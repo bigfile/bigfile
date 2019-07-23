@@ -18,7 +18,7 @@ func ExampleGetHashStateText() {
 	// function, see the next example. It seems like serialize and deserialize.
 
 	hash := sha256.New()
-	if _, err := hash.Write([]byte("some thing")); err != nil {
+	if _, err := hash.Write([]byte("something")); err != nil {
 		// you should handle the unexpected error
 		return
 	}
