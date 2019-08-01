@@ -2,17 +2,17 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// main package provides a database migrate tool, for keeping in
+// main package provides a database migrate cmd, for keeping in
 // step with team members, you can find help by this command:
 //
-// 		go run tool/migrate/migrate.go  --help
+// 		go run cmd/migrate/migrate.go  --help
 //
 // create migration files:
-// 		go run tool/migrate/migrate.go create alter_users_table
+// 		go run cmd/migrate/migrate.go create alter_users_table
 // execute upgrade command:
-//		go run tool/migrate/migrate.go upgrade
+//		go run cmd/migrate/migrate.go upgrade
 // execute rollback command:
-//	     go run tool/migrate/migrate.go rollback
+//	     go run cmd/migrate/migrate.go rollback
 package main
 
 import (
