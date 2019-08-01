@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// config package is responsible parsing the configuration file,
+// Package config is responsible parsing the configuration file,
 // and then, it is used by other parts of application.
 package config
 
@@ -42,7 +42,7 @@ type Database struct {
 	DBFile string `yaml:"dbFile,omitempty"`
 }
 
-// Console is used to config output handle for stdout
+// ConsoleLog is used to config output handle for stdout
 type ConsoleLog struct {
 	// Enable represent enable or disable log
 	Enable bool `yaml:"enable,omitempty"`
@@ -62,6 +62,7 @@ func (c *ConsoleLog) SetOutput(output *os.File) {
 	c.output = output
 }
 
+// FileLog is used to config output handler for file
 type FileLog struct {
 	// Enable represent enable or disable log
 	Enable bool `yaml:"enable,omitempty"`
@@ -108,6 +109,7 @@ type Configurator struct {
 }
 
 var (
+	// LevelToName map logging.Level to string represent
 	LevelToName = map[logging.Level]string{
 		logging.DEBUG:    "DEBUG",
 		logging.INFO:     "INFO",
@@ -116,6 +118,7 @@ var (
 		logging.ERROR:    "ERROR",
 		logging.CRITICAL: "CRITICAL",
 	}
+	// NameToLevel map string represent of log level to logging.Level
 	NameToLevel = map[string]logging.Level{
 		"DEBUG":    logging.DEBUG,
 		"INFO":     logging.INFO,
@@ -124,6 +127,7 @@ var (
 		"ERROR":    logging.ERROR,
 		"CRITICAL": logging.CRITICAL,
 	}
+	// DefaultConfig define a default configurator
 	DefaultConfig = &Configurator{
 		Database{
 			Driver:   "mysql",
@@ -153,11 +157,14 @@ var (
 // ParseConfigFile is used to parse configuration from yaml file to
 // specify configurator
 func ParseConfigFile(file string, config *Configurator) error {
-	if content, err := ioutil.ReadFile(file); err != nil {
+	var (
+		content []byte
+		err     error
+	)
+	if content, err = ioutil.ReadFile(file); err != nil {
 		return err
-	} else {
-		return ParseConfig(content, config)
 	}
+	return ParseConfig(content, config)
 }
 
 // ParseConfig parse config content to specify configurator. If config is nil,

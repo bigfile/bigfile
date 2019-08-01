@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// databases package provides capacity to interact with database
+// Package databases provides capacity to interact with database
 package databases
 
 import (
@@ -14,8 +14,12 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/jinzhu/gorm"
+
+	// import mysql database driver
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	// import postgres database driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	// import sqlite database driver
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 

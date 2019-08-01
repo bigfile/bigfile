@@ -18,7 +18,7 @@ func ExampleGetHashStateText() {
 	// function, see the next example. It seems like serialize and deserialize.
 
 	hash := sha256.New()
-	if _, err := hash.Write([]byte("something")); err != nil {
+	if _, err := hash.Write([]byte("hello world")); err != nil {
 		// you should handle the unexpected error
 		return
 	}
@@ -29,8 +29,8 @@ func ExampleGetHashStateText() {
 	}
 
 	// Output:
-	// 3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb
-	// MP+BAwEBBXN0YXRlAf+CAAEEAQFIAf+EAAEBWAH/hgABAk54AQQAAQNMZW4BBgAAABn/gwEBAQlbOF11aW50MzIB/4QAAQYBEAAAGv+FAQEBCVs2NF11aW50OAH/hgABBgH/gAAAc/+CAQj8agnmZ/y7Z66F/Dxu83L8pU/1OvxRDlJ//JsFaIz8H4PZq/xb4M0ZAUBzb21ldGhpbmcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARIBCQA=
+	// b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+	// MP+BAwEBBVN0YXRlAf+CAAEEAQFIAf+EAAEBWAH/hgABAk54AQQAAQNMZW4BBgAAABn/gwEBAQlbOF11aW50MzIB/4QAAQYBEAAAGv+FAQEBCVs2NF11aW50OAH/hgABBgH/gAAAc/+CAQj8agnmZ/y7Z66F/Dxu83L8pU/1OvxRDlJ//JsFaIz8H4PZq/xb4M0ZAUBoZWxsbyB3b3JsZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARYBCwA=
 }
 
 func ExampleNewHashWithStateText() {

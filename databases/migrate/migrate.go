@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// migrate package mainly provides capacity to migrate and rollback
+// Package migrate mainly provides capacity to migrate and rollback
 // database change automatically. keeping database structure is in
 // consistency in team members.
 package migrate
@@ -24,12 +24,14 @@ type Migrator interface {
 	Down(db *gorm.DB) error
 }
 
+// MigrationModel is used to generate migrations table in database
 type MigrationModel struct {
 	ID        uint   `gorm:"primary_key;AUTO_INCREMENT"`
 	Migration string `gorm:"type:varchar(255);not null;UNIQUE_INDEX"`
 	Batch     uint   `gorm:"type:int unsigned;not null"`
 }
 
+// TableName represent the name of migration table
 func (m MigrationModel) TableName() string {
 	return "migrations"
 }
@@ -127,6 +129,6 @@ func (m *MigrationCollection) Rollback(step uint) {
 	}
 }
 
-// In fact, DefaultMigrationCollection is not available, unless you set
+// DefaultMC  In fact, is not available, unless you set
 // the database connection by SetConnection method
 var DefaultMC = &MigrationCollection{}

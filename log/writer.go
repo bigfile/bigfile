@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// package log plan to provide a log collect component that can
+// Package log plan to provide a log collect component that can
 // output application log to console and file meanwhile. In addition,
 // log that is exported to file can be rotated automatically by Mode
 // and file size.
@@ -55,8 +55,8 @@ func NewAutoRotateWriter(file string, maxBytes uint64) (*AutoRotateWriter, error
 		dir                     = filepath.Dir(file)
 		err                     error
 		stat                    os.FileInfo
-		number                  uint32 = 0
-		handlerAlreadyWriteSize uint64 = 0
+		number                  uint32
+		handlerAlreadyWriteSize uint64
 		completeFileName        string
 		basename                string
 		ext                     string
@@ -85,9 +85,8 @@ func NewAutoRotateWriter(file string, maxBytes uint64) (*AutoRotateWriter, error
 				if handler, err = os.OpenFile(
 					completeFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 					return nil, err
-				} else {
-					break
 				}
+				break
 			} else {
 				return nil, err
 			}
@@ -101,7 +100,7 @@ func NewAutoRotateWriter(file string, maxBytes uint64) (*AutoRotateWriter, error
 				break
 			}
 		}
-		number += 1
+		number++
 	}
 
 	return &AutoRotateWriter{

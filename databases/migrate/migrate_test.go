@@ -79,7 +79,7 @@ func TestMigrationCollection_Upgrade(t *testing.T) {
 	DefaultMC.Register(&CreateUserTableMigration20190725{})
 	DefaultMC.Upgrade()
 	if !connection.HasTable(&UserModelTest{}) {
-		t.Fatalf("table %s should be already existed in datbase\n", UserModelTest{}.TableName())
+		t.Fatalf("table %s should be already existed in database\n", UserModelTest{}.TableName())
 	}
 	if DefaultMC.MaxBatch() != 1 {
 		t.Fatal("max batch of migrations table should be 1")
@@ -95,7 +95,7 @@ func TestMigrationCollection_Rollback(t *testing.T) {
 	DefaultMC.Upgrade()
 	DefaultMC.Rollback(1)
 	if connection.HasTable(&UserModelTest{}) {
-		t.Fatalf("table %s should be already deleted in datbase\n", UserModelTest{}.TableName())
+		t.Fatalf("table %s should be already deleted in database\n", UserModelTest{}.TableName())
 	}
 	if DefaultMC.MaxBatch() != 0 {
 		t.Fatal("max batch of migrations table should be 0")
