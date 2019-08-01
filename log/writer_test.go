@@ -5,7 +5,6 @@
 package log
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -132,13 +131,32 @@ func TestAutoRotateWriter_Write2(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < 1000; j++ {
 				writeBytes, err = writer.Write([]byte("hello hello"))
-				if err != nil {
-					fmt.Println(err)
-				}
 				assert.Equal(t, err, nil)
 				assert.Equal(t, writeBytes, 11)
 			}
 		}()
 	}
 	wg.Wait()
+}
+
+func BenchmarkAutoRotateWriter_Write(b *testing.B) {
+	var (
+		err      error
+		randNum  int
+		filePath string
+		writer   *AutoRotateWriter
+	)
+	filePath = filepath.Join(os.TempDir(), strconv.Itoa(randNum), "bigfile.log")
+	writer, err = NewAutoRotateWriter(filePath, 10)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.RemoveAll(filepath.Dir(filePath))
+
+	for i := 0; i < b.N; i++ {
+		_, err = writer.Write([]byte("hello hello"))
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
