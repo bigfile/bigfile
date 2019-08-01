@@ -45,8 +45,8 @@ func TestGetHashState(t *testing.T) {
 	// sha256.digest.len
 	rfxLen := digestElem.FieldByName("len")
 	rfxLen = reflect.NewAt(rfxLen.Type(), unsafe.Pointer(rfxLen.UnsafeAddr())).Elem()
-	if len_ := rfxLen.Interface().(uint64); len_ != hState.Len {
-		t.Fatalf("hState.Len should be %v", len_)
+	if xLen := rfxLen.Interface().(uint64); xLen != hState.Len {
+		t.Fatalf("hState.Len should be %v", xLen)
 	}
 }
 

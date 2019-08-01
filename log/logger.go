@@ -2,6 +2,8 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
+// Package log is used to collect information of running application
+// and then transport them to destination.
 package log
 
 import (

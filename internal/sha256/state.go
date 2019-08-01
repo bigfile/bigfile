@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// sha256 package provides functions to export the middle state of
+// Package sha256 provides functions to export the middle state of
 // internal sha256.digest and set the state. It also provides functions
 // to serialize and deserialize between text and sha256.digest.
 package sha256
@@ -19,7 +19,7 @@ import (
 )
 
 // State is a representation of *sha256.digest
-type state struct {
+type State struct {
 
 	// H is corresponding to sha256.digest.h
 	H [8]uint32
@@ -37,7 +37,7 @@ type state struct {
 // EncodeToString encodes state to string by base64 encode.
 // If there are anything wrong, it will return an error to
 // represent it.
-func (s *state) EncodeToString() (string, error) {
+func (s *State) EncodeToString() (string, error) {
 	buf := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buf)
 	if err := encoder.Encode(s); err != nil {
@@ -49,12 +49,12 @@ func (s *state) EncodeToString() (string, error) {
 // DecodeStringToState decodes string that is encoded by base64,
 // and then decodes it to a *state. When something goes wrong, it will
 // return an error, otherwise err is nil.
-func DecodeStringToState(cipherText string) (*state, error) {
+func DecodeStringToState(cipherText string) (*State, error) {
 	plainTextByte, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil {
 		return nil, err
 	}
-	state := &state{}
+	state := &State{}
 	buf := bytes.Buffer{}
 	buf.Write(plainTextByte)
 	decoder := gob.NewDecoder(&buf)
@@ -64,16 +64,16 @@ func DecodeStringToState(cipherText string) (*state, error) {
 	return state, nil
 }
 
-// DigestTypeError hash.Hash has many implementation types, but, here, we only
+// ErrDigestType hash.Hash has many implementation types, but, here, we only
 // reflect sha256.digest type.
-var DigestTypeError = errors.New("digest must be type of *sha256.digest")
+var ErrDigestType = errors.New("digest must be type of *sha256.digest")
 
 // GetHashState will return sha256.digest internal state. This is an unsafe method,
 // so you should use it with caution. If reflect successfully, it will return a *State.
-func GetHashState(digest hash.Hash) (*state, error) {
+func GetHashState(digest hash.Hash) (*State, error) {
 
 	if reflect.TypeOf(digest).String() != "*sha256.digest" {
-		return nil, DigestTypeError
+		return nil, ErrDigestType
 	}
 
 	digestElem := reflect.ValueOf(digest).Elem()
@@ -82,7 +82,7 @@ func GetHashState(digest hash.Hash) (*state, error) {
 		h    [8]uint32
 		x    [64]byte
 		nx   int
-		len_ uint64
+		xLen uint64
 	)
 	// sha256.digest.h
 	rfh := digestElem.FieldByName("h")
@@ -102,22 +102,22 @@ func GetHashState(digest hash.Hash) (*state, error) {
 	// sha256.digest.len
 	rfxLen := digestElem.FieldByName("len")
 	rfxLen = reflect.NewAt(rfxLen.Type(), unsafe.Pointer(rfxLen.UnsafeAddr())).Elem()
-	len_ = rfxLen.Interface().(uint64)
+	xLen = rfxLen.Interface().(uint64)
 
-	return &state{
+	return &State{
 		H:   h,
 		X:   x,
 		Nx:  nx,
-		Len: len_,
+		Len: xLen,
 	}, nil
 }
 
 // SetHashState will be used to set sha256.digest state. This method will help us
 // implement continuous hash.
-func SetHashState(digest hash.Hash, state *state) error {
+func SetHashState(digest hash.Hash, state *State) error {
 
 	if reflect.TypeOf(digest).String() != "*sha256.digest" {
-		return DigestTypeError
+		return ErrDigestType
 	}
 	digestElem := reflect.ValueOf(digest).Elem()
 
