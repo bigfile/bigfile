@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// main package provides a database migrate cmd, for keeping in
+// Package main provides a database migrate cmd, for keeping in
 // step with team members, you can find help by this command:
 //
 // 		go run cmd/migrate/migrate.go  --help
@@ -47,17 +47,21 @@ func init() {
 	migrate.DefaultMC.Register(&{{ .StructureName }}{})
 }
 
+// {{ .StructureName }} represent some database operate
 type {{ .StructureName }} struct{}
 
+// Name represent operate name, it's unique
 func (c *{{ .StructureName }}) Name() string {
 	return "{{ .Name }}"
 }
 
+// Up is executed in upgrading 
 func (c *{{ .StructureName }}) Up(db *gorm.DB) error {
 	// execute when upgrade database
 	return nil
 }
 
+// Down is executed in downgrading
 func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 	// execute when rollback database
 	return nil
