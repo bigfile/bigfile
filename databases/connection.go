@@ -75,3 +75,16 @@ func NewConnection(dbConfig *config.Database, useCache bool) (*gorm.DB, error) {
 	}
 	return conn, nil
 }
+
+// MustNewConnection just call NewConnection, but, when something goes wrong, it will
+// raise a panic
+func MustNewConnection(dbConfig *config.Database, useCache bool) *gorm.DB {
+	var (
+		conn *gorm.DB
+		err  error
+	)
+	if conn, err = NewConnection(dbConfig, useCache); err != nil {
+		panic(err)
+	}
+	return conn
+}

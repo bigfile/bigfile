@@ -45,3 +45,23 @@ func TestNewConnection(t *testing.T) {
 		assert.NotEqual(t, connectionPointer, uintptr(unsafe.Pointer(connection)))
 	}
 }
+
+func TestMustNewConnection(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	dbFile, err := ioutil.TempFile(os.TempDir(), "*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(dbFile.Name())
+
+	dbConfig := &config.Database{
+		Driver: "sqlite3",
+		DBFile: dbFile.Name(),
+	}
+
+	MustNewConnection(dbConfig, true)
+}

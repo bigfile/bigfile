@@ -24,17 +24,19 @@ func (c *CreateAppsTable20190801213442) Name() string {
 // Up is executed in upgrading
 func (c *CreateAppsTable20190801213442) Up(db *gorm.DB) error {
 	return db.Exec(`
-	CREATE TABLE IF NOT EXISTS apps (
-	  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-	  secret CHAR(32) NOT NULL COMMENT 'Application Secret',
-	  name VARCHAR(100) NOT NULL COMMENT 'Application Name',
-	  note VARCHAR(500) NULL COMMENT 'Application Note',
-	  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	  deletedAt TIMESTAMP NULL,
+	CREATE TABLE apps (
+	  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+	  uid char(32) not null comment 'Application unique id',
+	  secret char(32) NOT NULL COMMENT 'Application Secret',
+	  name varchar(100) NOT NULL COMMENT 'Application Name',
+	  note varchar(500) DEFAULT NULL COMMENT 'Application Note',
+	  createdAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+	  updatedAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+	  deletedAt timestamp(6) NULL DEFAULT NULL,
 	  PRIMARY KEY (id),
-	  INDEX deleted_at_idx (deletedAt)
-	)`).Error
+	  UNIQUE INDEX uid_uq_idx (uid),
+	  KEY deleted_at_idx (deletedAt)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).Error
 }
 
 // Down is executed in downgrading

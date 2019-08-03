@@ -23,7 +23,7 @@ log:
   console:
     enable: true
     level: info
-    format: '%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}'
+    format: '%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}'
   file:
     enable: true
     path: 'bigfile.log'
@@ -42,7 +42,7 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm.Equal(true, configurator.Log.Console.Enable)
 	confirm.Equal("info", configurator.Log.Console.Level)
 	confirm.Equal(
-		"%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
+		"%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}",
 		configurator.Log.Console.Format,
 	)
 	confirm.Equal("bigfile.log", configurator.File.Path)

@@ -132,7 +132,7 @@ var (
 		Database{
 			Driver:   "mysql",
 			Host:     "127.0.0.1",
-			Port:     3600,
+			Port:     3306,
 			User:     "root",
 			Password: "root",
 			DBName:   "bigfile",
@@ -141,7 +141,7 @@ var (
 			Console: ConsoleLog{
 				Level:  LevelToName[logging.DEBUG],
 				Enable: true,
-				Format: `%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}`,
+				Format: `%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}`,
 			},
 			File: FileLog{
 				Enable:          true,

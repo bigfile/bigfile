@@ -83,3 +83,15 @@ func NewLogger(logConfig *config.Log) (*logging.Logger, error) {
 
 	return log, nil
 }
+
+// MustNewLogger just call NewLogger, but if there are errors, process will
+func MustNewLogger(logConfig *config.Log) *logging.Logger {
+	var (
+		logger *logging.Logger
+		err    error
+	)
+	if logger, err = NewLogger(logConfig); err != nil {
+		panic(err)
+	}
+	return logger
+}
