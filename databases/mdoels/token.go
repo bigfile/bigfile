@@ -28,7 +28,7 @@ func (t *Token) TableName() string {
 	return "tokens"
 }
 
-// Scope represent token scope
+// Scope represent token scope. Actually, it's equal to path.
 func (t *Token) Scope() string {
 	return t.Path
 }
