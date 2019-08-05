@@ -4,8 +4,20 @@
 
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
 
+	"labix.org/v2/mgo/bson"
+
+	"github.com/jinzhu/gorm"
+)
+
+// Token acts as a key, it limits the user that own this token
+// which directories can be accessed. Or only when it's used with
+// specify ip, it will be accepted. Or some tokens only can be used
+// to read file. every token has an expired time, expired token can't
+// be used to do anything.
 type Token struct {
 	ID             uint64     `gorm:"type:BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT;primary_key"`
 	UID            string     `gorm:"type:CHAR(32) NOT NULL;UNIQUE;column:uid"`
@@ -31,4 +43,60 @@ func (t *Token) TableName() string {
 // Scope represent token scope. Actually, it's equal to path.
 func (t *Token) Scope() string {
 	return t.Path
+}
+
+// AllowIPAccess is used to check whether this ip can be allowed
+// to use this token
+func (t *Token) AllowIPAccess(ip string) bool {
+	if t.IP == nil {
+		return true
+	}
+	return strings.Contains(*t.IP, ip)
+}
+
+// NewToken will generate a token by input params
+func NewToken(
+	app *App, path string, expiredAt *time.Time, ip, secret *string, availableTimes int, readOnly int8, db *gorm.DB,
+) (*Token, error) {
+	var (
+		token = &Token{
+			UID:            bson.NewObjectId().Hex(),
+			Secret:         secret,
+			AppID:          app.ID,
+			IP:             ip,
+			AvailableTimes: availableTimes,
+			ReadOnly:       readOnly,
+			Path:           path,
+			ExpiredAt:      expiredAt,
+			App:            *app,
+		}
+		err error
+	)
+	err = db.Create(token).Error
+	return token, err
+}
+
+func findTokenByUID(uid string, trashed bool, db *gorm.DB) (*Token, error) {
+	var (
+		token = &Token{}
+		err   error
+	)
+	if trashed {
+		db = db.Unscoped()
+	}
+	err = db.Preload("App").Where("uid = ?", uid).Find(token).Error
+	if err != nil {
+		return token, err
+	}
+	return token, nil
+}
+
+// FindTokenByUID find a token by uid
+func FindTokenByUID(uid string, db *gorm.DB) (*Token, error) {
+	return findTokenByUID(uid, false, db)
+}
+
+// FindTokenByUIDWithTrashed find a token by uid with trashed
+func FindTokenByUIDWithTrashed(uid string, db *gorm.DB) (*Token, error) {
+	return findTokenByUID(uid, true, db)
 }
