@@ -62,25 +62,37 @@ func (v ValidateErrors) ContainsErrCode(code int) bool {
 }
 
 var (
-	// ErrMap map service field to specific error
+	// PreDefinedValidateErrors map service field to specific error
 	PreDefinedValidateErrors = map[string]*ValidateError{
 		"TokenCreate.App": {
-			Code: 10002, Field: "Token.App", Msg: "can't find specific application by input params",
+			Code:  10002,
+			Field: "Token.App",
+			Msg:   "can't find specific application by input params",
 		},
 		"TokenCreate.Path": {
-			Code: 10003, Field: "Token.Path", Msg: "path of token can't be empty, and max of length is 1000",
+			Code:  10003,
+			Field: "Token.Path",
+			Msg:   "path of token can't be empty, max of length is 1000, and must be a legal unix path",
 		},
-		"TokenCreate.Ip": {
-			Code: 10004, Field: "Token.Ip", Msg: "max length of ip is 1500",
+		"TokenCreate.IP": {
+			Code:  10004,
+			Field: "Token.Ip",
+			Msg:   "max length of ip is 1500",
 		},
 		"TokenCreate.Secret": {
-			Code: 10005, Field: "Token.Secret", Msg: "secret of token is 32",
+			Code:  10005,
+			Field: "Token.Secret",
+			Msg:   "secret of token is 32",
 		},
 		"TokenCreate.AvailableTimes": {
-			Code: 10006, Field: "Token.AvailableTimes", Msg: "availableTimes of token is greater than -1",
+			Code:  10006,
+			Field: "Token.AvailableTimes",
+			Msg:   "availableTimes of token is greater than -1",
 		},
 		"TokenCreate.ReadOnly": {
-			Code: 10007, Field: "Token.ReadOnly", Msg: "readOnly of token is 0 or 1",
+			Code:  10007,
+			Field: "Token.ReadOnly",
+			Msg:   "readOnly of token is 0 or 1",
 		},
 	}
 )

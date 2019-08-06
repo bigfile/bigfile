@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -36,13 +37,12 @@ func TestValidateApp(t *testing.T) {
 }
 
 func TestValidatePath(t *testing.T) {
-	//assert.True(t, ValidatePath("/test"))
-	//assert.True(t, ValidatePath("test"))
-	//assert.True(t, ValidatePath("/test/"))
-	//assert.True(t, ValidatePath("/test/hello"))
-	//assert.False(t, ValidatePath("/test//"))
-	//name := strings.Repeat("s", 255)
-	////fmt.Println(name)
-	//assert.True(t, ValidatePath("/test/"+name+"/"))
-	//assert.False(t, ValidatePath("/test/"+name+"1222/"))
+	assert.True(t, ValidatePath("/test"))
+	assert.True(t, ValidatePath("test"))
+	assert.True(t, ValidatePath("/test/"))
+	assert.True(t, ValidatePath("/test/hello"))
+	assert.False(t, ValidatePath("/test//"))
+	name := strings.Repeat("s", 255)
+	assert.True(t, ValidatePath("/test/"+name+"/"))
+	assert.False(t, ValidatePath("/test/"+name+"1222/"))
 }

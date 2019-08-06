@@ -6,24 +6,27 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"gopkg.in/go-playground/validator.v9"
-
 	models "github.com/bigfile/bigfile/databases/mdoels"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // TokenCreate provide service for create token
 type TokenCreate struct {
 	BaseService
 
-	Ip             *string     `validate:"omitempty,max=1500"`
+	IP             *string     `validate:"omitempty,max=1500"`
 	App            *models.App `validate:"required"`
 	Path           string      `validate:"required,max=1000"`
 	Secret         *string     `validate:"omitempty,len=32"`
 	ReadOnly       int8        `validate:"oneof=0 1"`
 	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
 	AvailableTimes int         `validate:"omitempty,gte=-1"`
+
+	// for Out method
+	token *models.Token
 }
 
 // Validate is used to validate input params
@@ -50,7 +53,18 @@ func (c *TokenCreate) Validate() ValidateErrors {
 			}
 		)
 		validateErrors = append(validateErrors, appErr)
+	}
 
+	if !ValidatePath(c.Path) {
+		var (
+			field   = "TokenCreate.Path"
+			pathErr = &ValidateError{
+				Code:      PreDefinedValidateErrors[field].Code,
+				Field:     field,
+				Exception: errors.New("path is not a legal unix path"),
+			}
+		)
+		validateErrors = append(validateErrors, pathErr)
 	}
 
 	return validateErrors
@@ -58,5 +72,22 @@ func (c *TokenCreate) Validate() ValidateErrors {
 
 // Execute is used to implement token create
 func (c *TokenCreate) Execute(ctx context.Context) error {
-	return nil
+	var err error
+
+	if err = c.CallBefore(ctx, c); err != nil {
+		return err
+	}
+
+	if c.token, err = models.NewToken(
+		c.App, c.Path, c.ExpiredAt, c.IP, c.Secret, c.AvailableTimes, c.ReadOnly, c.DB,
+	); err != nil {
+		return err
+	}
+
+	return c.CallAfter(ctx, c)
+}
+
+// Out return the result of Execute method
+func (c *TokenCreate) Out() *models.Token {
+	return c.token
 }

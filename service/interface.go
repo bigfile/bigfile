@@ -47,4 +47,42 @@ type BaseService struct {
 
 	// DB represent a database connection
 	DB *gorm.DB
+
+	// Value is designed to provide value container for user
+	Value map[string]interface{}
+}
+
+// CallBefore will call BeforeHandler in turn, return err if something goes wrong
+func (b *BaseService) CallBefore(ctx context.Context, service Service) error {
+	for _, handler := range b.Before {
+		if err := handler(ctx, service); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CallAfter will call AfterHandler in turn, return err if something goes wrong
+func (b *BaseService) CallAfter(ctx context.Context, service Service) error {
+	for _, handler := range b.After {
+		if err := handler(ctx, service); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Execute is only for implementing Service
+func (b *BaseService) Execute(ctx context.Context) error {
+	var err error
+
+	if err = b.CallBefore(ctx, b); err != nil {
+		return err
+	}
+	return b.CallAfter(ctx, b)
+}
+
+// Validate is only for implementing Service
+func (b *BaseService) Validate() ValidateErrors {
+	return nil
 }

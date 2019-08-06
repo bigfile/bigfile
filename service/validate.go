@@ -6,7 +6,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 
 	models "github.com/bigfile/bigfile/databases/mdoels"
@@ -34,14 +33,14 @@ func ValidateApp(db *gorm.DB, app *models.App) error {
 func ValidatePath(path string) bool {
 	var (
 		regexps = []*regexp.Regexp{
-			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+/|$`),
+			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+$`),
+			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+/$`),
 			regexp.MustCompile(`^(?:[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255}/|$)+$?`),
 			regexp.MustCompile(`^[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255}$`),
 		}
 	)
 
-	for index, regex := range regexps {
-		fmt.Println(regex.FindAllStringSubmatch(path, 10), index)
+	for _, regex := range regexps {
 		if regex.MatchString(path) {
 			return true
 		}
