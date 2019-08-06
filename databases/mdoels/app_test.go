@@ -30,7 +30,7 @@ func BenchmarkNewApp(b *testing.B) {
 			b.Fatal(err)
 		}
 	}()
-	trx := databases.MustNewConnection(nil, true).Begin()
+	trx := databases.MustNewConnection(nil).Begin()
 	defer func() {
 		trx.Rollback()
 	}()

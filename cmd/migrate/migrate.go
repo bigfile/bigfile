@@ -137,7 +137,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 				return nil
 			},
 			Before: func(context *cli.Context) error {
-				connection, err = databases.NewConnection(&config.DefaultConfig.Database, true)
+				connection, err = databases.NewConnection(&config.DefaultConfig.Database)
 				migrate.DefaultMC.SetConnection(connection)
 				return err
 			},
@@ -161,7 +161,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 				return nil
 			},
 			Before: func(context *cli.Context) error {
-				connection, err = databases.NewConnection(&config.DefaultConfig.Database, true)
+				connection, err = databases.NewConnection(&config.DefaultConfig.Database)
 				migrate.DefaultMC.SetConnection(connection)
 				return err
 			},

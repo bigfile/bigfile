@@ -8,10 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"unsafe"
 
 	"github.com/bigfile/bigfile/config"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConnection(t *testing.T) {
@@ -27,22 +25,9 @@ func TestNewConnection(t *testing.T) {
 		DBFile: dbFile.Name(),
 	}
 
-	connection, err := NewConnection(dbConfig, true)
+	_, err = NewConnection(dbConfig)
 	if err != nil {
 		t.Fatal(err)
-	}
-	connectionPointer := uintptr(unsafe.Pointer(connection))
-
-	if connection, err := NewConnection(dbConfig, true); err != nil {
-		t.Fatal(err)
-	} else {
-		assert.Equal(t, connectionPointer, uintptr(unsafe.Pointer(connection)))
-	}
-
-	if connection, err := NewConnection(dbConfig, false); err != nil {
-		t.Fatal(err)
-	} else {
-		assert.NotEqual(t, connectionPointer, uintptr(unsafe.Pointer(connection)))
 	}
 }
 
@@ -63,5 +48,5 @@ func TestMustNewConnection(t *testing.T) {
 		DBFile: dbFile.Name(),
 	}
 
-	MustNewConnection(dbConfig, true)
+	MustNewConnection(dbConfig)
 }

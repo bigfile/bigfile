@@ -43,7 +43,7 @@ func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, fu
 			t.Fatal(err)
 		}
 	}()
-	db := databases.MustNewConnection(dbConfig, true)
+	db := databases.MustNewConnection(dbConfig)
 	trx := db.Begin()
 	return trx, func(t *testing.T) {
 		defer func() {
@@ -69,6 +69,9 @@ func newAppForTest(dbConfig *config.Database, t *testing.T) (*App, *gorm.DB, fun
 	}
 	return app, trx, down, err
 }
+
+// NewAppForTest export newAppForTest for other package
+var NewAppForTest = newAppForTest
 
 func newTokenForTest(
 	cfg *config.Database,

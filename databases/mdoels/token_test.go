@@ -110,7 +110,7 @@ func TestFindTokenByUID(t *testing.T) {
 	confirm.Equal(token.ID, tmpToken.ID)
 	confirm.Equal(token.App.ID, tmpToken.App.ID)
 
-	tmpToken, err = FindTokenByUID("a fake token uid", trx)
+	_, err = FindTokenByUID("a fake token uid", trx)
 	confirm.NotNil(err)
 	confirm.Contains(err.Error(), "record not found")
 }
@@ -131,7 +131,7 @@ func TestFindTokenByUIDWithTrashed(t *testing.T) {
 
 	trx.Delete(token)
 
-	tmpToken, err = FindTokenByUID(token.UID, trx)
+	_, err = FindTokenByUID(token.UID, trx)
 	confirm.NotNil(err)
 	confirm.Contains(err.Error(), "record not found")
 

@@ -6,13 +6,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 
 	models "github.com/bigfile/bigfile/databases/mdoels"
 	"github.com/jinzhu/gorm"
 	"gopkg.in/go-playground/validator.v9"
 )
-
-const ValidateEreTmp = "Key: '%s' Error:Field validation for '%s' failed on the '%s' tag"
 
 var (
 	// Validate represent a global validator
@@ -28,4 +28,24 @@ func ValidateApp(db *gorm.DB, app *models.App) error {
 		return err
 	}
 	return nil
+}
+
+// ValidatePath is used to validate whether the given path is legal
+func ValidatePath(path string) bool {
+	var (
+		regexps = []*regexp.Regexp{
+			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+/|$`),
+			regexp.MustCompile(`^(?:[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255}/|$)+$?`),
+			regexp.MustCompile(`^[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255}$`),
+		}
+	)
+
+	for index, regex := range regexps {
+		fmt.Println(regex.FindAllStringSubmatch(path, 10), index)
+		if regex.MatchString(path) {
+			return true
+		}
+	}
+
+	return false
 }

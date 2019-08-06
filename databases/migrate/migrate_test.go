@@ -42,7 +42,7 @@ func getDBConnection(t *testing.T) *gorm.DB {
 		DBFile: ":memory:",
 	}
 
-	connection, err := databases.NewConnection(dbConfig, true)
+	connection, err := databases.NewConnection(dbConfig)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"gopkg.in/go-playground/validator.v9"
@@ -18,35 +17,43 @@ import (
 type TokenCreate struct {
 	BaseService
 
-	App            *models.App `validate:"required"`
-	Path           string      `validate:"required"`
-	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
 	Ip             *string     `validate:"omitempty,max=1500"`
+	App            *models.App `validate:"required"`
+	Path           string      `validate:"required,max=1000"`
 	Secret         *string     `validate:"omitempty,len=32"`
-	AvailableTimes int         `validate:"omitempty,gte=-1"`
 	ReadOnly       int8        `validate:"oneof=0 1"`
+	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
+	AvailableTimes int         `validate:"omitempty,gte=-1"`
 }
 
 // Validate is used to validate input params
-func (c *TokenCreate) Validate() error {
+func (c *TokenCreate) Validate() ValidateErrors {
 
-	if errs := Validate.Struct(c); errs != nil {
+	var (
+		validateErrors ValidateErrors
+		errs           error
+	)
+
+	if errs = Validate.Struct(c); errs != nil {
 		for _, err := range errs.(validator.ValidationErrors) {
-			if srvErr, ok := ErrMap[err.Namespace()]; ok {
-				return srvErr
-			} else {
-				ErrUnknown.Msg = fmt.Sprintf(ValidateEreTmp, err.Namespace(), err.Field(), err.Tag())
-				return ErrUnknown
-			}
+			validateErrors = append(validateErrors, PreDefinedValidateErrors[err.Namespace()])
 		}
 	}
 
 	if err := ValidateApp(c.DB, c.App); err != nil {
-		ErrApp.Desc = err.Error()
-		return ErrApp
+		var (
+			field  = "TokenCreate.App"
+			appErr = &ValidateError{
+				Code:      PreDefinedValidateErrors[field].Code,
+				Field:     field,
+				Exception: err,
+			}
+		)
+		validateErrors = append(validateErrors, appErr)
+
 	}
 
-	return nil
+	return validateErrors
 }
 
 // Execute is used to implement token create

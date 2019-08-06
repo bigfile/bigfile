@@ -25,7 +25,7 @@ var (
 	err        error
 	logger     = log.MustNewLogger(nil)
 	before     = func(context *cli.Context) error {
-		connection, err = databases.NewConnection(&config.DefaultConfig.Database, true)
+		connection, err = databases.NewConnection(&config.DefaultConfig.Database)
 		migrate.DefaultMC.SetConnection(connection)
 		return err
 	}

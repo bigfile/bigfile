@@ -28,7 +28,7 @@ type Service interface {
 	Execute(ctx context.Context) error
 
 	// Validate is designed to validate input params
-	Validate() error
+	Validate() ValidateErrors
 
 	// for convenience, each service should define a return value
 	// method that returns the specific output of service.
