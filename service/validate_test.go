@@ -37,6 +37,7 @@ func TestValidateApp(t *testing.T) {
 }
 
 func TestValidatePath(t *testing.T) {
+	assert.True(t, ValidatePath("/"))
 	assert.True(t, ValidatePath("/test"))
 	assert.True(t, ValidatePath("test"))
 	assert.True(t, ValidatePath("/test/"))
