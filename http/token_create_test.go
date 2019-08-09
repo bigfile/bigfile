@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/bigfile/bigfile/config"
 )
 
 func TestTokenCreateHandler(t *testing.T) {
@@ -23,11 +25,11 @@ func TestTokenCreateHandler(t *testing.T) {
 	_ = multipartBody.WriteField("appId", "10001")
 	_ = multipartBody.WriteField("requestTime", strconv.FormatInt(time.Now().Unix(), 10))
 	_ = multipartBody.WriteField("sign", "sign")
-	_ = multipartBody.WriteField("secret", "secret")
+	_ = multipartBody.WriteField("secret", "secret111")
 	multipartBody.Close()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", buildRoute(cfg.HTTP.APIPrefix, "/token/create"), buf)
+	req, _ := http.NewRequest("POST", buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create"), buf)
 	req.Header.Set("Content-Type", multipartBody.FormDataContentType())
 	Routers().ServeHTTP(w, req)
 }

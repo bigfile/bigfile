@@ -24,9 +24,9 @@ type tokenCreateInput struct {
 }
 
 func TokenCreateHandler(ctx *gin.Context) {
-	var input tokenCreateInput
-	if err := ctx.ShouldBind(&input); err != nil {
-		fmt.Println(err)
+	var input *tokenCreateInput
+	if inputParam, ok := ctx.Get("inputParam"); ok {
+		input = inputParam.(*tokenCreateInput)
 	}
-	fmt.Println(*input.Secret)
+	fmt.Println(input)
 }
