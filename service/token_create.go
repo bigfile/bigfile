@@ -23,7 +23,7 @@ type TokenCreate struct {
 	Secret         *string     `validate:"omitempty,len=32"`
 	ReadOnly       int8        `validate:"oneof=0 1"`
 	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
-	AvailableTimes int         `validate:"omitempty,gte=-1"`
+	AvailableTimes int         `validate:"omitempty,gte=-1,max=2147483647"`
 
 	// for Out method
 	token *models.Token

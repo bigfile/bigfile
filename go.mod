@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/jinzhu/gorm v1.9.10
-	github.com/json-iterator/go v1.1.7 // indirect
+	github.com/json-iterator/go v1.1.7
 	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.1

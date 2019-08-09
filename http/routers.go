@@ -26,7 +26,7 @@ func Routers() *gin.Engine {
 	requestWithAppGroup := r.Group("", ParseAppMiddleware())
 	requestWithAppGroup.POST(
 		buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create"),
-		SignMiddlewareWithApp(&tokenCreateInput{}),
+		SignWithAppMiddleware(&tokenCreateInput{}),
 		TokenCreateHandler,
 	)
 

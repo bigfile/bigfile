@@ -6,7 +6,7 @@ package http
 
 // Response represent http response for client
 type Response struct {
-	RequestId int64               `json:"requestId"`
+	RequestID int64               `json:"requestId"`
 	Success   bool                `json:"success"`
 	Errors    map[string][]string `json:"errors"`
 	Data      interface{}         `json:"data"`

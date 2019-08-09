@@ -40,6 +40,18 @@ func (v ValidateErrors) Error() string {
 	return buf.String()
 }
 
+// MapFieldErrors is used to represent error in other way. It's mainly
+// used to represent http response errors
+func (v ValidateErrors) MapFieldErrors() map[string][]string {
+	var (
+		m = make(map[string][]string, len(v))
+	)
+	for i := 0; i < len(v); i++ {
+		m[v[i].Field] = []string{v[i].Error()}
+	}
+	return m
+}
+
 // Map will transform error to map[code] = errMsg form
 func (v ValidateErrors) Map() map[int]string {
 	var (

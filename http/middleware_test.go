@@ -5,10 +5,13 @@
 package http
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	models "github.com/bigfile/bigfile/databases/mdoels"
 	"github.com/gin-gonic/gin"
@@ -47,7 +50,7 @@ func TestParseAppMiddleware(t *testing.T) {
 	ConfigContextMiddleware(nil)(ctx)
 	ParseAppMiddleware()(ctx)
 	bw, _ := ctx.Writer.(*bodyWriter)
-	assert.Contains(t, bw.body.String(), "Key: '.AppId' Error:Field validation for 'AppId' failed on the 'required' tag")
+	assert.Contains(t, bw.body.String(), "Key: '.AppID' Error:Field validation for 'AppID' failed on the 'required' tag")
 }
 
 func TestParseAppMiddleware2(t *testing.T) {
@@ -85,4 +88,101 @@ func TestParseAppMiddleware3(t *testing.T) {
 	ctxApp, ok := ctxAppValue.(*models.App)
 	assert.True(t, ok)
 	assert.Equal(t, app.UID, ctxApp.UID)
+}
+
+func TestValidateRequestSignature(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	// no input sign param
+	req, _ := http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader("appId=fakeAppId"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+	assert.Nil(t, ctx.Request.ParseForm())
+	assert.False(t, ValidateRequestSignature(ctx, "secret"))
+
+	m := md5.New()
+	secret := "this is a test secret"
+	body := "a=1&b=2&c=3&d=4"
+	_, _ = m.Write([]byte(body))
+	_, _ = m.Write([]byte(secret))
+	correctSign := hex.EncodeToString(m.Sum(nil))
+
+	// sign error
+	bodyWithWrongSign := body + "&sign=" + "wrong sign"
+	req, _ = http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader(bodyWithWrongSign))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+	assert.Nil(t, ctx.Request.ParseForm())
+	assert.False(t, ValidateRequestSignature(ctx, secret))
+
+	// sign correctly
+	bodyWithWrongSign = body + "&sign=" + correctSign
+	req, _ = http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader(bodyWithWrongSign))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+	assert.Nil(t, ctx.Request.ParseForm())
+	assert.True(t, ValidateRequestSignature(ctx, secret))
+}
+
+func TestSignWithAppMiddleware(t *testing.T) {
+
+	type TestInput struct {
+		A string     `form:"a" json:"a" binding:"required"`
+		B int64      `form:"b" json:"b" binding:"required"`
+		C bool       `form:"c" json:"c" binding:"required"`
+		T *time.Time `form:"t" json:"t"`
+	}
+
+	var it = &TestInput{}
+
+	//app, _, down, err := models.NewAppForTest(nil, t)
+	//assert.Nil(t, err)
+	//defer down(t)
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	RecordRequestMiddleware()(ctx)
+	assert.IsType(t, ctx.Writer, &bodyWriter{})
+	bw, _ := ctx.Writer.(*bodyWriter)
+
+	// parse param error, because of c type error
+	req, _ := http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader("a=a&b=1&c=c"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+	SignWithAppMiddleware(it)(ctx)
+	assert.Contains(t, bw.body.String(), "strconv.ParseBool: parsing")
+	bw.body.Reset()
+
+	// sign error
+	app, _, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	ctx.Set("app", app)
+
+	req, _ = http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader("a=a&b=1&c=1&sign=error"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+
+	SignWithAppMiddleware(it)(ctx)
+	assert.Contains(t, bw.body.String(), "request param sign error")
+	bw.body.Reset()
+
+	// sign correctly
+	reqBody := "a=a&b=1&c=1"
+	reqBodySign := SignStrWithSecret(reqBody, app.Secret)
+	reqBody += "&sign=" + reqBodySign
+	req, _ = http.NewRequest("POST", "http://bigfile.io",
+		strings.NewReader(reqBody))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	ctx.Request = req
+	SignWithAppMiddleware(it)(ctx)
+	assert.Equal(t, 0, bw.body.Len())
+}
+
+func TestSignStrWithSecret(t *testing.T) {
+	assert.Equal(t, SignStrWithSecret("a=1&b=2&c=3", "secret"), "44d18b899e05f82c1cc4ce22bf5df09b")
 }

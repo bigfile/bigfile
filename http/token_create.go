@@ -5,28 +5,82 @@
 package http
 
 import (
-	"fmt"
+	"context"
 	"time"
+
+	models "github.com/bigfile/bigfile/databases/mdoels"
+
+	"github.com/bigfile/bigfile/service"
+	"github.com/jinzhu/gorm"
 
 	"github.com/gin-gonic/gin"
 )
 
 type tokenCreateInput struct {
-	AppId          uint64     `form:"appId" json:"appId" binding:"required"`
+	AppID          uint64     `form:"appId" json:"appId" binding:"required"`
 	RequestTime    time.Time  `form:"requestTime" json:"requestTime" time_format:"unix" binding:"required"`
 	Sign           string     `form:"sign" json:"sign" binding:"required"`
-	Path           *string    `form:"path" json:"path"`
-	IP             *string    `form:"ip" json:"ip"`
-	ExpiredAt      *time.Time `form:"expiredAt" json:"expiredAt"`
-	Secret         *string    `form:"secret" json:"secret"`
-	AvailableTimes *int8      `form:"availableTimes" json:"availableTimes"`
-	ReadOnly       *bool      `form:"readOnly" json:"readOnly"`
+	Path           *string    `form:"path,default=/" json:"path,default=/" binding:"max=1000"`
+	IP             *string    `form:"ip" json:"ip" binding:"omitempty,max=1500"`
+	ExpiredAt      *time.Time `form:"expiredAt" json:"expiredAt" time_format:"unix" binding:"omitempty,gt"`
+	Secret         *string    `form:"secret" json:"secret" binding:"omitempty,len=32"`
+	AvailableTimes *int       `form:"availableTimes,default=-1" json:"availableTimes,default=-1" binding:"omitempty,gte=1,max=2147483647"`
+	ReadOnly       *bool      `form:"readOnly,default=0" json:"readOnly,default=0"`
 }
 
+// TokenCreateHandler is used to handle token create http request
 func TokenCreateHandler(ctx *gin.Context) {
-	var input *tokenCreateInput
-	if inputParam, ok := ctx.Get("inputParam"); ok {
-		input = inputParam.(*tokenCreateInput)
+	var (
+		input          *tokenCreateInput
+		db             *gorm.DB
+		app            *models.App
+		tokenCreateSrv *service.TokenCreate
+		readOnlyI8     int8
+	)
+	input = ctx.MustGet("inputParam").(*tokenCreateInput)
+	db = ctx.MustGet("db").(*gorm.DB)
+	app = ctx.MustGet("app").(*models.App)
+
+	if input.ReadOnly != nil && *input.ReadOnly {
+		readOnlyI8 = 1
 	}
-	fmt.Println(input)
+
+	tokenCreateSrv = &service.TokenCreate{
+		BaseService: service.BaseService{
+			DB: db,
+		},
+		IP:             input.IP,
+		App:            app,
+		Path:           *input.Path,
+		Secret:         input.Secret,
+		ReadOnly:       readOnlyI8,
+		ExpiredAt:      input.ExpiredAt,
+		AvailableTimes: *input.AvailableTimes,
+	}
+
+	if err := tokenCreateSrv.Validate(); err != nil {
+		ctx.JSON(400, &Response{
+			RequestID: ctx.GetInt64("requestId"),
+			Success:   false,
+			Errors:    err.MapFieldErrors(),
+		})
+		return
+	}
+
+	if err := tokenCreateSrv.Execute(context.Background()); err != nil {
+		ctx.JSON(400, &Response{
+			RequestID: ctx.GetInt64("requestId"),
+			Success:   false,
+			Errors: map[string][]string{
+				"system": {err.Error()},
+			},
+		})
+		return
+	}
+
+	ctx.JSON(200, &Response{
+		RequestID: ctx.GetInt64("requestId"),
+		Success:   true,
+		Data:      tokenCreateSrv.Out(),
+	})
 }

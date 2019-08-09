@@ -17,6 +17,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+var isTesting bool
+
 type bodyWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
@@ -40,23 +42,23 @@ func RecordRequestMiddleware() gin.HandlerFunc {
 
 // ParseAppMiddleware will parse request context to get an app
 func ParseAppMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ctx *gin.Context) {
 		var (
 			input struct {
-				AppId string `form:"appId" json:"appId" binding:"required"`
+				AppID string `form:"appId" json:"appId" binding:"required"`
 			}
 			app   *models.App
 			err   error
 			ok    bool
 			ctxDb interface{}
 		)
-		if err = c.ShouldBind(&input); err == nil {
-			if ctxDb, ok = c.Get("db"); ok {
-				if app, err = models.FindAppByUID(input.AppId, ctxDb.(*gorm.DB)); err == nil {
-					c.Set("app", app)
+		if err = ctx.ShouldBind(&input); err == nil {
+			if ctxDb, ok = ctx.Get("db"); ok {
+				if app, err = models.FindAppByUID(input.AppID, ctxDb.(*gorm.DB)); err == nil {
+					ctx.Set("app", app)
 				} else {
-					c.AbortWithStatusJSON(400, &Response{
-						RequestId: c.GetInt64("requestId"),
+					ctx.AbortWithStatusJSON(400, &Response{
+						RequestID: ctx.GetInt64("requestId"),
 						Success:   false,
 						Errors: map[string][]string{
 							"appId": {"cant't parse app from AppId"},
@@ -66,8 +68,8 @@ func ParseAppMiddleware() gin.HandlerFunc {
 				}
 			}
 		} else {
-			c.AbortWithStatusJSON(400, &Response{
-				RequestId: c.GetInt64("requestId"),
+			ctx.AbortWithStatusJSON(400, &Response{
+				RequestID: ctx.GetInt64("requestId"),
 				Success:   false,
 				Errors: map[string][]string{
 					"appId": {err.Error()},
@@ -75,27 +77,35 @@ func ParseAppMiddleware() gin.HandlerFunc {
 				Data: nil,
 			})
 		}
-		c.Next()
+		ctx.Next()
 	}
 }
 
 // ConfigContextMiddleware will config context for each request. such as: db connection
 func ConfigContextMiddleware(db *gorm.DB) gin.HandlerFunc {
-	return func(context *gin.Context) {
+	return func(ctx *gin.Context) {
+		var inTrx bool
 		if db == nil {
 			db = databases.MustNewConnection(&config.DefaultConfig.Database)
+			if isTesting {
+				db = db.Begin()
+				inTrx = true
+			}
 		}
-		context.Set("db", db)
-		context.Next()
+		ctx.Set("db", db)
+		ctx.Next()
+		if isTesting && inTrx {
+			db.Rollback()
+		}
 	}
 }
 
-// SignMiddlewareWithApp will validate request signature of request
-func SignMiddlewareWithApp(input interface{}) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if err := c.ShouldBind(input); err != nil {
-			c.AbortWithStatusJSON(400, &Response{
-				RequestId: c.GetInt64("requestId"),
+// SignWithAppMiddleware will validate request signature of request
+func SignWithAppMiddleware(input interface{}) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := ctx.ShouldBind(input); err != nil {
+			ctx.AbortWithStatusJSON(400, &Response{
+				RequestID: ctx.GetInt64("requestId"),
 				Success:   false,
 				Errors: map[string][]string{
 					"inputParamError": {err.Error()},
@@ -103,12 +113,12 @@ func SignMiddlewareWithApp(input interface{}) gin.HandlerFunc {
 			})
 
 		} else {
-			c.Set("inputParam", input)
-			appValue, _ := c.Get("app")
+			ctx.Set("inputParam", input)
+			appValue, _ := ctx.Get("app")
 			app := appValue.(*models.App)
-			if !ValidateRequestSignature(c, app.Secret) {
-				c.AbortWithStatusJSON(400, &Response{
-					RequestId: c.GetInt64("requestId"),
+			if !ValidateRequestSignature(ctx, app.Secret) {
+				ctx.AbortWithStatusJSON(400, &Response{
+					RequestID: ctx.GetInt64("requestId"),
 					Success:   false,
 					Errors: map[string][]string{
 						"sign": {"request param sign error"},
@@ -116,7 +126,7 @@ func SignMiddlewareWithApp(input interface{}) gin.HandlerFunc {
 				})
 			}
 		}
-		c.Next()
+		ctx.Next()
 	}
 }
 
@@ -155,5 +165,14 @@ func ValidateRequestSignature(ctx *gin.Context, secret string) bool {
 	signature.WriteString(secret)
 	_, _ = m.Write(signature.Bytes())
 
-	return hex.EncodeToString(m.Sum(nil)) == secret
+	return hex.EncodeToString(m.Sum(nil)) == sign
+}
+
+// SignStrWithSecret will calculate the sign of request paramStr that
+// has already been sorted and concat together.
+func SignStrWithSecret(paramStr, secret string) string {
+	m := md5.New()
+	_, _ = m.Write([]byte(paramStr))
+	_, _ = m.Write([]byte(secret))
+	return hex.EncodeToString(m.Sum(nil))
 }
