@@ -31,8 +31,7 @@ log:
     format: '[%{time:2006/01/02 15:04:05.000}] %{pid} %{longfile} %{longfunc} %{callpath} ▶ %{level:.4s} %{message}'
     maxBytesPerFile: 52428800
 http:
-  apiPrefix: /api/bigfile
-  listen: '0.0.0.0:10985'`
+  apiPrefix: /api/bigfile`
 
 func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm := assert.New(t)
@@ -57,7 +56,6 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 		configurator.File.Format,
 	)
 	confirm.Equal("/api/bigfile", configurator.HTTP.APIPrefix)
-	confirm.Equal("0.0.0.0:10985", configurator.HTTP.Listen)
 }
 
 func TestParseConfigFile(t *testing.T) {

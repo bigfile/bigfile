@@ -5,6 +5,8 @@
 package http
 
 import (
+	"io"
+	"os"
 	"strings"
 
 	"github.com/bigfile/bigfile/config"
@@ -14,13 +16,13 @@ import (
 // Routers will define all routers for service
 func Routers() *gin.Engine {
 	r := gin.New()
-	//if cfg.HTTP.AccessLogFile != "" {
-	//	if f, err := os.OpenFile(cfg.HTTP.AccessLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
-	//		panic(err)
-	//	} else {
-	//		gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
-	//	}
-	//}
+	if config.DefaultConfig.HTTP.AccessLogFile != "" {
+		if f, err := os.OpenFile(config.DefaultConfig.HTTP.AccessLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+			panic(err)
+		} else {
+			gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
+		}
+	}
 	r.Use(gin.Recovery(), AccessLogMiddleware(), ConfigContextMiddleware(nil), RecordRequestMiddleware())
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware())

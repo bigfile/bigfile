@@ -11,10 +11,6 @@ type HTTP struct {
 	// example: /api/v1
 	APIPrefix string `yaml:"apiPrefix,omitempty"`
 
-	// Listen represent which address and port http service
-	// should listen on. eg: 0.0.0.0:10985
-	Listen string `yaml:"listen,omitempty"`
-
 	// AccessLogFile represent http access log file. if it's empty,
 	// log will not be written to accessLogFile
 	AccessLogFile string `yaml:"accessLogFile,omitempty"`

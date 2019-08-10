@@ -33,8 +33,7 @@ var (
 		},
 		HTTP{
 			APIPrefix:     "/api/bigfile",
-			Listen:        ":10985",
-			AccessLogFile: "",
+			AccessLogFile: "bigfile.http.access.log",
 		},
 	}
 )

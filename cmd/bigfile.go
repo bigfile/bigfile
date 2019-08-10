@@ -11,6 +11,7 @@ import (
 	"time"
 
 	cmdApp "github.com/bigfile/bigfile/cmd/app"
+	"github.com/bigfile/bigfile/cmd/http"
 	"github.com/bigfile/bigfile/cmd/migrate"
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
@@ -78,6 +79,7 @@ func main() {
 	)
 	commands = append(commands, migrate.Commands...)
 	commands = append(commands, cmdApp.Commands...)
+	commands = append(commands, http.Commands...)
 	app.Commands = commands
 
 	sort.Sort(cli.FlagsByName(app.Flags))

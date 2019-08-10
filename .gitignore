@@ -17,3 +17,5 @@
 /.idea
 /.bigfile.yaml
 *.log
+/bigfile.key
+/bigfile.pem
