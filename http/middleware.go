@@ -8,16 +8,22 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"sort"
+	"time"
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
 	models "github.com/bigfile/bigfile/databases/mdoels"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	janitor "github.com/json-iterator/go"
 )
 
-var isTesting bool
+var (
+	isTesting  bool
+	testDBConn *gorm.DB
+)
 
 type bodyWriter struct {
 	gin.ResponseWriter
@@ -34,9 +40,22 @@ func RecordRequestMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
 		ctx.Writer = bw
-		ctx.Set("requestId", int64(1000001))
+		db := ctx.MustGet("db").(*gorm.DB)
+		reqRecord := models.MustNewRequestWithHTTPProtocol(
+			ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL.String(), db,
+		)
+		ctx.Set("requestId", int64(reqRecord.ID))
+		ctx.Set("reqRecord", reqRecord)
 		ctx.Next()
-		// TODO: record response body
+		// If some handle return file stream data, that should not
+		// written to database.
+		if _, ok := ctx.Get("ignoreRespBody"); !ok {
+			reqBodyString, _ := janitor.MarshalToString(ctx.Request.Form)
+			reqRecord.RequestBody = reqBodyString
+			reqRecord.ResponseCode = ctx.Writer.Status()
+			reqRecord.ResponseBody = bw.body.String()
+			_ = reqRecord.Save(db)
+		}
 	}
 }
 
@@ -55,6 +74,8 @@ func ParseAppMiddleware() gin.HandlerFunc {
 		if err = ctx.ShouldBind(&input); err == nil {
 			if ctxDb, ok = ctx.Get("db"); ok {
 				if app, err = models.FindAppByUID(input.AppID, ctxDb.(*gorm.DB)); err == nil {
+					reqRecord := ctx.MustGet("reqRecord").(*models.Request)
+					reqRecord.AppID = &app.ID
 					ctx.Set("app", app)
 				} else {
 					ctx.AbortWithStatusJSON(400, &Response{
@@ -63,7 +84,6 @@ func ParseAppMiddleware() gin.HandlerFunc {
 						Errors: map[string][]string{
 							"appId": {"cant't parse app from AppId"},
 						},
-						Data: nil,
 					})
 				}
 			}
@@ -74,7 +94,6 @@ func ParseAppMiddleware() gin.HandlerFunc {
 				Errors: map[string][]string{
 					"appId": {err.Error()},
 				},
-				Data: nil,
 			})
 		}
 		ctx.Next()
@@ -84,19 +103,15 @@ func ParseAppMiddleware() gin.HandlerFunc {
 // ConfigContextMiddleware will config context for each request. such as: db connection
 func ConfigContextMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var inTrx bool
 		if db == nil {
-			db = databases.MustNewConnection(&config.DefaultConfig.Database)
 			if isTesting {
-				db = db.Begin()
-				inTrx = true
+				db = testDBConn
+			} else {
+				db = databases.MustNewConnection(&config.DefaultConfig.Database)
 			}
 		}
 		ctx.Set("db", db)
 		ctx.Next()
-		if isTesting && inTrx {
-			db.Rollback()
-		}
 	}
 }
 
@@ -166,6 +181,23 @@ func ValidateRequestSignature(ctx *gin.Context, secret string) bool {
 	_, _ = m.Write(signature.Bytes())
 
 	return hex.EncodeToString(m.Sum(nil)) == sign
+}
+
+// AccessLogMiddleware just wrap gin.LoggerWithFormatter
+func AccessLogMiddleware() gin.HandlerFunc {
+	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+			param.ClientIP,
+			param.TimeStamp.Format(time.RFC1123),
+			param.Method,
+			param.Path,
+			param.Request.Proto,
+			param.StatusCode,
+			param.Latency,
+			param.Request.UserAgent(),
+			param.ErrorMessage,
+		)
+	})
 }
 
 // SignStrWithSecret will calculate the sign of request paramStr that

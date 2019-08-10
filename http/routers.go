@@ -21,7 +21,7 @@ func Routers() *gin.Engine {
 	//		gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
 	//	}
 	//}
-	r.Use(ConfigContextMiddleware(nil), RecordRequestMiddleware(), gin.Recovery())
+	r.Use(gin.Recovery(), AccessLogMiddleware(), ConfigContextMiddleware(nil), RecordRequestMiddleware())
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware())
 	requestWithAppGroup.POST(

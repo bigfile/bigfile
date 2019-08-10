@@ -21,6 +21,11 @@ import (
 
 func TestRecordRequestMiddleware(t *testing.T) {
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	testDBConn = db
+	ConfigContextMiddleware(nil)(ctx)
 	RecordRequestMiddleware()(ctx)
 	_, _ = ctx.Writer.Write([]byte("hello"))
 	assert.IsType(t, ctx.Writer, &bodyWriter{})
@@ -46,6 +51,10 @@ func TestParseAppMiddleware(t *testing.T) {
 		strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	testDBConn = db
+	ConfigContextMiddleware(nil)(ctx)
 	RecordRequestMiddleware()(ctx)
 	ConfigContextMiddleware(nil)(ctx)
 	ParseAppMiddleware()(ctx)
@@ -61,8 +70,11 @@ func TestParseAppMiddleware2(t *testing.T) {
 		strings.NewReader("appId=fakeAppId"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
-	RecordRequestMiddleware()(ctx)
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	testDBConn = db
 	ConfigContextMiddleware(nil)(ctx)
+	RecordRequestMiddleware()(ctx)
 	ParseAppMiddleware()(ctx)
 	bw, _ := ctx.Writer.(*bodyWriter)
 	assert.Contains(t, bw.body.String(), "cant't parse app from AppId")
@@ -80,8 +92,11 @@ func TestParseAppMiddleware3(t *testing.T) {
 		strings.NewReader("appId="+app.UID))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
-	RecordRequestMiddleware()(ctx)
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	testDBConn = db
 	ConfigContextMiddleware(trx)(ctx)
+	RecordRequestMiddleware()(ctx)
 	ParseAppMiddleware()(ctx)
 	ctxAppValue, ok := ctx.Get("app")
 	assert.True(t, ok)
@@ -138,11 +153,13 @@ func TestSignWithAppMiddleware(t *testing.T) {
 
 	var it = &TestInput{}
 
-	//app, _, down, err := models.NewAppForTest(nil, t)
-	//assert.Nil(t, err)
-	//defer down(t)
-
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	app, trx, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	testDBConn = trx
+	ConfigContextMiddleware(nil)(ctx)
 	RecordRequestMiddleware()(ctx)
 	assert.IsType(t, ctx.Writer, &bodyWriter{})
 	bw, _ := ctx.Writer.(*bodyWriter)
@@ -157,11 +174,7 @@ func TestSignWithAppMiddleware(t *testing.T) {
 	bw.body.Reset()
 
 	// sign error
-	app, _, down, err := models.NewAppForTest(nil, t)
-	assert.Nil(t, err)
-	defer down(t)
 	ctx.Set("app", app)
-
 	req, _ = http.NewRequest("POST", "http://bigfile.io",
 		strings.NewReader("a=a&b=1&c=1&sign=error"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")

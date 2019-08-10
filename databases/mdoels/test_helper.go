@@ -13,6 +13,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Down represent rollback function type
+type Down = func(*testing.T)
+
+var (
+	// NewAppForTest export newAppForTest for other package
+	NewAppForTest = newAppForTest
+
+	// SetUpTestCaseWithTrx is a helper method for helping to finish test
+	SetUpTestCaseWithTrx = setUpTestCaseWithTrx
+)
+
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -45,9 +56,6 @@ func newAppForTest(dbConfig *config.Database, t *testing.T) (*App, *gorm.DB, fun
 	}
 	return app, trx, down, err
 }
-
-// NewAppForTest export newAppForTest for other package
-var NewAppForTest = newAppForTest
 
 func newTokenForTest(
 	cfg *config.Database,
