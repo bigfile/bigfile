@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,12 @@ func Routers() *gin.Engine {
 		}
 	}
 	r.Use(gin.Recovery(), AccessLogMiddleware(), ConfigContextMiddleware(nil), RecordRequestMiddleware())
+
+	if !isTesting && config.DefaultConfig.HTTP.LimitRateByIPEnable {
+		interval := time.Duration(config.DefaultConfig.HTTP.LimitRateByIPInterval * int64(time.Millisecond))
+		maxNumber := config.DefaultConfig.HTTP.LimitRateByIPMaxNum
+		r.Use(RateLimitByIPMiddleware(interval, int(maxNumber)))
+	}
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware())
 	requestWithAppGroup.POST(

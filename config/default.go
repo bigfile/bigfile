@@ -32,8 +32,11 @@ var (
 			},
 		},
 		HTTP{
-			APIPrefix:     "/api/bigfile",
-			AccessLogFile: "bigfile.http.access.log",
+			APIPrefix:             "/api/bigfile",
+			AccessLogFile:         "bigfile.http.access.log",
+			LimitRateByIPEnable:   false,
+			LimitRateByIPInterval: 1000,
+			LimitRateByIPMaxNum:   100,
 		},
 	}
 )

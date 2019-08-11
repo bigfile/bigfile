@@ -18,11 +18,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	janitor "github.com/json-iterator/go"
+	"github.com/patrickmn/go-cache"
+	"golang.org/x/time/rate"
 )
 
 var (
 	isTesting  bool
 	testDBConn *gorm.DB
+	limiterSet = cache.New(5*time.Minute, 10*time.Minute)
 )
 
 type bodyWriter struct {
@@ -198,6 +201,29 @@ func AccessLogMiddleware() gin.HandlerFunc {
 			param.ErrorMessage,
 		)
 	})
+}
+
+// RateLimitByIPMiddleware will requests number by ip, avoid being attacked
+func RateLimitByIPMiddleware(interval time.Duration, maxNumber int) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ip := ctx.ClientIP()
+		limiter, ok := limiterSet.Get(ip)
+		if !ok {
+			var expire = interval * 10
+			limiter = rate.NewLimiter(rate.Every(interval), maxNumber)
+			limiterSet.Set(ip, limiter, expire)
+		}
+		if !limiter.(*rate.Limiter).Allow() {
+			ctx.AbortWithStatusJSON(429, &Response{
+				RequestID: ctx.GetInt64("requestId"),
+				Success:   false,
+				Errors: map[string][]string{
+					"limitRateByIp": {"too many requests"},
+				},
+			})
+		}
+		ctx.Next()
+	}
 }
 
 // SignStrWithSecret will calculate the sign of request paramStr that

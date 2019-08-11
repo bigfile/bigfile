@@ -5,6 +5,7 @@
 package http
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"net/http"
@@ -198,4 +199,19 @@ func TestSignWithAppMiddleware(t *testing.T) {
 
 func TestSignStrWithSecret(t *testing.T) {
 	assert.Equal(t, SignStrWithSecret("a=1&b=2&c=3", "secret"), "44d18b899e05f82c1cc4ce22bf5df09b")
+}
+
+func TestRateLimitByIPMiddleware(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	ctx.Request.Header.Set("X-Forwarded-For", "192.168.0.1")
+	ctx.Set("requestId", int64(10000001111))
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+
+	RateLimitByIPMiddleware(time.Second, 1)(ctx)
+	assert.Equal(t, 0, bw.body.Len())
+	RateLimitByIPMiddleware(time.Second, 1)(ctx)
+	assert.Equal(t, 429, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "too many requests")
 }
