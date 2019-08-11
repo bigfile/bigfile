@@ -7,6 +7,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,21 @@ http:
   accessLogFile: bigfile.http.access.log
   limitRateByIPEnable: false
   limitRateByIPInterval: 1000
-  limitRateByIPMaxNum: 100`
+  limitRateByIPMaxNum: 100
+  corsEnable: false
+  corsAllowOrigins:
+    - '*'
+  corsAllowMethods:
+    - PUT
+    - PATCH
+    - DELETE
+  corsAllowHeaders:
+    - Origin
+  corsExposeHeaders:
+    - 'Content-Length'
+  corsAllowCredentials: true
+  corsAllowAllOrigins: false
+  corsMaxAge: 3600`
 
 func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm := assert.New(t)
@@ -64,6 +79,14 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm.Equal(false, configurator.HTTP.LimitRateByIPEnable)
 	confirm.Equal(int64(1000), configurator.HTTP.LimitRateByIPInterval)
 	confirm.Equal(uint(100), configurator.HTTP.LimitRateByIPMaxNum)
+	confirm.False(configurator.CORSEnable)
+	confirm.True(configurator.CORSAllowCredentials)
+	confirm.False(configurator.CORSAllowAllOrigins)
+	confirm.True(reflect.DeepEqual([]string{"*"}, configurator.CORSAllowOrigins))
+	confirm.True(reflect.DeepEqual([]string{"PUT", "PATCH", "DELETE"}, configurator.CORSAllowMethods))
+	confirm.True(reflect.DeepEqual([]string{"Origin"}, configurator.CORSAllowHeaders))
+	confirm.True(reflect.DeepEqual([]string{"Content-Length"}, configurator.CORSExposeHeaders))
+	confirm.Equal(int64(3600), configurator.HTTP.CORSMaxAge)
 }
 
 func TestParseConfigFile(t *testing.T) {

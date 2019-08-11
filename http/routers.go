@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/cors"
+
 	"github.com/bigfile/bigfile/config"
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +26,19 @@ func Routers() *gin.Engine {
 			gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
 		}
 	}
+
+	if config.DefaultConfig.HTTP.CORSEnable {
+		r.Use(cors.New(cors.Config{
+			AllowAllOrigins:  false,
+			AllowOrigins:     config.DefaultConfig.CORSAllowOrigins,
+			AllowMethods:     config.DefaultConfig.CORSAllowMethods,
+			AllowHeaders:     config.DefaultConfig.CORSAllowHeaders,
+			AllowCredentials: config.DefaultConfig.CORSAllowCredentials,
+			ExposeHeaders:    config.DefaultConfig.CORSExposeHeaders,
+			MaxAge:           time.Duration(config.DefaultConfig.CORSMaxAge * int64(time.Second)),
+		}))
+	}
+
 	r.Use(gin.Recovery(), AccessLogMiddleware(), ConfigContextMiddleware(nil), RecordRequestMiddleware())
 
 	if !isTesting && config.DefaultConfig.HTTP.LimitRateByIPEnable {

@@ -4,7 +4,11 @@
 
 package config
 
-import "github.com/op/go-logging"
+import (
+	"time"
+
+	"github.com/op/go-logging"
+)
 
 var (
 	// DefaultConfig define a default configurator
@@ -37,6 +41,13 @@ var (
 			LimitRateByIPEnable:   false,
 			LimitRateByIPInterval: 1000,
 			LimitRateByIPMaxNum:   100,
+			CORSEnable:            false,
+			CORSAllowAllOrigins:   false,
+			CORSAllowCredentials:  false,
+			CORSAllowHeaders:      []string{"Origin"},
+			CORSAllowOrigins:      []string{"*"},
+			CORSAllowMethods:      []string{"PUT", "DELETE"},
+			CORSMaxAge:            3600 * int64(time.Second),
 		},
 	}
 )
