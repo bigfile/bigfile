@@ -101,8 +101,8 @@ func TestFindTokenByUID(t *testing.T) {
 	)
 	confirm := assert.New(t)
 	token, trx, down, err = newTokenForTest(nil, t, "/test", nil, nil, nil, -1, int8(0))
-	defer down(t)
 	confirm.Nil(err)
+	defer down(t)
 	confirm.NotNil(token)
 
 	tmpToken, err = FindTokenByUID(token.UID, trx)
@@ -125,8 +125,8 @@ func TestFindTokenByUIDWithTrashed(t *testing.T) {
 	)
 	confirm := assert.New(t)
 	token, trx, down, err = newTokenForTest(nil, t, "/test", nil, nil, nil, -1, int8(0))
-	defer down(t)
 	confirm.Nil(err)
+	defer down(t)
 	confirm.NotNil(token)
 
 	trx.Delete(token)
@@ -139,4 +139,18 @@ func TestFindTokenByUIDWithTrashed(t *testing.T) {
 	confirm.Nil(err)
 	confirm.Equal(token.ID, tmpToken.ID)
 	confirm.Equal(token.App.ID, tmpToken.App.ID)
+}
+
+func TestToken_BeforeSave(t *testing.T) {
+	var (
+		token *Token
+		down  func(t *testing.T)
+		err   error
+	)
+	confirm := assert.New(t)
+	token, _, down, err = newTokenForTest(nil, t, "test", nil, nil, nil, -1, int8(0))
+	confirm.Nil(err)
+	defer down(t)
+	confirm.NotNil(token)
+	confirm.Equal("/test", token.Path)
 }

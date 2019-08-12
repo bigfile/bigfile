@@ -45,6 +45,14 @@ func (t *Token) Scope() string {
 	return t.Path
 }
 
+// BeforeSave will be called before token saved
+func (t *Token) BeforeSave() (err error) {
+	if !strings.HasPrefix(t.Path, "/") {
+		t.Path = "/" + t.Path
+	}
+	return nil
+}
+
 // AllowIPAccess is used to check whether this ip can be allowed
 // to use this token
 func (t *Token) AllowIPAccess(ip string) bool {

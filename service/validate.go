@@ -33,6 +33,7 @@ func ValidateApp(db *gorm.DB, app *models.App) error {
 func ValidatePath(path string) bool {
 	var (
 		regexps = []*regexp.Regexp{
+			// different regex match different path, see the test case
 			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+$`),
 			regexp.MustCompile(`^(?:/[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255})+/$`),
 			regexp.MustCompile(`^(?:[^\^!@%();,\[\]{}<>/\\|:*?"']{1,255}/|$)+$?`),
