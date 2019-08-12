@@ -19,7 +19,7 @@ import (
 // Routers will define all routers for service
 func Routers() *gin.Engine {
 	r := gin.New()
-	if config.DefaultConfig.HTTP.AccessLogFile != "" {
+	if !isTesting && config.DefaultConfig.HTTP.AccessLogFile != "" {
 		if f, err := os.OpenFile(config.DefaultConfig.HTTP.AccessLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
 			panic(err)
 		} else {

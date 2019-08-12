@@ -86,7 +86,6 @@ func (c *TokenCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	if c.CallAfter(ctx, c) != nil {
 		return nil, err
-	} else {
-		return c.token, nil
 	}
+	return c.token, nil
 }

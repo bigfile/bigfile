@@ -68,7 +68,7 @@ func TestTokenCreateHandler2(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	api := buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
-	body := fmt.Sprintf("appId=%s&requestTime=%d", app.UID, time.Now().Unix())
+	body := fmt.Sprintf("appUid=%s&requestTime=%d", app.UID, time.Now().Unix())
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
 	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
@@ -107,7 +107,7 @@ func TestTokenCreateHandler3(t *testing.T) {
 	expiredAtUnix := expiredAt.Unix()
 	secret := SignStrWithSecret("", "")
 	body := fmt.Sprintf(
-		"appId=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&path=/test&readOnly=1&requestTime=%d&secret=%s",
+		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&path=/test&readOnly=1&requestTime=%d&secret=%s",
 		app.UID, expiredAtUnix, time.Now().Unix(), secret,
 	)
 	sign := SignStrWithSecret(body, app.Secret)

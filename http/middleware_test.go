@@ -47,7 +47,7 @@ func TestConfigContextMiddleware(t *testing.T) {
 func TestParseAppMiddleware(t *testing.T) {
 	rc := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(rc)
-	// appId doesn't set
+	// appUid doesn't set
 	req, _ := http.NewRequest("POST", "http://bigfile.io",
 		strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
@@ -60,15 +60,15 @@ func TestParseAppMiddleware(t *testing.T) {
 	ConfigContextMiddleware(nil)(ctx)
 	ParseAppMiddleware()(ctx)
 	bw, _ := ctx.Writer.(*bodyWriter)
-	assert.Contains(t, bw.body.String(), "Key: '.AppID' Error:Field validation for 'AppID' failed on the 'required' tag")
+	assert.Contains(t, bw.body.String(), "Key: '.AppUID' Error:Field validation for 'AppUID' failed on the 'required' tag")
 }
 
 func TestParseAppMiddleware2(t *testing.T) {
 	rc := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(rc)
-	// input a fake appId
+	// input a fake appUid
 	req, _ := http.NewRequest("POST", "http://bigfile.io",
-		strings.NewReader("appId=fakeAppId"))
+		strings.NewReader("appUid=fakeAppUid"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
 	db, down := models.SetUpTestCaseWithTrx(nil, t)
@@ -78,7 +78,7 @@ func TestParseAppMiddleware2(t *testing.T) {
 	RecordRequestMiddleware()(ctx)
 	ParseAppMiddleware()(ctx)
 	bw, _ := ctx.Writer.(*bodyWriter)
-	assert.Contains(t, bw.body.String(), "cant't parse app from AppId")
+	assert.Contains(t, bw.body.String(), "cant't parse app from appUid")
 }
 
 func TestParseAppMiddleware3(t *testing.T) {
@@ -88,9 +88,9 @@ func TestParseAppMiddleware3(t *testing.T) {
 
 	rc := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(rc)
-	// input a fake appId
+	// input a fake appUid
 	req, _ := http.NewRequest("POST", "http://bigfile.io",
-		strings.NewReader("appId="+app.UID))
+		strings.NewReader("appUid="+app.UID))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
 	db, down := models.SetUpTestCaseWithTrx(nil, t)
@@ -111,7 +111,7 @@ func TestValidateRequestSignature(t *testing.T) {
 
 	// no input sign param
 	req, _ := http.NewRequest("POST", "http://bigfile.io",
-		strings.NewReader("appId=fakeAppId"))
+		strings.NewReader("appUid=fakeAppUid"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	ctx.Request = req
 	assert.Nil(t, ctx.Request.ParseForm())

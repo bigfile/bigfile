@@ -15,7 +15,7 @@ import (
 )
 
 type tokenCreateInput struct {
-	AppID          string     `form:"appId" json:"appId" binding:"required"`
+	AppUID         string     `form:"appUid" json:"appUid" binding:"required"`
 	RequestTime    time.Time  `form:"requestTime" json:"requestTime" time_format:"unix" binding:"required"`
 	Sign           string     `form:"sign" json:"sign" binding:"required"`
 	Path           *string    `form:"path,default=/" json:"path,default=/" binding:"max=1000"`

@@ -67,7 +67,7 @@ func ParseAppMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var (
 			input struct {
-				AppID string `form:"appId" json:"appId" binding:"required"`
+				AppUID string `form:"appUid" json:"appUid" binding:"required"`
 			}
 			app   *models.App
 			err   error
@@ -76,7 +76,7 @@ func ParseAppMiddleware() gin.HandlerFunc {
 		)
 		if err = ctx.ShouldBind(&input); err == nil {
 			if ctxDb, ok = ctx.Get("db"); ok {
-				if app, err = models.FindAppByUID(input.AppID, ctxDb.(*gorm.DB)); err == nil {
+				if app, err = models.FindAppByUID(input.AppUID, ctxDb.(*gorm.DB)); err == nil {
 					reqRecord := ctx.MustGet("reqRecord").(*models.Request)
 					reqRecord.AppID = &app.ID
 					ctx.Set("app", app)
@@ -85,7 +85,7 @@ func ParseAppMiddleware() gin.HandlerFunc {
 						RequestID: ctx.GetInt64("requestId"),
 						Success:   false,
 						Errors: map[string][]string{
-							"appId": {"cant't parse app from AppId"},
+							"appUid": {"cant't parse app from appUid"},
 						},
 					})
 				}
@@ -95,7 +95,7 @@ func ParseAppMiddleware() gin.HandlerFunc {
 				RequestID: ctx.GetInt64("requestId"),
 				Success:   false,
 				Errors: map[string][]string{
-					"appId": {err.Error()},
+					"appUid": {err.Error()},
 				},
 			})
 		}
