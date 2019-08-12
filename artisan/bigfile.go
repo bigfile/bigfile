@@ -10,9 +10,9 @@ import (
 	"sort"
 	"time"
 
-	cmdApp "github.com/bigfile/bigfile/cmd/app"
-	"github.com/bigfile/bigfile/cmd/http"
-	"github.com/bigfile/bigfile/cmd/migrate"
+	cmdApp "github.com/bigfile/bigfile/artisan/app"
+	"github.com/bigfile/bigfile/artisan/http"
+	"github.com/bigfile/bigfile/artisan/migrate"
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
 	"github.com/mitchellh/go-homedir"

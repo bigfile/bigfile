@@ -71,23 +71,22 @@ func (c *TokenCreate) Validate() ValidateErrors {
 }
 
 // Execute is used to implement token create
-func (c *TokenCreate) Execute(ctx context.Context) error {
+func (c *TokenCreate) Execute(ctx context.Context) (interface{}, error) {
 	var err error
 
 	if err = c.CallBefore(ctx, c); err != nil {
-		return err
+		return nil, err
 	}
 
 	if c.token, err = models.NewToken(
 		c.App, c.Path, c.ExpiredAt, c.IP, c.Secret, c.AvailableTimes, c.ReadOnly, c.DB,
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	return c.CallAfter(ctx, c)
-}
-
-// Out return the result of Execute method
-func (c *TokenCreate) Out() *models.Token {
-	return c.token
+	if c.CallAfter(ctx, c) != nil {
+		return nil, err
+	} else {
+		return c.token, nil
+	}
 }

@@ -87,25 +87,28 @@ func TestTokenCreate_Execute2(t *testing.T) {
 	defer down(t)
 	err = tokenCreate.Validate()
 	assert.Nil(t, err)
-	err = tokenCreate.Execute(context.TODO())
+	_, err = tokenCreate.Execute(context.TODO())
 	assert.Nil(t, err)
 }
 
-func TestTokenCreate_Out(t *testing.T) {
+func TestTokenCreate_Execute(t *testing.T) {
 	var (
 		tokenCreate *TokenCreate
 		down        func(*testing.T)
 		err         error
 		app         *models.App
 		token       *models.Token
+		tokenValue  interface{}
+		ok          bool
 	)
 	tokenCreate, app, down = newTokenCreateForTest(t)
 	defer down(t)
 	err = tokenCreate.Validate()
 	assert.Nil(t, err)
-	err = tokenCreate.Execute(context.TODO())
+	tokenValue, err = tokenCreate.Execute(context.TODO())
 	assert.Nil(t, err)
-	token = tokenCreate.Out()
+	token, ok = tokenValue.(*models.Token)
+	assert.True(t, ok)
 	assert.Equal(t, app.ID, token.App.ID)
 	assert.True(t, token.ID > 0)
 }

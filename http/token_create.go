@@ -29,11 +29,13 @@ type tokenCreateInput struct {
 // TokenCreateHandler is used to handle token create http request
 func TokenCreateHandler(ctx *gin.Context) {
 	var (
-		input          *tokenCreateInput
-		db             *gorm.DB
-		app            *models.App
-		tokenCreateSrv *service.TokenCreate
-		readOnlyI8     int8
+		input            *tokenCreateInput
+		db               *gorm.DB
+		app              *models.App
+		tokenCreateSrv   *service.TokenCreate
+		readOnlyI8       int8
+		tokenCreateValue interface{}
+		err              error
 	)
 	input = ctx.MustGet("inputParam").(*tokenCreateInput)
 	db = ctx.MustGet("db").(*gorm.DB)
@@ -65,7 +67,7 @@ func TokenCreateHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := tokenCreateSrv.Execute(context.Background()); err != nil {
+	if tokenCreateValue, err = tokenCreateSrv.Execute(context.Background()); err != nil {
 		ctx.JSON(400, &Response{
 			RequestID: ctx.GetInt64("requestId"),
 			Success:   false,
@@ -79,6 +81,6 @@ func TokenCreateHandler(ctx *gin.Context) {
 	ctx.JSON(200, &Response{
 		RequestID: ctx.GetInt64("requestId"),
 		Success:   true,
-		Data:      tokenCreateSrv.Out(),
+		Data:      tokenCreateValue.(*models.Token),
 	})
 }

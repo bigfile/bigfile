@@ -13,6 +13,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bigfile/bigfile/config"
+	"github.com/bigfile/bigfile/databases"
+	"github.com/bigfile/bigfile/databases/migrate"
+
 	"github.com/bigfile/bigfile/http"
 	"github.com/bigfile/bigfile/log"
 	"github.com/gin-gonic/gin"
@@ -140,6 +144,11 @@ var (
 						return nil
 					},
 				},
+			},
+			Before: func(context *cli.Context) error {
+				migrate.DefaultMC.SetConnection(databases.MustNewConnection(&config.DefaultConfig.Database))
+				migrate.DefaultMC.Upgrade()
+				return nil
 			},
 		},
 	}

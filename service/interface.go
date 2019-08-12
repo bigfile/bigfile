@@ -25,7 +25,7 @@ type AfterHandler = func(ctx context.Context, service Service) error
 type Service interface {
 
 	// Execute is designed to implement specific function
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context) (interface{}, error)
 
 	// Validate is designed to validate input params
 	Validate() ValidateErrors
@@ -73,13 +73,13 @@ func (b *BaseService) CallAfter(ctx context.Context, service Service) error {
 }
 
 // Execute is only for implementing Service
-func (b *BaseService) Execute(ctx context.Context) error {
+func (b *BaseService) Execute(ctx context.Context) (interface{}, error) {
 	var err error
 
 	if err = b.CallBefore(ctx, b); err != nil {
-		return err
+		return false, err
 	}
-	return b.CallAfter(ctx, b)
+	return true, b.CallAfter(ctx, b)
 }
 
 // Validate is only for implementing Service

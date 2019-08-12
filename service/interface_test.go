@@ -34,7 +34,7 @@ func TestBaseService_CallBefore(t *testing.T) {
 		}
 		err error
 	)
-	err = baseService.Execute(context.TODO())
+	_, err = baseService.Execute(context.TODO())
 	assert.Nil(t, err)
 	start := baseService.Value["start"].(time.Time)
 	end := baseService.Value["end"].(time.Time)
@@ -46,7 +46,8 @@ func TestBaseService_CallAfter(t *testing.T) {
 }
 
 func TestBaseService_Execute(t *testing.T) {
-	assert.Nil(t, (&BaseService{}).Execute(context.TODO()))
+	_, err := (&BaseService{}).Execute(context.TODO())
+	assert.Nil(t, err)
 }
 
 func TestBaseService_Validate(t *testing.T) {
