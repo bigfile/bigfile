@@ -4,6 +4,9 @@
 
 package http
 
+import "github.com/gin-gonic/gin"
+
 func init() {
 	isTesting = true
+	gin.SetMode(gin.ReleaseMode)
 }

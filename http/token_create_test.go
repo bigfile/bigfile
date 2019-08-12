@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bigfile/bigfile/databases"
+
 	"github.com/bigfile/bigfile/config"
 
 	models "github.com/bigfile/bigfile/databases/mdoels"
@@ -136,4 +138,46 @@ func TestTokenCreateHandler3(t *testing.T) {
 	respExpiredAt := respData["expiredAt"].(string)
 	respExpiredAtTime, _ := time.Parse(time.RFC3339, respExpiredAt)
 	assert.Equal(t, respExpiredAtTime.Unix(), expiredAtUnix)
+}
+
+func BenchmarkTokenCreateHandler(b *testing.B) {
+	b.StopTimer()
+	defer func() {
+		if err := recover(); err != nil {
+			b.Fatal(err)
+		}
+	}()
+
+	trx := databases.MustNewConnection(nil).Begin()
+	testDBConn = trx
+	defer func() { trx.Rollback() }()
+
+	note := "test"
+	app, err := models.NewApp("test", &note, trx)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	router := Routers()
+	w := httptest.NewRecorder()
+	api := buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
+	expiredAt := time.Now().Add(10 * time.Hour)
+	expiredAtUnix := expiredAt.Unix()
+	secret := SignStrWithSecret("", "")
+	body := fmt.Sprintf(
+		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&path=/test&readOnly=1&requestTime=%d&secret=%s",
+		app.UID, expiredAtUnix, time.Now().Unix(), secret,
+	)
+	sign := SignStrWithSecret(body, app.Secret)
+	body = fmt.Sprintf("%s&sign=%s", body, sign)
+	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		router.ServeHTTP(w, req)
+		if w.Code != 200 {
+			b.Fatalf("response code should be 200")
+		}
+	}
 }
