@@ -25,25 +25,24 @@ type TokenCreate struct {
 	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
 	AvailableTimes int         `validate:"omitempty,gte=-1,max=2147483647"`
 
-	// for Out method
 	token *models.Token
 }
 
 // Validate is used to validate input params
-func (c *TokenCreate) Validate() ValidateErrors {
+func (t *TokenCreate) Validate() ValidateErrors {
 
 	var (
 		validateErrors ValidateErrors
 		errs           error
 	)
 
-	if errs = Validate.Struct(c); errs != nil {
+	if errs = Validate.Struct(t); errs != nil {
 		for _, err := range errs.(validator.ValidationErrors) {
 			validateErrors = append(validateErrors, PreDefinedValidateErrors[err.Namespace()])
 		}
 	}
 
-	if err := ValidateApp(c.DB, c.App); err != nil {
+	if err := ValidateApp(t.DB, t.App); err != nil {
 		var (
 			field  = "TokenCreate.App"
 			appErr = &ValidateError{
@@ -55,7 +54,7 @@ func (c *TokenCreate) Validate() ValidateErrors {
 		validateErrors = append(validateErrors, appErr)
 	}
 
-	if !ValidatePath(c.Path) {
+	if !ValidatePath(t.Path) {
 		var (
 			field   = "TokenCreate.Path"
 			pathErr = &ValidateError{
@@ -71,21 +70,21 @@ func (c *TokenCreate) Validate() ValidateErrors {
 }
 
 // Execute is used to implement token create
-func (c *TokenCreate) Execute(ctx context.Context) (interface{}, error) {
+func (t *TokenCreate) Execute(ctx context.Context) (interface{}, error) {
 	var err error
 
-	if err = c.CallBefore(ctx, c); err != nil {
+	if err = t.CallBefore(ctx, t); err != nil {
 		return nil, err
 	}
 
-	if c.token, err = models.NewToken(
-		c.App, c.Path, c.ExpiredAt, c.IP, c.Secret, c.AvailableTimes, c.ReadOnly, c.DB,
+	if t.token, err = models.NewToken(
+		t.App, t.Path, t.ExpiredAt, t.IP, t.Secret, t.AvailableTimes, t.ReadOnly, t.DB,
 	); err != nil {
 		return nil, err
 	}
 
-	if c.CallAfter(ctx, c) != nil {
-		return nil, err
+	if t.CallAfter(ctx, t) != nil {
+		return t.token, err
 	}
-	return c.token, nil
+	return t.token, nil
 }

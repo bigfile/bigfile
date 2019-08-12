@@ -22,6 +22,9 @@ var (
 
 	// SetUpTestCaseWithTrx is a helper method for helping to finish test
 	SetUpTestCaseWithTrx = setUpTestCaseWithTrx
+
+	// NewTokenForTest export newTokenForTest for other package
+	NewTokenForTest = newTokenForTest
 )
 
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {

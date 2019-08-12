@@ -29,9 +29,6 @@ type Service interface {
 
 	// Validate is designed to validate input params
 	Validate() ValidateErrors
-
-	// for convenience, each service should define a return value
-	// method that returns the specific output of service.
 }
 
 // BaseService only includes two fields: Before and After, the handler in
