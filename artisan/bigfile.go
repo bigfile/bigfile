@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	cmdApp "github.com/bigfile/bigfile/artisan/app"
@@ -74,10 +75,13 @@ var (
 )
 
 func main() {
-	var (
-		commands []*cli.Command
-	)
-	commands = append(commands, migrate.Commands...)
+	var commands []*cli.Command
+
+	// just for develop environment
+	if mode, ok := os.LookupEnv("BIGFILE_MODE"); ok && strings.HasPrefix(strings.ToLower(mode), "dev") {
+		commands = append(commands, migrate.Commands...)
+	}
+
 	commands = append(commands, cmdApp.Commands...)
 	commands = append(commands, http.Commands...)
 	app.Commands = commands
