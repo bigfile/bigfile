@@ -53,6 +53,8 @@ func RecordRequestMiddleware() gin.HandlerFunc {
 		// written to database.
 		if _, ok := ctx.Get("ignoreRespBody"); !ok {
 			reqRecord.ResponseBody = bw.body.String()
+		} else {
+			bw.body.Reset()
 		}
 		reqBodyString, _ := janitor.MarshalToString(ctx.Request.Form)
 		reqRecord.RequestBody = reqBodyString

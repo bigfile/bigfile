@@ -233,3 +233,27 @@ func TestReplayAttackMiddleware(t *testing.T) {
 	assert.Equal(t, 400, ctx.Writer.Status())
 	assert.Contains(t, bw.body.String(), "nonce is optional, but the min length of nonce is 32, the max length is 48")
 }
+
+func TestReplayAttackMiddleware2(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	nonce := models.RandomWithMd5(128)
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("nonce="+nonce))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	app, db, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	reqRecord.Nonce = &nonce
+	reqRecord.AppID = &app.ID
+	assert.Nil(t, reqRecord.Save(db))
+
+	ctx.Set("db", db)
+	ctx.Set("app", app)
+	ctx.Set("reqRecord", reqRecord)
+
+	ReplayAttackMiddleware()(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "this request is being replayed")
+}

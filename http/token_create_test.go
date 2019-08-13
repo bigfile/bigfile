@@ -28,7 +28,7 @@ func TestTokenCreateHandler(t *testing.T) {
 		availableTimes = 1
 		path           = "/"
 		input          = &tokenCreateInput{
-			RequestTime:    time.Now(),
+			Nonce:          models.RandomWithMd5(128),
 			Path:           &path,
 			AvailableTimes: &availableTimes,
 			ReadOnly:       &readOnly,
@@ -70,7 +70,7 @@ func TestTokenCreateHandler2(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	api := buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
-	body := fmt.Sprintf("appUid=%s&requestTime=%d", app.UID, time.Now().Unix())
+	body := fmt.Sprintf("appUid=%s&nonce=%s", app.UID, models.RandomWithMd5(128))
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
 	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
@@ -109,8 +109,8 @@ func TestTokenCreateHandler3(t *testing.T) {
 	expiredAtUnix := expiredAt.Unix()
 	secret := SignStrWithSecret("", "")
 	body := fmt.Sprintf(
-		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&path=/test&readOnly=1&requestTime=%d&secret=%s",
-		app.UID, expiredAtUnix, time.Now().Unix(), secret,
+		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&nonce=%s&path=/test&readOnly=1&secret=%s",
+		app.UID, expiredAtUnix, models.RandomWithMd5(128), secret,
 	)
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
@@ -165,8 +165,8 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 	expiredAtUnix := expiredAt.Unix()
 	secret := SignStrWithSecret("", "")
 	body := fmt.Sprintf(
-		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&path=/test&readOnly=1&requestTime=%d&secret=%s",
-		app.UID, expiredAtUnix, time.Now().Unix(), secret,
+		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&nonce=%s&path=/test&readOnly=1&secret=%s",
+		app.UID, expiredAtUnix, models.RandomWithMd5(128), secret,
 	)
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
@@ -180,4 +180,10 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 			b.Fatalf("response code should be 200")
 		}
 	}
+}
+
+func TestRateLimitByIPMiddleware2(t *testing.T) {
+	paramStr := fmt.Sprintf("appUid=5d4ee21527075f8740000001&nonce=%s&path=test", models.RandomWithMd5(128))
+	fmt.Println(paramStr)
+	fmt.Println(SignStrWithSecret(paramStr, "a0ee01d762d9d167cbfa5656614e62d7"))
 }

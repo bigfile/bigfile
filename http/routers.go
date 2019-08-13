@@ -46,7 +46,7 @@ func Routers() *gin.Engine {
 		r.Use(RateLimitByIPMiddleware(interval, int(maxNumber)))
 	}
 
-	requestWithAppGroup := r.Group("", ParseAppMiddleware())
+	requestWithAppGroup := r.Group("", ParseAppMiddleware(), ReplayAttackMiddleware())
 	requestWithAppGroup.POST(
 		buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create"),
 		SignWithAppMiddleware(&tokenCreateInput{}),
