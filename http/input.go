@@ -11,5 +11,5 @@ type AppUIDInput struct {
 
 // NonceInput represent `nonce` request param
 type NonceInput struct {
-	Nonce string `form:"nonce" json:"nonce" header:"X-Request-Nonce" binding:"required"`
+	Nonce *string `form:"nonce" json:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
 }

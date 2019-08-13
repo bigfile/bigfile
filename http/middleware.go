@@ -45,9 +45,7 @@ func RecordRequestMiddleware() gin.HandlerFunc {
 		bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
 		ctx.Writer = bw
 		db := ctx.MustGet("db").(*gorm.DB)
-		reqRecord := models.MustNewRequestWithHTTPProtocol(
-			ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL.String(), db,
-		)
+		reqRecord := models.MustNewHTTPRequest(ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL.String(), db)
 		ctx.Set("requestId", int64(reqRecord.ID))
 		ctx.Set("reqRecord", reqRecord)
 		ctx.Next()
@@ -223,6 +221,48 @@ func RateLimitByIPMiddleware(interval time.Duration, maxNumber int) gin.HandlerF
 				Success:   false,
 				Errors: map[string][]string{
 					"limitRateByIp": {"too many requests"},
+				},
+			})
+		}
+		ctx.Next()
+	}
+}
+
+// ReplayAttackMiddleware is used to avoid request replay attack.
+// We recommend that you should provide a 'nonce' value for request
+// in all of 'UPDATE' request. But for 'QUERY' request, you should
+// not add this. Of course, if you want to do this, bigfile allow that.
+//
+// For developers, this middleware should be put behind ParseAppMiddleware
+// or ParseTokenMiddleware, we need appId to validate this.
+func ReplayAttackMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var (
+			db        = ctx.MustGet("db").(*gorm.DB)
+			app       = ctx.MustGet("app").(*models.App)
+			reqRecord = ctx.MustGet("reqRecord").(*models.Request)
+			input     NonceInput
+			err       error
+		)
+		if err = ctx.ShouldBind(&input); err == nil {
+			if input.Nonce != nil {
+				if t, err := models.FindRequestWithAppAndNonce(app, *input.Nonce, db); err == nil && t.ID > 0 {
+					ctx.AbortWithStatusJSON(400, &Response{
+						RequestID: ctx.GetInt64("requestId"),
+						Success:   false,
+						Errors: map[string][]string{
+							"nonce": {"this request is being replayed"},
+						},
+					})
+				}
+				reqRecord.Nonce = input.Nonce
+			}
+		} else {
+			ctx.AbortWithStatusJSON(400, &Response{
+				RequestID: ctx.GetInt64("requestId"),
+				Success:   false,
+				Errors: map[string][]string{
+					"nonce": {"nonce is optional, but the min length of nonce is 32, the max length is 48"},
 				},
 			})
 		}

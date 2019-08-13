@@ -55,7 +55,7 @@ func MustNewRequestWithProtocol(protocol string, db *gorm.DB) *Request {
 }
 
 // MustNewRequestWithHTTPProtocol is used to generate http protocol request record.
-func MustNewRequestWithHTTPProtocol(ip, method, url string, db *gorm.DB) *Request {
+func MustNewHTTPRequest(ip, method, url string, db *gorm.DB) *Request {
 	var (
 		req = &Request{
 			Protocol: "http",
@@ -70,4 +70,14 @@ func MustNewRequestWithHTTPProtocol(ip, method, url string, db *gorm.DB) *Reques
 		panic(err)
 	}
 	return req
+}
+
+// FindRequestWithAppAndNonce will find a request with appId and nonce
+func FindRequestWithAppAndNonce(app *App, nonce string, db *gorm.DB) (*Request, error) {
+	var (
+		request = &Request{}
+		err     error
+	)
+	err = db.Where("appId = ? and nonce = ?", app.ID, nonce).Find(request).Error
+	return request, err
 }

@@ -215,3 +215,21 @@ func TestRateLimitByIPMiddleware(t *testing.T) {
 	assert.Equal(t, 429, ctx.Writer.Status())
 	assert.Contains(t, bw.body.String(), "too many requests")
 }
+
+func TestReplayAttackMiddleware(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("nonce=1111"))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	app, db, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	ctx.Set("db", db)
+	ctx.Set("app", app)
+	ctx.Set("reqRecord", reqRecord)
+	ReplayAttackMiddleware()(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "nonce is optional, but the min length of nonce is 32, the max length is 48")
+}
