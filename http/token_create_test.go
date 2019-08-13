@@ -181,9 +181,3 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 		}
 	}
 }
-
-func TestRateLimitByIPMiddleware2(t *testing.T) {
-	paramStr := fmt.Sprintf("appUid=5d4ee21527075f8740000001&nonce=%s&path=test", models.RandomWithMd5(128))
-	fmt.Println(paramStr)
-	fmt.Println(SignStrWithSecret(paramStr, "a0ee01d762d9d167cbfa5656614e62d7"))
-}
