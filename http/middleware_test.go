@@ -60,7 +60,7 @@ func TestParseAppMiddleware(t *testing.T) {
 	ConfigContextMiddleware(nil)(ctx)
 	ParseAppMiddleware()(ctx)
 	bw, _ := ctx.Writer.(*bodyWriter)
-	assert.Contains(t, bw.body.String(), "Key: '.AppUID' Error:Field validation for 'AppUID' failed on the 'required' tag")
+	assert.Contains(t, bw.body.String(), "Error:Field validation for 'AppUID' failed on the 'required' tag")
 }
 
 func TestParseAppMiddleware2(t *testing.T) {

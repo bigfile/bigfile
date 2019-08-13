@@ -10,9 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/cors"
-
 	"github.com/bigfile/bigfile/config"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 

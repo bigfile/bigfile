@@ -16,17 +16,30 @@ import (
 
 // NewSecret is used generate secret for app and token
 func NewSecret() string {
+	return RandomWithMd5(32)
+}
+
+// Random is used to generate random bytes
+func Random(length uint) []byte {
 	var (
-		b           = make([]byte, 128)
-		hash        = md5.New()
+		r           = make([]byte, length)
 		letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	)
-	if _, err := rand.Reader.Read(b); err != nil {
+	if _, err := rand.Reader.Read(r); err != nil {
 		log.MustNewLogger(&config.DefaultConfig.Log).Warning(err)
-		for i := range b {
-			b[i] = letterBytes[mrand.Intn(len(letterBytes))]
+		for i := range r {
+			r[i] = letterBytes[mrand.Intn(len(letterBytes))]
 		}
 	}
+	return r
+}
+
+// RandomWithMd5 is used to generate random and hashed by md5
+func RandomWithMd5(length uint) string {
+	var (
+		b    = Random(length)
+		hash = md5.New()
+	)
 	_, _ = hash.Write(b)
 	return hex.EncodeToString(hash.Sum(nil))
 }

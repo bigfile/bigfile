@@ -19,3 +19,17 @@ func BenchmarkNewSecret(b *testing.B) {
 		NewSecret()
 	}
 }
+
+func TestRandom(t *testing.T) {
+	assert.Equal(t, 128, len(Random(128)))
+}
+
+func BenchmarkRandom(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		Random(32)
+	}
+}
+
+func TestRandomWithMd5(t *testing.T) {
+	assert.Equal(t, len(RandomWithMd5(128)), 32)
+}

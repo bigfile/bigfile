@@ -38,7 +38,8 @@ func (bw *bodyWriter) Write(p []byte) (int, error) {
 	return bw.ResponseWriter.Write(p)
 }
 
-// RecordRequestMiddleware is used to record request in database
+// RecordRequestMiddleware is used to record request in database.
+// It's should be put behind ConfigContextMiddleware
 func RecordRequestMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
@@ -53,22 +54,23 @@ func RecordRequestMiddleware() gin.HandlerFunc {
 		// If some handle return file stream data, that should not
 		// written to database.
 		if _, ok := ctx.Get("ignoreRespBody"); !ok {
-			reqBodyString, _ := janitor.MarshalToString(ctx.Request.Form)
-			reqRecord.RequestBody = reqBodyString
-			reqRecord.ResponseCode = ctx.Writer.Status()
 			reqRecord.ResponseBody = bw.body.String()
-			_ = reqRecord.Save(db)
 		}
+		reqBodyString, _ := janitor.MarshalToString(ctx.Request.Form)
+		reqRecord.RequestBody = reqBodyString
+		reqRecord.ResponseCode = ctx.Writer.Status()
+		reqHeaderString, _ := janitor.MarshalToString(ctx.Request.Header)
+		reqRecord.RequestHeader = reqHeaderString
+		_ = reqRecord.Save(db)
 	}
 }
 
-// ParseAppMiddleware will parse request context to get an app
+// ParseAppMiddleware will parse request context to get an app.
+// It's should be put behind RecordRequestMiddleware
 func ParseAppMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var (
-			input struct {
-				AppUID string `form:"appUid" json:"appUid" binding:"required"`
-			}
+			input AppUIDInput
 			app   *models.App
 			err   error
 			ok    bool
@@ -118,7 +120,8 @@ func ConfigContextMiddleware(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// SignWithAppMiddleware will validate request signature of request
+// SignWithAppMiddleware will validate request signature of request.
+// It's should be put behind ParseAppMiddleware
 func SignWithAppMiddleware(input interface{}) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if err := ctx.ShouldBind(input); err != nil {
@@ -203,7 +206,8 @@ func AccessLogMiddleware() gin.HandlerFunc {
 	})
 }
 
-// RateLimitByIPMiddleware will requests number by ip, avoid being attacked
+// RateLimitByIPMiddleware will record requests number by ip, avoid floor attack.
+// It's should put behind RecordRequestMiddleware
 func RateLimitByIPMiddleware(interval time.Duration, maxNumber int) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ip := ctx.ClientIP()

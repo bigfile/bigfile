@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.4.1-0.20190805014259-20440b96b9ab
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/jinzhu/gorm v1.9.10
 	github.com/json-iterator/go v1.1.7
 	github.com/leodido/go-urn v1.1.0 // indirect
