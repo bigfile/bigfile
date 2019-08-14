@@ -2,7 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// Package migrate mainly provides capacity to migrate and rollback
+// Package migrate mainly provides capacity to migrateBak and rollback
 // database change automatically. keeping database structure is in
 // consistency in team members.
 package migrate

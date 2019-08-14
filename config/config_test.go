@@ -7,6 +7,7 @@ package config
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,13 +24,33 @@ log:
   console:
     enable: true
     level: info
-    format: '%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}'
+    format: '%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}'
   file:
     enable: true
     path: 'bigfile.log'
     level: warn
     format: '[%{time:2006/01/02 15:04:05.000}] %{pid} %{longfile} %{longfunc} %{callpath} ▶ %{level:.4s} %{message}'
-    maxBytesPerFile: 52428800`
+    maxBytesPerFile: 52428800
+http:
+  apiPrefix: /api/bigfile
+  accessLogFile: bigfile.http.access.log
+  limitRateByIPEnable: false
+  limitRateByIPInterval: 1000
+  limitRateByIPMaxNum: 100
+  corsEnable: false
+  corsAllowOrigins:
+    - '*'
+  corsAllowMethods:
+    - PUT
+    - PATCH
+    - DELETE
+  corsAllowHeaders:
+    - Origin
+  corsExposeHeaders:
+    - 'Content-Length'
+  corsAllowCredentials: true
+  corsAllowAllOrigins: false
+  corsMaxAge: 3600`
 
 func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm := assert.New(t)
@@ -42,7 +63,7 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm.Equal(true, configurator.Log.Console.Enable)
 	confirm.Equal("info", configurator.Log.Console.Level)
 	confirm.Equal(
-		"%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
+		"%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}",
 		configurator.Log.Console.Format,
 	)
 	confirm.Equal("bigfile.log", configurator.File.Path)
@@ -53,6 +74,19 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 		"[%{time:2006/01/02 15:04:05.000}] %{pid} %{longfile} %{longfunc} %{callpath} ▶ %{level:.4s} %{message}",
 		configurator.File.Format,
 	)
+	confirm.Equal("/api/bigfile", configurator.HTTP.APIPrefix)
+	confirm.Equal("bigfile.http.access.log", configurator.HTTP.AccessLogFile)
+	confirm.Equal(false, configurator.HTTP.LimitRateByIPEnable)
+	confirm.Equal(int64(1000), configurator.HTTP.LimitRateByIPInterval)
+	confirm.Equal(uint(100), configurator.HTTP.LimitRateByIPMaxNum)
+	confirm.False(configurator.CORSEnable)
+	confirm.True(configurator.CORSAllowCredentials)
+	confirm.False(configurator.CORSAllowAllOrigins)
+	confirm.True(reflect.DeepEqual([]string{"*"}, configurator.CORSAllowOrigins))
+	confirm.True(reflect.DeepEqual([]string{"PUT", "PATCH", "DELETE"}, configurator.CORSAllowMethods))
+	confirm.True(reflect.DeepEqual([]string{"Origin"}, configurator.CORSAllowHeaders))
+	confirm.True(reflect.DeepEqual([]string{"Content-Length"}, configurator.CORSExposeHeaders))
+	confirm.Equal(int64(3600), configurator.HTTP.CORSMaxAge)
 }
 
 func TestParseConfigFile(t *testing.T) {

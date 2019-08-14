@@ -46,5 +46,26 @@ func TestNewLogger(t *testing.T) {
 	}
 
 	wg.Wait()
+}
 
+func TestMustNewLogger(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	var (
+		logConfig   = *config.DefaultConfig
+		err         error
+		tempLogFile *os.File
+	)
+
+	logConfig.Console.Enable = false
+	tempLogFile, err = ioutil.TempFile(os.TempDir(), "*.log")
+	assert.Equal(t, err, nil)
+
+	defer os.Remove(tempLogFile.Name())
+	logConfig.File.Path = tempLogFile.Name()
+
+	MustNewLogger(&logConfig.Log)
 }

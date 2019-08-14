@@ -15,4 +15,7 @@
 # vendor/
 
 /.idea
-/bigfile.yaml
+/.bigfile.yaml
+*.log
+/bigfile.key
+/bigfile.pem

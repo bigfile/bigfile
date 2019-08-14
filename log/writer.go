@@ -68,7 +68,7 @@ func NewAutoRotateWriter(file string, maxBytes uint64) (*AutoRotateWriter, error
 			return nil, err
 		}
 	} else if err == nil && !stat.IsDir() {
-		return nil, errors.New("the directory of log file is illegal   ")
+		return nil, errors.New("the directory of log file is illegal")
 	} else if err != nil {
 		return nil, err
 	}
