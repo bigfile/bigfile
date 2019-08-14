@@ -54,7 +54,7 @@ func MustNewRequestWithProtocol(protocol string, db *gorm.DB) *Request {
 	}
 }
 
-// MustNewRequestWithHTTPProtocol is used to generate http protocol request record.
+// MustNewHTTPRequest is used to generate http protocol request record.
 func MustNewHTTPRequest(ip, method, url string, db *gorm.DB) *Request {
 	var (
 		req = &Request{

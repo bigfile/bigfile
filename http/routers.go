@@ -28,7 +28,7 @@ func Routers() *gin.Engine {
 
 	if config.DefaultConfig.HTTP.CORSEnable {
 		r.Use(cors.New(cors.Config{
-			AllowAllOrigins:  false,
+			AllowAllOrigins:  config.DefaultConfig.CORSAllowAllOrigins,
 			AllowOrigins:     config.DefaultConfig.CORSAllowOrigins,
 			AllowMethods:     config.DefaultConfig.CORSAllowMethods,
 			AllowHeaders:     config.DefaultConfig.CORSAllowHeaders,
