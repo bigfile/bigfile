@@ -257,3 +257,12 @@ func TestReplayAttackMiddleware2(t *testing.T) {
 	assert.Equal(t, 400, ctx.Writer.Status())
 	assert.Contains(t, bw.body.String(), "this request is being replayed")
 }
+
+func TestBodyWriter_Write(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	n, err := bw.Write([]byte("hello"))
+	assert.Nil(t, err)
+	assert.True(t, n == 5)
+}

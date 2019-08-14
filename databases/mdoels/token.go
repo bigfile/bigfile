@@ -19,20 +19,20 @@ import (
 // to read file. every token has an expired time, expired token can't
 // be used to do anything.
 type Token struct {
-	ID             uint64     `gorm:"type:BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT;primary_key" json:"-"`
-	UID            string     `gorm:"type:CHAR(32) NOT NULL;UNIQUE;column:uid" json:"token"`
-	Secret         *string    `gorm:"type:CHAR(32)" json:"-"`
-	AppID          uint64     `gorm:"type:BIGINT(20) UNSIGNED NOT NULL;column:appId" json:"-"`
-	IP             *string    `gorm:"type:VARCHAR(1500);column:ip" json:"ip"`
-	AvailableTimes int        `gorm:"type:int(10);column:availableTimes;DEFAULT:-1" json:"availableTimes"`
-	ReadOnly       int8       `gorm:"type:tinyint;column:readOnly;DEFAULT:0" json:"readOnly"`
-	Path           string     `gorm:"type:tinyint;column:path" json:"path"`
-	ExpiredAt      *time.Time `gorm:"type:TIMESTAMP;column:expiredAt" json:"expiredAt"`
-	CreatedAt      time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt" json:"-"`
-	UpdatedAt      time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt" json:"-"`
-	DeletedAt      *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt" json:"-"`
+	ID             uint64     `gorm:"type:BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT;primary_key"`
+	UID            string     `gorm:"type:CHAR(32) NOT NULL;UNIQUE;column:uid"`
+	Secret         *string    `gorm:"type:CHAR(32)"`
+	AppID          uint64     `gorm:"type:BIGINT(20) UNSIGNED NOT NULL;column:appId"`
+	IP             *string    `gorm:"type:VARCHAR(1500);column:ip"`
+	AvailableTimes int        `gorm:"type:int(10);column:availableTimes;DEFAULT:-1"`
+	ReadOnly       int8       `gorm:"type:tinyint;column:readOnly;DEFAULT:0"`
+	Path           string     `gorm:"type:tinyint;column:path"`
+	ExpiredAt      *time.Time `gorm:"type:TIMESTAMP;column:expiredAt"`
+	CreatedAt      time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt"`
+	UpdatedAt      time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
+	DeletedAt      *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt"`
 
-	App App `gorm:"association_foreignkey:id;foreignkey:AppID" json:"-"`
+	App App `gorm:"association_foreignkey:id;foreignkey:AppID"`
 }
 
 // TableName represent token table name

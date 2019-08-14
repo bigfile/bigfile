@@ -6,10 +6,10 @@ package http
 
 // AppUIDInput represent 'AppUid' request param
 type AppUIDInput struct {
-	AppUID string `form:"appUid" json:"appUid" binding:"required"`
+	AppUID string `form:"appUid" binding:"required"`
 }
 
 // NonceInput represent `nonce` request param
 type NonceInput struct {
-	Nonce *string `form:"nonce" json:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
+	Nonce *string `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
 }

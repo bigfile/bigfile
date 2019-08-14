@@ -135,9 +135,8 @@ func TestTokenCreateHandler3(t *testing.T) {
 	assert.Equal(t, 1, int(respReadOnly))
 	respReadPath := respData["path"].(string)
 	assert.Equal(t, "/test", respReadPath)
-	respExpiredAt := respData["expiredAt"].(string)
-	respExpiredAtTime, _ := time.Parse(time.RFC3339, respExpiredAt)
-	assert.Equal(t, respExpiredAtTime.Unix(), expiredAtUnix)
+	respExpiredAt := respData["expiredAt"].(float64)
+	assert.Equal(t, int64(respExpiredAt), expiredAtUnix)
 }
 
 func TestTokenCreateHandler4(t *testing.T) {
@@ -181,26 +180,32 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	router := Routers()
-	w := httptest.NewRecorder()
-	api := buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
-	expiredAt := time.Now().Add(10 * time.Hour)
-	expiredAtUnix := expiredAt.Unix()
-	secret := SignStrWithSecret("", "")
-	body := fmt.Sprintf(
-		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&nonce=%s&path=/test&readOnly=1&secret=%s",
-		app.UID, expiredAtUnix, models.RandomWithMd5(128), secret,
+	var (
+		router        = Routers()
+		api           = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
+		expiredAtUnix = time.Now().Add(10 * time.Hour).Unix()
+		secret        = SignStrWithSecret("", "")
 	)
-	sign := SignStrWithSecret(body, app.Secret)
-	body = fmt.Sprintf("%s&sign=%s", body, sign)
-	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
+		var (
+			w    = httptest.NewRecorder()
+			body = signRequestParams(map[string]interface{}{
+				"appUid":         app.UID,
+				"availableTimes": 1000,
+				"expiredAt":      expiredAtUnix,
+				"ip":             "192.168.0.1",
+				"nonce":          models.RandomWithMd5(64),
+				"path":           "/test",
+				"readOnly":       1,
+				"secret":         secret,
+			}, app.Secret)
+		)
+		req, _ := http.NewRequest("POST", api, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		router.ServeHTTP(w, req)
 		if w.Code != 200 {
-			b.Fatalf("response code should be 200")
+			b.Fatal("response code should be 200")
 		}
 	}
 }

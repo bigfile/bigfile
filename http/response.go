@@ -4,7 +4,10 @@
 
 package http
 
-import "github.com/bigfile/bigfile/service"
+import (
+	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/service"
+)
 
 // Response represent http response for client
 type Response struct {
@@ -14,6 +17,7 @@ type Response struct {
 	Data      interface{}         `json:"data"`
 }
 
+// generateErrors is used to generate errors
 func generateErrors(err error) map[string][]string {
 
 	if err == nil {
@@ -25,5 +29,25 @@ func generateErrors(err error) map[string][]string {
 	}
 	return map[string][]string{
 		"system": {err.Error()},
+	}
+}
+
+// tokenResp is sed to generate token json response
+func tokenResp(token *models.Token) map[string]interface{} {
+
+	var expiredAt interface{} = token.ExpiredAt
+
+	if token.ExpiredAt != nil {
+		expiredAt = token.ExpiredAt.Unix()
+	}
+
+	return map[string]interface{}{
+		"token":          token.UID,
+		"ip":             token.IP,
+		"availableTimes": token.AvailableTimes,
+		"readOnly":       token.ReadOnly,
+		"expiredAt":      expiredAt,
+		"path":           token.Path,
+		"secret":         token.Secret,
 	}
 }

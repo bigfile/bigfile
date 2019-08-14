@@ -16,15 +16,15 @@ import (
 )
 
 type tokenCreateInput struct {
-	AppUID         string     `form:"appUid" json:"appUid" binding:"required"`
-	Nonce          string     `form:"nonce" json:"nonce" header:"X-Request-Nonce" binding:"required,min=32,max=48"`
-	Sign           string     `form:"sign" json:"sign" binding:"required"`
-	Path           *string    `form:"path,default=/" json:"path,default=/" binding:"max=1000"`
-	IP             *string    `form:"ip" json:"ip" binding:"omitempty,max=1500"`
-	ExpiredAt      *time.Time `form:"expiredAt" json:"expiredAt" time_format:"unix" binding:"omitempty,gt"`
-	Secret         *string    `form:"secret" json:"secret" binding:"omitempty,len=32"`
-	AvailableTimes *int       `form:"availableTimes,default=-1" json:"availableTimes,default=-1" binding:"omitempty,max=2147483647"`
-	ReadOnly       *bool      `form:"readOnly,default=0" json:"readOnly,default=0"`
+	AppUID         string     `form:"appUid" binding:"required"`
+	Nonce          string     `form:"nonce" header:"X-Request-Nonce" binding:"required,min=32,max=48"`
+	Sign           string     `form:"sign" binding:"required"`
+	Path           *string    `form:"path,default=/" binding:"max=1000"`
+	IP             *string    `form:"ip" binding:"omitempty,max=1500"`
+	ExpiredAt      *time.Time `form:"expiredAt" time_format:"unix" binding:"omitempty,gt"`
+	Secret         *string    `form:"secret" binding:"omitempty,len=32"`
+	AvailableTimes *int       `form:"availableTimes,default=-1" binding:"omitempty,max=2147483647"`
+	ReadOnly       *bool      `form:"readOnly,default=0"`
 }
 
 // TokenCreateHandler is used to handle token create http request
@@ -84,7 +84,7 @@ func TokenCreateHandler(ctx *gin.Context) {
 		return
 	}
 
-	data = tokenCreateValue.(*models.Token)
+	data = tokenResp(tokenCreateValue.(*models.Token))
 	success = true
 	code = 200
 }

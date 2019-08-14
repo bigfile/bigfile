@@ -48,9 +48,14 @@ func Routers() *gin.Engine {
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware(), ReplayAttackMiddleware())
 	requestWithAppGroup.POST(
-		buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create"),
+		buildRouteWithPrefix("/token/create"),
 		SignWithAppMiddleware(&tokenCreateInput{}),
 		TokenCreateHandler,
+	)
+	requestWithAppGroup.POST(
+		buildRouteWithPrefix("/token/update"),
+		SignWithAppMiddleware(&tokenUpdateInput{}),
+		TokenUpdateHandler,
 	)
 
 	return r
@@ -59,4 +64,8 @@ func Routers() *gin.Engine {
 // buildRoute is used to build a correct route
 func buildRoute(prefix, route string) string {
 	return strings.TrimRight(prefix, "/") + "/" + strings.TrimLeft(route, "/")
+}
+
+func buildRouteWithPrefix(route string) string {
+	return buildRoute(config.DefaultConfig.HTTP.APIPrefix, route)
 }
