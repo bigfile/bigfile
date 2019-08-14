@@ -6,6 +6,7 @@ package http
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	models "github.com/bigfile/bigfile/databases/mdoels"
@@ -16,7 +17,7 @@ import (
 
 type tokenCreateInput struct {
 	AppUID         string     `form:"appUid" json:"appUid" binding:"required"`
-	Nonce          string     `form:"nonce" json:"nonce" binding:"required,min=32,max=48"`
+	Nonce          string     `form:"nonce" json:"nonce" header:"X-Request-Nonce" binding:"required,min=32,max=48"`
 	Sign           string     `form:"sign" json:"sign" binding:"required"`
 	Path           *string    `form:"path,default=/" json:"path,default=/" binding:"max=1000"`
 	IP             *string    `form:"ip" json:"ip" binding:"omitempty,max=1500"`
@@ -36,7 +37,22 @@ func TokenCreateHandler(ctx *gin.Context) {
 		readOnlyI8       int8
 		tokenCreateValue interface{}
 		err              error
+
+		code     = 400
+		reErrors map[string][]string
+		success  bool
+		data     interface{}
 	)
+
+	defer func() {
+		ctx.JSON(code, &Response{
+			RequestID: ctx.GetInt64("requestId"),
+			Success:   success,
+			Errors:    reErrors,
+			Data:      data,
+		})
+	}()
+
 	input = ctx.MustGet("inputParam").(*tokenCreateInput)
 	db = ctx.MustGet("db").(*gorm.DB)
 	app = ctx.MustGet("app").(*models.App)
@@ -58,29 +74,17 @@ func TokenCreateHandler(ctx *gin.Context) {
 		AvailableTimes: *input.AvailableTimes,
 	}
 
-	if err := tokenCreateSrv.Validate(); err != nil {
-		ctx.JSON(400, &Response{
-			RequestID: ctx.GetInt64("requestId"),
-			Success:   false,
-			Errors:    err.MapFieldErrors(),
-		})
+	if err := tokenCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		reErrors = generateErrors(err)
 		return
 	}
 
 	if tokenCreateValue, err = tokenCreateSrv.Execute(context.Background()); err != nil {
-		ctx.JSON(400, &Response{
-			RequestID: ctx.GetInt64("requestId"),
-			Success:   false,
-			Errors: map[string][]string{
-				"system": {err.Error()},
-			},
-		})
+		reErrors = generateErrors(err)
 		return
 	}
 
-	ctx.JSON(200, &Response{
-		RequestID: ctx.GetInt64("requestId"),
-		Success:   true,
-		Data:      tokenCreateValue.(*models.Token),
-	})
+	data = tokenCreateValue.(*models.Token)
+	success = true
+	code = 200
 }

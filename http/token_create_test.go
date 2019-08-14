@@ -5,17 +5,17 @@
 package http
 
 import (
+	"bytes"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/bigfile/bigfile/databases"
-
 	"github.com/bigfile/bigfile/config"
-
+	"github.com/bigfile/bigfile/databases"
 	models "github.com/bigfile/bigfile/databases/mdoels"
 	"github.com/gin-gonic/gin"
 	janitor "github.com/json-iterator/go"
@@ -138,6 +138,29 @@ func TestTokenCreateHandler3(t *testing.T) {
 	respExpiredAt := respData["expiredAt"].(string)
 	respExpiredAtTime, _ := time.Parse(time.RFC3339, respExpiredAt)
 	assert.Equal(t, respExpiredAtTime.Unix(), expiredAtUnix)
+}
+
+func TestTokenCreateHandler4(t *testing.T) {
+	app, trx, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Set("db", trx)
+	ctx.Set("app", app)
+	ctx.Set("requestId", rand.Int63n(100000000))
+
+	path := "/wrong path//"
+	availableTimes := 1
+	ctx.Set("inputParam", &tokenCreateInput{
+		Path:           &path,
+		AvailableTimes: &availableTimes,
+	})
+
+	TokenCreateHandler(ctx)
+	assert.Contains(t, bw.body.String(), "path is not a legal unix path")
 }
 
 func BenchmarkTokenCreateHandler(b *testing.B) {
