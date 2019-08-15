@@ -50,7 +50,9 @@ http:
     - 'Content-Length'
   corsAllowCredentials: true
   corsAllowAllOrigins: false
-  corsMaxAge: 3600`
+  corsMaxAge: 3600
+chunk:
+  rootPath: storage/chunks`
 
 func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm := assert.New(t)
@@ -87,6 +89,8 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 	confirm.True(reflect.DeepEqual([]string{"Origin"}, configurator.CORSAllowHeaders))
 	confirm.True(reflect.DeepEqual([]string{"Content-Length"}, configurator.CORSExposeHeaders))
 	confirm.Equal(int64(3600), configurator.HTTP.CORSMaxAge)
+
+	confirm.Equal("storage/chunks", configurator.Chunk.RootPath)
 }
 
 func TestParseConfigFile(t *testing.T) {

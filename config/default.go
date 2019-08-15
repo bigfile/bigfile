@@ -49,5 +49,8 @@ var (
 			CORSAllowMethods:      []string{"PUT", "DELETE"},
 			CORSMaxAge:            3600 * int64(time.Second),
 		},
+		Chunk{
+			RootPath: "storage/chunks",
+		},
 	}
 )
