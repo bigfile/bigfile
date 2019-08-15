@@ -5,7 +5,9 @@
 package models
 
 import (
-	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,10 +24,20 @@ func TestChunk_Path(t *testing.T) {
 		assert.Contains(t, err.(error).Error(), "invalid chunk id")
 	}()
 	chunk := &Chunk{}
-	chunk.Path()
+	chunk.Path(nil)
 }
 
 func TestChunk_Path2(t *testing.T) {
-	chunk := &Chunk{ID: 10000223344}
-	fmt.Println(chunk.Path())
+
+	tempDir := filepath.Join(os.TempDir(), RandomWithMd5(32))
+	defer func() {
+		os.RemoveAll(tempDir)
+	}()
+
+	chunk := &Chunk{ID: 100044}
+	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/100/100044")
+	chunk = &Chunk{ID: 10001}
+	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/10/10001")
+	chunk = &Chunk{ID: 100001}
+	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/100/100001")
 }

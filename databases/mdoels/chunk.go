@@ -6,8 +6,11 @@ package models
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bigfile/bigfile/config"
@@ -32,8 +35,11 @@ func (c Chunk) TableName() string {
 }
 
 // Path represent the actual storage path
-func (c Chunk) Path() string {
-	rootPath := config.DefaultConfig.Chunk.RootPath
+func (c Chunk) Path(rootPath *string) string {
+
+	if rootPath == nil {
+		rootPath = &config.DefaultConfig.Chunk.RootPath
+	}
 	if c.ID < 10000 {
 		panic(errors.New("invalid chunk id"))
 	}
@@ -45,8 +51,16 @@ func (c Chunk) Path() string {
 		idStr = util.SubStrFromTo(idStr, 0, -3)
 	}
 	parts[index] = idStr
-	parts[0] = rootPath
+	parts = parts[1:]
 	util.ReverseSlice(parts)
-	dir := filepath.Join(parts...)
-	return filepath.Join(dir, strconv.FormatUint(c.ID, 10))
+
+	dir := fmt.Sprintf("%s/%s", strings.TrimSuffix(*rootPath, "/"), filepath.Join(parts...))
+
+	if !util.IsDir(dir) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			panic(err)
+		}
+	}
+
+	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
 }
