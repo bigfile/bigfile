@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// direct test TokenCreateHandler
 func TestTokenCreateHandler(t *testing.T) {
 	var (
 		readOnly       bool
@@ -61,6 +62,8 @@ func TestTokenCreateHandler(t *testing.T) {
 	assert.Equal(t, availableTimes, int(respAvailableTimes))
 }
 
+// test TokenCreateHandler in a complete request, it will go through kinds of
+// middleware. In this test case, we omit optional parameters and check the result.
 func TestTokenCreateHandler2(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
@@ -96,6 +99,9 @@ func TestTokenCreateHandler2(t *testing.T) {
 	assert.Nil(t, respData["expiredAt"])
 }
 
+// test TokenCreateHandler in a complete request, it will go through kinds of
+// middleware. But in this test case, we set optional parameters manually and
+// check the result.
 func TestTokenCreateHandler3(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
@@ -139,6 +145,9 @@ func TestTokenCreateHandler3(t *testing.T) {
 	assert.Equal(t, int64(respExpiredAt), expiredAtUnix)
 }
 
+// TestTokenCreateHandler4 is used to test this case.
+// If there are errors in parameters passed to service.TokenCreate,
+// some errors should be raised.
 func TestTokenCreateHandler4(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
