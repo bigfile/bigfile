@@ -53,14 +53,11 @@ func (c Chunk) Path(rootPath *string) string {
 	parts[index] = idStr
 	parts = parts[1:]
 	util.ReverseSlice(parts)
-
 	dir := fmt.Sprintf("%s/%s", strings.TrimSuffix(*rootPath, "/"), filepath.Join(parts...))
-
 	if !util.IsDir(dir) {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			panic(err)
 		}
 	}
-
 	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
 }
