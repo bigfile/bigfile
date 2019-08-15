@@ -7,10 +7,13 @@ package http
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/bigfile/bigfile/config"
+	"github.com/bigfile/bigfile/internal/util"
+	"github.com/bigfile/bigfile/log"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -19,11 +22,7 @@ import (
 func Routers() *gin.Engine {
 	r := gin.New()
 	if !isTesting && config.DefaultConfig.HTTP.AccessLogFile != "" {
-		if f, err := os.OpenFile(config.DefaultConfig.HTTP.AccessLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
-			panic(err)
-		} else {
-			gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
-		}
+		setGinLogWriter()
 	}
 
 	if config.DefaultConfig.HTTP.CORSEnable {
@@ -68,4 +67,25 @@ func buildRoute(prefix, route string) string {
 
 func buildRouteWithPrefix(route string) string {
 	return buildRoute(config.DefaultConfig.HTTP.APIPrefix, route)
+}
+
+func setGinLogWriter() {
+	accessLogFile := config.DefaultConfig.HTTP.AccessLogFile
+	dir := filepath.Dir(accessLogFile)
+	logger := log.MustNewLogger(&config.DefaultConfig.Log)
+	if util.IsFile(dir) {
+		logger.Fatalf("invalid access log file path: %s", accessLogFile)
+	}
+	if !util.IsDir(dir) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			logger.Fatal(err)
+		}
+	}
+
+	if f, err := os.OpenFile(
+		config.DefaultConfig.HTTP.AccessLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666); err != nil {
+		panic(err)
+	} else {
+		gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
+	}
 }

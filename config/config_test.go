@@ -27,13 +27,13 @@ log:
     format: '%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}'
   file:
     enable: true
-    path: 'bigfile.log'
+    path: storage/logs/bigfile.log
     level: warn
     format: '[%{time:2006/01/02 15:04:05.000}] %{pid} %{longfile} %{longfunc} %{callpath} ▶ %{level:.4s} %{message}'
     maxBytesPerFile: 52428800
 http:
   apiPrefix: /api/bigfile
-  accessLogFile: bigfile.http.access.log
+  accessLogFile: storage/logs/bigfile.http.access.log
   limitRateByIPEnable: false
   limitRateByIPInterval: 1000
   limitRateByIPMaxNum: 100
@@ -66,7 +66,7 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 		"%{color:bold}[%{time:2006/01/02 15:04:05.000}] %{pid} %{level:.5s} %{color:reset} %{message}",
 		configurator.Log.Console.Format,
 	)
-	confirm.Equal("bigfile.log", configurator.File.Path)
+	confirm.Equal("storage/logs/bigfile.log", configurator.File.Path)
 	confirm.Equal("warn", configurator.File.Level)
 	confirm.Equal(true, configurator.Log.File.Enable)
 	confirm.Equal(uint64(52428800), configurator.File.MaxBytesPerFile)
@@ -75,7 +75,7 @@ func assertConfigurator(t *testing.T, configurator *Configurator) {
 		configurator.File.Format,
 	)
 	confirm.Equal("/api/bigfile", configurator.HTTP.APIPrefix)
-	confirm.Equal("bigfile.http.access.log", configurator.HTTP.AccessLogFile)
+	confirm.Equal("storage/logs/bigfile.http.access.log", configurator.HTTP.AccessLogFile)
 	confirm.Equal(false, configurator.HTTP.LimitRateByIPEnable)
 	confirm.Equal(int64(1000), configurator.HTTP.LimitRateByIPInterval)
 	confirm.Equal(uint(100), configurator.HTTP.LimitRateByIPMaxNum)

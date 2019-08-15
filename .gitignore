@@ -19,3 +19,4 @@
 *.log
 /bigfile.key
 /bigfile.pem
+/storage
