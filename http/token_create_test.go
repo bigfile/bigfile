@@ -213,7 +213,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 		req, _ := http.NewRequest("POST", api, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		router.ServeHTTP(w, req)
-		if w.Code != 200 {
+		if w.Code != http.StatusOK {
 			b.Fatal("response code should be 200")
 		}
 	}
