@@ -70,3 +70,11 @@ func TestReverseSlice(t *testing.T) {
 	ReverseSlice(ages)
 	reflect.DeepEqual(ages, []int{28, 26, 24})
 }
+
+func TestSha256Hash2String(t *testing.T) {
+	s := "hello world"
+	h := "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+	sh, err := Sha256Hash2String([]byte(s))
+	assert.Nil(t, err)
+	assert.Equal(t, sh, h)
+}

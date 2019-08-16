@@ -7,6 +7,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/internal/util"
+	"github.com/jinzhu/gorm"
 )
 
 // ChunkSize represent chunk size, default: 1MB
@@ -60,4 +62,47 @@ func (c Chunk) Path(rootPath *string) string {
 		}
 	}
 	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
+}
+
+// CreateChunkFromBytes will crate a chunk from the specify byte content
+func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, error) {
+	var (
+		chunk   *Chunk
+		err     error
+		hashStr string
+		size    int
+	)
+
+	if size = len(p); int64(size) > ChunkSize {
+		return nil, fmt.Errorf("the size of chunk must be less than %d bytes", ChunkSize)
+	}
+
+	if hashStr, err = util.Sha256Hash2String(p); err != nil {
+		return nil, err
+	}
+
+	if chunk, err = FindChunkByHash(hashStr, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
+		return chunk, err
+	}
+
+	chunk = &Chunk{
+		Size: size,
+		Hash: hashStr,
+	}
+	if err = db.Create(chunk).Error; err != nil {
+		return nil, err
+	}
+
+	if err = ioutil.WriteFile(chunk.Path(rootPath), p, 0644); err != nil {
+		return nil, err
+	}
+
+	return chunk, nil
+}
+
+// FindChunkByHash will find chunk by the specify hash
+func FindChunkByHash(h string, db *gorm.DB) (*Chunk, error) {
+	var chunk Chunk
+	var err = db.Where("hash = ?", h).First(&chunk).Error
+	return &chunk, err
 }

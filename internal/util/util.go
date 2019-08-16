@@ -5,6 +5,8 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"os"
 	"reflect"
@@ -66,4 +68,14 @@ func ReverseSlice(data interface{}) {
 		reverseIndex := valueLen - 1 - i
 		swap(i, reverseIndex)
 	}
+}
+
+// Sha256Hash2String will hash bytes to string, if some errors happened,
+// an error will be returned.
+func Sha256Hash2String(p []byte) (string, error) {
+	hash := sha256.New()
+	if _, err := hash.Write(p); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
