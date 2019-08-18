@@ -103,3 +103,34 @@ func TestCreateChunkFromBytes(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, fileInfo.Size(), int64(ChunkSize))
 }
+
+func TestChunk_AppendBytes(t *testing.T) {
+	var (
+		bigBytes   = []byte("hello")
+		tempDir    = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		trx        *gorm.DB
+		err        error
+		down       func(*testing.T)
+		chunk      *Chunk
+		writeCount int
+	)
+
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	chunk, err = CreateChunkFromBytes(bigBytes, &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 5, chunk.Size)
+	assert.Equal(t, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", chunk.Hash)
+
+	writeCount, err = chunk.AppendBytes([]byte(" world"), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, writeCount)
+	assert.Equal(t, 11, chunk.Size)
+	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", chunk.Hash)
+}

@@ -5,6 +5,7 @@
 package models
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -62,6 +63,48 @@ func (c Chunk) Path(rootPath *string) string {
 		}
 	}
 	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
+}
+
+// AppendBytes is used to append bytes to chunk
+func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (int, error) {
+	var (
+		file       *os.File
+		err        error
+		writeCount int
+		buf        bytes.Buffer
+		oldContent []byte
+		hash       string
+	)
+
+	if len(p) > ChunkSize-c.Size {
+		panic(fmt.Errorf("total length exceed limit: %d bytes", ChunkSize))
+	}
+
+	if oldContent, err = ioutil.ReadFile(c.Path(rootPath)); err != nil {
+		return 0, err
+	}
+	buf.Write(oldContent)
+	buf.Write(p)
+	c.Size = buf.Len()
+	if hash, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
+		return 0, err
+	}
+	c.Hash = hash
+
+	if file, err = os.OpenFile(c.Path(rootPath), os.O_APPEND|os.O_WRONLY, 0644); err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	if writeCount, err = file.Write(p); err != nil {
+		return 0, err
+	}
+
+	if err = db.Save(c).Error; err != nil {
+		return 0, err
+	}
+
+	return writeCount, err
 }
 
 // CreateChunkFromBytes will crate a chunk from the specify byte content

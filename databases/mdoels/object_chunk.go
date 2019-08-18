@@ -15,6 +15,9 @@ type ObjectChunk struct {
 	HashState *string   `gorm:"type:CHAR(64) NOT NULL;UNIQUE;column:hashState"`
 	CreatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt"`
 	UpdatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
+
+	Object Object `gorm:"foreignkey:objectId"`
+	Chunk  Chunk  `gorm:"foreignkey:chunkId"`
 }
 
 // TableName represent the db table name
