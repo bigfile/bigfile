@@ -34,7 +34,9 @@ func (c *CreateObjectChunkTable20190816152349) Up(db *gorm.DB) error {
 		  createdAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
           updatedAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 		  PRIMARY KEY (id),
-		  UNIQUE INDEX object_chunk_no_uq (objectId, chunkId, number)
+		  UNIQUE INDEX object_chunk_no_uq (objectId, chunkId, number),
+          KEY objectId_idx (objectId),
+          KEY chunkId_idx (chunkId)
 		)ENGINE = InnoDB
 	`).Error
 }

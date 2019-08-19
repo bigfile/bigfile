@@ -5,15 +5,12 @@
 package models
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/bigfile/bigfile/databases"
 
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
@@ -262,10 +259,21 @@ func TestFindObjectByHash(t *testing.T) {
 
 func TestCreateObjectFromReader(t *testing.T) {
 	var (
-		tempDir = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
-		db      = databases.MustNewConnection(nil)
-		reader  = strings.NewReader(string(Random(uint(ChunkSize * 2.5))))
+		tempDir   = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		randomStr = Random(uint(ChunkSize * 2.5))
+		reader    = strings.NewReader(string(randomStr))
 	)
-	object, err := CreateObjectFromReader(reader, &tempDir, true, db)
-	fmt.Println(object, err)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	object, err := CreateObjectFromReader(reader, &tempDir, trx)
+	assert.Nil(t, err)
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+		down(t)
+	}()
+	hash, err := util.Sha256Hash2String(randomStr)
+	assert.Nil(t, err)
+	assert.Equal(t, hash, object.Hash)
+	assert.Equal(t, int(ChunkSize*2.5), object.Size)
 }

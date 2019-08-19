@@ -7,6 +7,8 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"hash"
 	"io"
 	"io/ioutil"
 	"math"
@@ -77,6 +79,46 @@ func (o *Object) LastObjectChunk(db *gorm.DB) (*ObjectChunk, error) {
 	return &o.ObjectChunks[0], nil
 }
 
+// AppendFromReader will append content from reader to object
+func (o *Object) AppendFromReader(reader io.Reader, db *gorm.DB) (*Object, int, error) {
+	var (
+		allContent      []byte
+		allContentLen   int
+		err             error
+		lastOc          *ObjectChunk
+		lastChunk       *Chunk
+		stateHash       hash.Hash
+		completeHashStr string
+		object          *Object
+	)
+	if allContent, err = ioutil.ReadAll(reader); err != nil {
+		return o, 0, err
+	}
+	allContentLen = len(allContent)
+
+	if lastOc, err = o.LastObjectChunk(db); err != nil {
+		return o, 0, err
+	} else if lastOc == nil {
+		return o, 0, errors.New("unexpected error happened, object must have some chunks")
+	}
+
+	if stateHash, err = sha2562.NewHashWithStateText(*lastOc.HashState); err != nil {
+		return o, 0, err
+	}
+	if _, err = stateHash.Write(allContent); err != nil {
+		return o, 0, err
+	}
+	completeHashStr = hex.EncodeToString(stateHash.Sum(nil))
+	if object, err = FindObjectByHash(completeHashStr, db); err == nil && object != nil {
+		return object, len(allContent), nil
+	}
+
+	if lastChunk, err = o.LastChunk(db); err != nil {
+		return o, 0, err
+	}
+
+}
+
 // FindObjectByHash will find object by the specify hash
 func FindObjectByHash(h string, db *gorm.DB) (*Object, error) {
 	var object Object
@@ -85,7 +127,7 @@ func FindObjectByHash(h string, db *gorm.DB) (*Object, error) {
 }
 
 // CreateObjectFromReader reads data from reader to create an object
-func CreateObjectFromReader(reader io.Reader, rootPath *string, inTrx bool, db *gorm.DB) (*Object, error) {
+func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (*Object, error) {
 	var (
 		oc         []*ObjectChunk
 		sha256Hash = sha256.New()
@@ -107,7 +149,13 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, inTrx bool, db *
 
 	maxChunkNumber := int(math.Ceil(float64(len(allContent)) / float64(ChunkSize)))
 	for i := 0; i < maxChunkNumber; i++ {
-		var content = allContent[i*ChunkSize : (i+1)*ChunkSize]
+
+		end := (i + 1) * ChunkSize
+		if end > len(allContent) {
+			end = len(allContent)
+		}
+
+		var content = allContent[i*ChunkSize : end]
 		if chunk, err := CreateChunkFromBytes(content, rootPath, db); err != nil {
 			return nil, err
 		} else {
@@ -127,7 +175,7 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, inTrx bool, db *
 	}
 
 	// for atomicity, the following code should be run in a transaction
-	if inTrx {
+	if !isTesting {
 		db = db.Begin()
 		defer func() {
 			if rErr := recover(); rErr != nil || err != nil {
@@ -150,7 +198,7 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, inTrx bool, db *
 		}
 	}
 
-	if inTrx {
+	if !isTesting {
 		return object, db.Commit().Error
 	}
 
