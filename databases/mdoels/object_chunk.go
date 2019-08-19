@@ -4,7 +4,11 @@
 
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // ObjectChunk is a middle table, that associates chunk and object
 type ObjectChunk struct {
@@ -23,4 +27,11 @@ type ObjectChunk struct {
 // TableName represent the db table name
 func (oc ObjectChunk) TableName() string {
 	return "object_chunk"
+}
+
+// CountObjectChunkByChunkID will count the middle value by chunkId
+func CountObjectChunkByChunkID(chunkID uint64, db *gorm.DB) (int, error) {
+	var count int
+	err := db.Model(&ObjectChunk{}).Where("chunkId = ?", chunkID).Count(&count).Error
+	return count, err
 }

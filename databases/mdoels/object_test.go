@@ -5,7 +5,15 @@
 package models
 
 import (
+	"fmt"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
+
+	"github.com/bigfile/bigfile/databases"
 
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
@@ -193,4 +201,71 @@ func TestObject_LastChunkNumber2(t *testing.T) {
 	number, err = object.LastChunkNumber(trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, number)
+}
+
+func TestObject_LastObjectChunk(t *testing.T) {
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+
+	var (
+		content = "hello world"
+		size    = len(content)
+		err     error
+	)
+	hash, err := util.Sha256Hash2String([]byte(content))
+	assert.Nil(t, err)
+	object := &Object{
+		Size: size,
+		Hash: hash,
+	}
+	assert.Nil(t, trx.Save(object).Error)
+	assert.True(t, object.ID > 0)
+
+	oc1 := &ObjectChunk{
+		ObjectID: object.ID,
+		ChunkID:  1,
+		Number:   1,
+	}
+	assert.Nil(t, trx.Create(oc1).Error)
+
+	oc2 := &ObjectChunk{
+		ObjectID: object.ID,
+		ChunkID:  1,
+		Number:   2,
+	}
+	assert.Nil(t, trx.Create(oc2).Error)
+
+	ocTmp, err := object.LastObjectChunk(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, ocTmp.ID, oc2.ID)
+}
+
+func TestFindObjectByHash(t *testing.T) {
+	var (
+		content = "hello world"
+		size    = len(content)
+		err     error
+	)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	hash, err := util.Sha256Hash2String([]byte(content))
+	assert.Nil(t, err)
+	object := &Object{
+		Size: size,
+		Hash: hash,
+	}
+	assert.Nil(t, trx.Save(object).Error)
+	objectTmp, err := FindObjectByHash(hash, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, objectTmp.ID, object.ID)
+}
+
+func TestCreateObjectFromReader(t *testing.T) {
+	var (
+		tempDir = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		db      = databases.MustNewConnection(nil)
+		reader  = strings.NewReader(string(Random(uint(ChunkSize * 2.5))))
+	)
+	object, err := CreateObjectFromReader(reader, &tempDir, true, db)
+	fmt.Println(object, err)
 }

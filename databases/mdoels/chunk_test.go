@@ -128,9 +128,90 @@ func TestChunk_AppendBytes(t *testing.T) {
 	assert.Equal(t, 5, chunk.Size)
 	assert.Equal(t, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", chunk.Hash)
 
-	writeCount, err = chunk.AppendBytes([]byte(" world"), &tempDir, trx)
+	_, writeCount, err = chunk.AppendBytes([]byte(" world"), &tempDir, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 6, writeCount)
 	assert.Equal(t, 11, chunk.Size)
 	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", chunk.Hash)
+}
+
+func TestChunk_AppendBytes2(t *testing.T) {
+	var (
+		bigBytes     = []byte("hello")
+		tempDir      = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		trx          *gorm.DB
+		err          error
+		down         func(*testing.T)
+		chunk        *Chunk
+		writeCount   int
+		contentBytes = []byte("hello world")
+	)
+
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	chunk, err = CreateChunkFromBytes(bigBytes, &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 5, chunk.Size)
+	assert.Equal(t, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", chunk.Hash)
+
+	chunk2, err := CreateChunkFromBytes(contentBytes, &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 11, chunk2.Size)
+	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", chunk2.Hash)
+
+	chunkTmp, writeCount, err := chunk.AppendBytes([]byte(" world"), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, writeCount)
+	assert.Equal(t, 11, chunkTmp.Size)
+	assert.Equal(t, chunkTmp.ID, chunk2.ID)
+}
+
+func TestChunk_AppendBytes3(t *testing.T) {
+	var (
+		bigBytes   = []byte("hello")
+		tempDir    = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		trx        *gorm.DB
+		err        error
+		down       func(*testing.T)
+		chunk      *Chunk
+		writeCount int
+	)
+
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	chunk, err = CreateChunkFromBytes(bigBytes, &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 5, chunk.Size)
+	assert.Equal(t, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", chunk.Hash)
+
+	assert.Nil(t, trx.Create(&ObjectChunk{
+		ObjectID: 1,
+		ChunkID:  chunk.ID,
+		Number:   1,
+	}).Error)
+
+	assert.Nil(t, trx.Create(&ObjectChunk{
+		ObjectID: 2,
+		ChunkID:  chunk.ID,
+		Number:   1,
+	}).Error)
+
+	newChunk, writeCount, err := chunk.AppendBytes([]byte(" world"), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 6, writeCount)
+	assert.Equal(t, 11, newChunk.Size)
+	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", newChunk.Hash)
+	assert.True(t, newChunk.ID != chunk.ID)
 }

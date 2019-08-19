@@ -65,8 +65,10 @@ func (c Chunk) Path(rootPath *string) string {
 	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
 }
 
-// AppendBytes is used to append bytes to chunk
-func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (int, error) {
+// AppendBytes is used to append bytes to chunk. Firstly, this function will check whether
+// there is already a chunk its hash value is equal to the hash of complete content. If exist,
+// return it, otherwise, append content to origin chunk.
+func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, int, error) {
 	var (
 		file       *os.File
 		err        error
@@ -81,30 +83,49 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (int, error
 	}
 
 	if oldContent, err = ioutil.ReadFile(c.Path(rootPath)); err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 	buf.Write(oldContent)
 	buf.Write(p)
-	c.Size = buf.Len()
+
+	// calculate the hash value of complete content
 	if hash, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
-		return 0, err
+		return nil, 0, err
 	}
+
+	// find chunk by the hash value of complete content
+	if chunk, err := FindChunkByHash(hash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
+		return chunk, len(p), err
+	}
+
+	// if the current chunk is referenced by other objects, it should be copied and appended
+	if count, err := CountObjectChunkByChunkID(c.ID, db); err != nil {
+		return nil, 0, err
+	} else if count > 1 {
+		newChunk, err := CreateChunkFromBytes(buf.Bytes(), rootPath, db)
+		if err != nil {
+			return nil, 0, err
+		}
+		return newChunk, len(p), nil
+	}
+
+	c.Size = buf.Len()
 	c.Hash = hash
 
 	if file, err = os.OpenFile(c.Path(rootPath), os.O_APPEND|os.O_WRONLY, 0644); err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 	defer file.Close()
 
 	if writeCount, err = file.Write(p); err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
 	if err = db.Save(c).Error; err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
-	return writeCount, err
+	return c, writeCount, err
 }
 
 // CreateChunkFromBytes will crate a chunk from the specify byte content
