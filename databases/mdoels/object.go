@@ -112,11 +112,17 @@ func (o *Object) AppendFromReader(reader io.Reader, db *gorm.DB) (*Object, int, 
 	if object, err = FindObjectByHash(completeHashStr, db); err == nil && object != nil {
 		return object, len(allContent), nil
 	}
+	// determine if we need to copy the object
 
+	// get the last chunk of object, determine if we need to complete
+	// the last chunk
 	if lastChunk, err = o.LastChunk(db); err != nil {
 		return o, 0, err
 	}
 
+	// append the rest of content
+
+	return &Object{}, 0, nil
 }
 
 // FindObjectByHash will find object by the specify hash
