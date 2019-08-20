@@ -5,6 +5,7 @@
 package models
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -214,4 +215,26 @@ func TestChunk_AppendBytes3(t *testing.T) {
 	assert.Equal(t, 11, newChunk.Size)
 	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", newChunk.Hash)
 	assert.True(t, newChunk.ID != chunk.ID)
+}
+
+func TestCreateEmptyContentChunk(t *testing.T) {
+	var (
+		trx     *gorm.DB
+		err     error
+		down    func(*testing.T)
+		chunk   *Chunk
+		tempDir = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	)
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	chunk, err = CreateEmptyContentChunk(&tempDir, trx)
+	assert.Nil(t, err)
+	assert.True(t, chunk.ID > 0)
+	fmt.Println(tempDir)
 }

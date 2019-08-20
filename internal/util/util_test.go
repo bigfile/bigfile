@@ -5,6 +5,8 @@
 package util
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"os"
@@ -77,4 +79,11 @@ func TestSha256Hash2String(t *testing.T) {
 	sh, err := Sha256Hash2String([]byte(s))
 	assert.Nil(t, err)
 	assert.Equal(t, sh, h)
+}
+
+func TestSha256Hash2String2(t *testing.T) {
+	sh, err := Sha256Hash2String(nil)
+	assert.Nil(t, err)
+	h := sha256.New()
+	assert.Equal(t, sh, hex.EncodeToString(h.Sum(nil)))
 }

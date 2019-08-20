@@ -170,3 +170,34 @@ func FindChunkByHash(h string, db *gorm.DB) (*Chunk, error) {
 	var err = db.Where("hash = ?", h).First(&chunk).Error
 	return &chunk, err
 }
+
+// CreateEmptyContentChunk is used to create a chunk with empty content
+func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (*Chunk, error) {
+	var (
+		chunk            *Chunk
+		err              error
+		emptyContentHash string
+	)
+	if emptyContentHash, err = util.Sha256Hash2String(nil); err != nil {
+		return nil, err
+	}
+
+	if chunk, err = FindChunkByHash(emptyContentHash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
+		return chunk, err
+	}
+
+	chunk = &Chunk{
+		Size: 0,
+		Hash: emptyContentHash,
+	}
+
+	if err = db.Create(chunk).Error; err != nil {
+		return nil, err
+	}
+
+	if err = ioutil.WriteFile(chunk.Path(rootPath), nil, 0644); err != nil {
+		return nil, err
+	}
+
+	return chunk, nil
+}
