@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"labix.org/v2/mgo/bson"
+
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -276,4 +278,45 @@ func TestCreateObjectFromReader(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, hash, object.Hash)
 	assert.Equal(t, int(ChunkSize*2.5), object.Size)
+}
+
+func TestObject_FileCount(t *testing.T) {
+	var (
+		content = "hello world"
+		size    = len(content)
+		err     error
+	)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	hash, err := util.Sha256Hash2String([]byte(content))
+	assert.Nil(t, err)
+	object := &Object{
+		Size: size,
+		Hash: hash,
+	}
+	assert.Nil(t, trx.Save(object).Error)
+	file1 := &File{
+		UID:      bson.NewObjectId().Hex(),
+		ObjectID: object.ID,
+	}
+	assert.Nil(t, trx.Save(file1).Error)
+	assert.Equal(t, object.FileCount(trx), 1)
+}
+
+func TestObject_FileCount2(t *testing.T) {
+	var (
+		content = "hello world"
+		size    = len(content)
+		err     error
+	)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	hash, err := util.Sha256Hash2String([]byte(content))
+	assert.Nil(t, err)
+	object := &Object{
+		Size: size,
+		Hash: hash,
+	}
+	assert.Nil(t, trx.Save(object).Error)
+	assert.Equal(t, object.FileCount(trx), 0)
 }

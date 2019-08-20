@@ -29,6 +29,7 @@ type Object struct {
 	CreatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt"`
 	UpdatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 
+	Files        []File        `gorm:"foreignkey:objectId"`
 	Chunks       []Chunk       `gorm:"many2many:object_chunk;association_jointable_foreignkey:chunkId;jointable_foreignkey:objectId"`
 	ObjectChunks []ObjectChunk `gorm:"foreignkey:objectId"`
 }
@@ -36,6 +37,11 @@ type Object struct {
 // TableName represent the db table name
 func (o Object) TableName() string {
 	return "objects"
+}
+
+// FileCount count the files they are associated with this object
+func (o *Object) FileCount(db *gorm.DB) int {
+	return db.Model(o).Association("Files").Count()
 }
 
 // ChunkCount count the chunks of object and return
@@ -119,6 +125,9 @@ func (o *Object) AppendFromReader(reader io.Reader, db *gorm.DB) (*Object, int, 
 	if lastChunk, err = o.LastChunk(db); err != nil {
 		return o, 0, err
 	}
+
+	_ = allContentLen
+	_ = lastChunk
 
 	// append the rest of content
 
