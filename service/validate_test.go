@@ -4,10 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/jinzhu/gorm"
-
-	models "github.com/bigfile/bigfile/databases/mdoels"
-
 	"github.com/stretchr/testify/assert"
 )
 

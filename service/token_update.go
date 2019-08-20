@@ -9,7 +9,7 @@ import (
 	"errors"
 	"time"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"gopkg.in/go-playground/validator.v9"
 )
 

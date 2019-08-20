@@ -14,7 +14,7 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	janitor "github.com/json-iterator/go"

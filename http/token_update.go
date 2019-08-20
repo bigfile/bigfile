@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"time"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/service"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"

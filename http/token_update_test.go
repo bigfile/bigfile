@@ -14,10 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bigfile/bigfile/databases"
-
 	"github.com/bigfile/bigfile/config"
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )

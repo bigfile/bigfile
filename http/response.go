@@ -5,7 +5,7 @@
 package http
 
 import (
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/service"
 )
 
