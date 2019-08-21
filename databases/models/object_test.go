@@ -326,6 +326,7 @@ func TestCreateEmptyObject(t *testing.T) {
 	assert.Equal(t, emptyContentHash, hex.EncodeToString(stateHash.Sum(nil)))
 }
 
+// TestObject_AppendFromReader is used to test append content to an object
 func TestObject_AppendFromReader(t *testing.T) {
 	var (
 		h         = sha2562.New()
@@ -389,6 +390,8 @@ func TestObject_AppendFromReader(t *testing.T) {
 	assert.Equal(t, object.Hash, hex.EncodeToString(stateHash.Sum(nil)))
 }
 
+// TestObject_AppendFromReader2 is used to test that an object will be appended
+// be referenced by many files
 func TestObject_AppendFromReader2(t *testing.T) {
 	var (
 		h                 = sha2562.New()
@@ -447,4 +450,49 @@ func TestObject_AppendFromReader2(t *testing.T) {
 	assert.Equal(t, 3, object.ChunkCount(trx))
 	assert.Equal(t, originContentHash, object.Hash)
 	assert.NotEqual(t, object.ID, object2.ID)
+}
+
+// TestObject_AppendFromReader3 is used to test an object that consists of multiple
+// the same chunk
+func TestObject_AppendFromReader3(t *testing.T) {
+	var (
+		h         = sha2562.New()
+		oc        *ObjectChunk
+		err       error
+		size      int
+		tempDir   = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		randomStr = Random(uint(ChunkSize))
+		stateHash hash.Hash
+		object    *Object
+		object2   *Object
+		reader    = bytes.NewBuffer(randomStr)
+	)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	object, err = CreateObjectFromReader(reader, &tempDir, trx)
+	assert.Nil(t, err)
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+		down(t)
+	}()
+	_, err = h.Write(randomStr)
+	assert.Nil(t, err)
+	assert.Equal(t, hex.EncodeToString(h.Sum(nil)), object.Hash)
+	assert.Equal(t, ChunkSize, object.Size)
+	assert.Equal(t, 1, object.ChunkCount(trx))
+	oc, err = object.LastObjectChunk(trx)
+	assert.Nil(t, err)
+	stateHash, err = sha256.NewHashWithStateText(*oc.HashState)
+	assert.Nil(t, err)
+	assert.Equal(t, object.Hash, hex.EncodeToString(stateHash.Sum(nil)))
+
+	object2, size, err = object.AppendFromReader(bytes.NewReader(randomStr), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, ChunkSize, size)
+	assert.Equal(t, object2.ID, object.ID)
+	assert.Equal(t, 2, object2.ChunkCount(trx))
+	oc2, err := object2.LastObjectChunk(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, oc.ChunkID, oc2.ChunkID)
 }

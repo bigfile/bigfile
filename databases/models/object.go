@@ -134,7 +134,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 		return o, 0, err
 	}
 	// determine if we need to copy the object
-	if o.FileCount(db) == 1 {
+	if o.FileCount(db) <= 1 {
 		object.ID = o.ID
 		object.CreatedAt = o.CreatedAt
 		object.UpdatedAt = o.UpdatedAt
