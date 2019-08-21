@@ -27,16 +27,16 @@ func (c *CreateFilesTable20190820111006) Up(db *gorm.DB) error {
 	return db.Exec(`
 		CREATE TABLE IF NOT EXISTS files (
 		  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-		  appId BIGINT(20) UNSIGNED NOT NULL,
+		  appId BIGINT(20) UNSIGNED NOT NULL default 0,
 		  pid BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
 		  uid CHAR(32) NOT NULL,
-		  name VARCHAR(255) NOT NULL,
-		  ext VARCHAR(255) NOT NULL,
-		  objectId BIGINT(20) UNSIGNED NOT NULL,
-		  size BIGINT(20) UNSIGNED NOT NULL,
+		  name VARCHAR(255) NOT NULL default '',
+		  ext VARCHAR(255) NOT NULL default '',
+		  objectId BIGINT(20) UNSIGNED NOT NULL default 0,
+		  size BIGINT(20) UNSIGNED NOT NULL default 0,
 		  isDir TINYINT UNSIGNED NOT NULL DEFAULT 0,
 		  downloadCount BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
-		  hidden TINYINT UNSIGNED NOT NULL DEFAULT 1,
+		  hidden TINYINT UNSIGNED NOT NULL DEFAULT 0,
 		  createdAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 		  updatedAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 		  deletedAt timestamp(6) NULL DEFAULT NULL,
@@ -44,6 +44,7 @@ func (c *CreateFilesTable20190820111006) Up(db *gorm.DB) error {
 		  KEY objectId_idx (objectId),
 		  KEY appId_idx (appId),
 		  KEY deleted_at_idx (deletedAt),
+          UNIQUE appId_pid_name_unique (appId, pid, name),
 		  UNIQUE INDEX uid_UNIQUE (uid ASC))
 		ENGINE = InnoDB
 	`).Error
