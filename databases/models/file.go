@@ -12,12 +12,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bigfile/bigfile/internal/util"
 	"github.com/jinzhu/gorm"
 	"labix.org/v2/mgo/bson"
 )
 
 var (
-	ErrFileExisted = errors.New("file has already existed")
+	ErrFileExisted  = errors.New("file has already existed")
+	ErrOverwriteDir = errors.New("directory can't be overwritten")
+	ErrAppendToDir  = errors.New("can't append data to directory")
 )
 
 // File represent a file or a directory of system. If it's a file
@@ -39,14 +42,39 @@ type File struct {
 	UpdatedAt     time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 	DeletedAt     *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt"`
 
-	Object Object `gorm:"foreignkey:objectId"`
-	App    App    `gorm:"foreignkey:appId"`
-	Parent *File  `gorm:"foreignkey:id;association_foreignkey:pid"`
+	Object    Object    `gorm:"foreignkey:objectId"`
+	App       App       `gorm:"foreignkey:appId"`
+	Parent    *File     `gorm:"foreignkey:id;association_foreignkey:pid"`
+	Histories []History `gorm:"foreignkey:fileId"`
 }
 
 // TableName represent the name of files table
 func (f *File) TableName() string {
 	return "files"
+}
+
+// Path is used to get the complete path of file
+func (f *File) Path(db *gorm.DB) (string, error) {
+	var (
+		err     error
+		parts   []string
+		current = *f
+	)
+	for {
+		parts = append(parts, current.Name)
+		if current.PID == 0 {
+			break
+		}
+		temp := &File{}
+		if err = db.Where("id = ?", current.PID).Find(temp).Error; err != nil {
+			return "", err
+		}
+		current = *temp
+	}
+
+	util.ReverseSlice(parts)
+
+	return strings.Join(parts, "/"), nil
 }
 
 // UpdateParentSize is used to update parent size. note, size may be a negative number.
@@ -63,8 +91,62 @@ func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
 	return f.Parent.UpdateParentSize(size, db)
 }
 
+// OverWriteFromReader is used to overwrite the object
+func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) error {
+
+	if f.IsDir == 0 {
+		return ErrOverwriteDir
+	}
+
+	var (
+		err      error
+		path     string
+		object   *Object
+		sizeDiff int
+		history  = &History{
+			ObjectID: f.ObjectID,
+			FileID:   f.ID,
+			Path:     path,
+		}
+	)
+
+	if path, err = f.Path(db); err != nil {
+		return err
+	}
+	history.Path = path
+
+	if err := db.Save(history).Error; err != nil {
+		return err
+	}
+
+	if object, err = CreateObjectFromReader(reader, rootPath, db); err != nil {
+		return err
+	}
+
+	f.Object = *object
+	f.ObjectID = object.ID
+	f.Hidden = hidden
+	sizeDiff = object.Size - f.Size
+	f.Size += sizeDiff
+
+	if err = db.Save(f).Error; err != nil {
+		return err
+	}
+
+	if err = db.Preload("Parent").Find(f).Error; err != nil {
+		return err
+	}
+
+	return f.Parent.UpdateParentSize(sizeDiff, db)
+}
+
 // AppendFromReader is used to append content from reader to file
 func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) error {
+
+	if f.IsDir == 1 {
+		return ErrAppendToDir
+	}
+
 	var (
 		err    error
 		size   int
@@ -87,11 +169,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 		return err
 	}
 
-	if err = f.Parent.UpdateParentSize(size, db); err != nil {
-		return err
-	}
-
-	return nil
+	return f.Parent.UpdateParentSize(size, db)
 }
 
 // CreateOrGetLastDirectory is used to get last level directory

@@ -183,3 +183,67 @@ func TestFile_AppendFromReader(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, ChunkSize*2+145+256, root.Size)
 }
+
+func TestFile_Path(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	dir, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+	path, err := dir.Path(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/images", path)
+
+	file := &File{UID: bson.NewObjectId().Hex(), PID: dir.ID, Name: "test.png", AppID: app.ID}
+	assert.Nil(t, trx.Save(file).Error)
+	path, err = file.Path(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/images/test.png", path)
+}
+
+func TestFile_OverWriteFromReader(t *testing.T) {
+	var (
+		trx             *gorm.DB
+		app             *App
+		err             error
+		down            func(*testing.T)
+		file            *File
+		object          Object
+		tempDir         = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		randomBytes     = Random(uint(127))
+		randomBytesHash string
+		reader          = bytes.NewReader(randomBytes)
+	)
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file, err = CreateFileFromReader(app, "/test/random/content/txt.byte", reader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	randomBytesHash, err = util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, file.Object.Hash)
+	object = file.Object
+
+	root, err := CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 127, root.Size)
+
+	randomBytes = Random(uint(120))
+	reader = bytes.NewReader(randomBytes)
+	assert.Nil(t, file.OverWriteFromReader(reader, int8(0), &tempDir, trx))
+	assert.NotEqual(t, file.Object.ID, object.ID)
+	randomBytesHash, err = util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, file.Object.Hash)
+	assert.Equal(t, 1, trx.Model(file).Association("Histories").Count())
+
+	root, err = CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 120, root.Size)
+}

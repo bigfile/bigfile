@@ -32,6 +32,7 @@ type Object struct {
 	Files        []File        `gorm:"foreignkey:objectId"`
 	Chunks       []Chunk       `gorm:"many2many:object_chunk;association_jointable_foreignkey:chunkId;jointable_foreignkey:objectId"`
 	ObjectChunks []ObjectChunk `gorm:"foreignkey:objectId"`
+	Histories    []History     `gorm:"foreignkey:objectId"`
 }
 
 // TableName represent the db table name
@@ -134,7 +135,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 		return o, 0, err
 	}
 	// determine if we need to copy the object
-	if o.FileCount(db) <= 1 {
+	if o.FileCount(db)+db.Model(o).Association("Histories").Count() <= 1 {
 		object.ID = o.ID
 		object.CreatedAt = o.CreatedAt
 		object.UpdatedAt = o.UpdatedAt

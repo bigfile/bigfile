@@ -427,8 +427,8 @@ func TestObject_AppendFromReader2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, object.Hash, hex.EncodeToString(stateHash.Sum(nil)))
 
-	file1 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID}
-	file2 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID}
+	file1 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID, Name: "file1"}
+	file2 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID, Name: "file2"}
 	assert.Nil(t, trx.Save(file1).Error)
 	assert.Nil(t, trx.Save(file2).Error)
 
