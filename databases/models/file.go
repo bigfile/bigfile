@@ -94,7 +94,7 @@ func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
 // OverWriteFromReader is used to overwrite the object
 func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) error {
 
-	if f.IsDir == 0 {
+	if f.IsDir == 1 {
 		return ErrOverwriteDir
 	}
 
