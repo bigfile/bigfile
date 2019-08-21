@@ -139,6 +139,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 		object.CreatedAt = o.CreatedAt
 		object.UpdatedAt = o.UpdatedAt
 	} else {
+		// copy the object chunk
 		for index := range object.ObjectChunks {
 			object.ObjectChunks[index].ID = 0
 		}
