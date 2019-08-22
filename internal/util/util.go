@@ -79,3 +79,10 @@ func Sha256Hash2String(p []byte) (string, error) {
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
+
+// IsRecordNotFound is used to determine that some error is RecordNotFound.
+// when we use gorm to find models, if there are not related records, an error
+// "record not found" will be returned.
+func IsRecordNotFound(err error) bool {
+	return err != nil && err.Error() == "record not found"
+}

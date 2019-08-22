@@ -6,7 +6,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -43,27 +42,11 @@ func (t *TokenCreate) Validate() ValidateErrors {
 	}
 
 	if err := ValidateApp(t.DB, t.App); err != nil {
-		var (
-			field  = "TokenCreate.App"
-			appErr = &ValidateError{
-				Code:      PreDefinedValidateErrors[field].Code,
-				Field:     field,
-				Exception: err,
-			}
-		)
-		validateErrors = append(validateErrors, appErr)
+		validateErrors = append(validateErrors, generateErrorByField("TokenCreate.App", err))
 	}
 
 	if !ValidatePath(t.Path) {
-		var (
-			field   = "TokenCreate.Path"
-			pathErr = &ValidateError{
-				Code:      PreDefinedValidateErrors[field].Code,
-				Field:     field,
-				Exception: errors.New("path is not a legal unix path"),
-			}
-		)
-		validateErrors = append(validateErrors, pathErr)
+		validateErrors = append(validateErrors, generateErrorByField("TokenCreate.Path", ErrInvalidPath))
 	}
 
 	return validateErrors

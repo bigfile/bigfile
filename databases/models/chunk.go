@@ -23,6 +23,15 @@ import (
 // ChunkSize represent chunk size, default: 1MB
 const ChunkSize = 1 << 20
 
+var (
+	// ErrInvalidChunkID when try to get the path of chunk, if the id of chunk
+	// is less than 10000, this error will be panic
+	ErrInvalidChunkID = errors.New("invalid chunk id")
+	// ErrChunkExceedLimit the size of chunk is limited, if the content that is
+	// more than ChunkSize is appended to chunk, it will panic this error
+	ErrChunkExceedLimit = fmt.Errorf("total length exceed limit: %d bytes", ChunkSize)
+)
+
 // Chunk represents every chunk of file
 type Chunk struct {
 	ID        uint64    `gorm:"type:BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT;primary_key"`
@@ -44,7 +53,7 @@ func (c Chunk) Path(rootPath *string) string {
 		rootPath = &config.DefaultConfig.Chunk.RootPath
 	}
 	if c.ID < 10000 {
-		panic(errors.New("invalid chunk id"))
+		panic(ErrInvalidChunkID)
 	}
 	idStr := strconv.FormatUint(c.ID, 10)
 	parts := make([]string, (len(idStr)/3)+1)
@@ -79,7 +88,7 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, in
 	)
 
 	if len(p) > ChunkSize-c.Size {
-		panic(fmt.Errorf("total length exceed limit: %d bytes", ChunkSize))
+		panic(ErrChunkExceedLimit)
 	}
 
 	if oldContent, err = ioutil.ReadFile(c.Path(rootPath)); err != nil {

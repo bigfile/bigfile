@@ -18,9 +18,12 @@ import (
 )
 
 var (
-	ErrFileExisted  = errors.New("file has already existed")
+	// ErrFileExisted represent that the path has been occupied
+	ErrFileExisted = errors.New("file has already existed")
+	// ErrOverwriteDir represent that try to overwrite some directory
 	ErrOverwriteDir = errors.New("directory can't be overwritten")
-	ErrAppendToDir  = errors.New("can't append data to directory")
+	// ErrAppendToDir represent that try to append content to directory
+	ErrAppendToDir = errors.New("can't append data to directory")
 )
 
 // File represent a file or a directory of system. If it's a file
@@ -133,7 +136,7 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 		return err
 	}
 
-	if err = db.Preload("Parent").Find(f).Error; err != nil {
+	if err = db.Preload("Parent").Preload("App").Find(f).Error; err != nil {
 		return err
 	}
 
@@ -152,7 +155,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 		size   int
 		object *Object
 	)
-	if err = db.Preload("Object").Preload("Parent").Find(f).Error; err != nil {
+	if err = db.Preload("Object").Preload("Parent").Preload("App").Find(f).Error; err != nil {
 		return err
 	}
 
@@ -194,7 +197,7 @@ func CreateOrGetLastDirectory(app *App, path string, db *gorm.DB) (*File, error)
 		}
 		parent = file
 	}
-
+	parent.App = *app
 	return parent, nil
 }
 
@@ -204,9 +207,12 @@ func CreateOrGetRootPath(app *App, db *gorm.DB) (*File, error) {
 		file = &File{}
 		err  error
 	)
-	err = db.Where(
+	if err = db.Where(
 		&File{AppID: app.ID, PID: 0, Name: ""}).Assign(
-		&File{IsDir: 1, UID: bson.NewObjectId().Hex()}).FirstOrCreate(file).Error
+		&File{IsDir: 1, UID: bson.NewObjectId().Hex()}).FirstOrCreate(file).Error; err == nil {
+		file.App = *app
+	}
+
 	return file, err
 }
 
@@ -243,6 +249,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 		Ext:      strings.TrimPrefix(filepath.Ext(fileName), "."),
 		Hidden:   hidden,
 		Object:   *object,
+		App:      *app,
 	}
 
 	if err = db.Save(file).Error; err != nil {
@@ -275,5 +282,6 @@ func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
 		}
 		parent = file
 	}
+	parent.App = *app
 	return parent, nil
 }

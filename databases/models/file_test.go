@@ -32,6 +32,7 @@ func TestCreateOrGetRootPath(t *testing.T) {
 	file, err := CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, app.ID, file.AppID)
+	assert.Equal(t, app.ID, file.App.ID)
 }
 
 func TestCreateOrGetLastDirectory(t *testing.T) {
@@ -41,6 +42,7 @@ func TestCreateOrGetLastDirectory(t *testing.T) {
 	file, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, app.ID, file.AppID)
+	assert.Equal(t, app.ID, file.App.ID)
 	assert.Equal(t, int8(1), file.IsDir)
 	assert.Equal(t, "images", file.Name)
 	var subDirCount int
@@ -94,6 +96,7 @@ func TestFindFileByPath(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, int8(0), testPngFile.IsDir)
 	assert.Equal(t, app.ID, testPngFile.AppID)
+	assert.Equal(t, app.ID, testPngFile.App.ID)
 	assert.Equal(t, "test.png", testPngFile.Name)
 	assert.Equal(t, imagesDir.ID, testPngFile.PID)
 
@@ -132,6 +135,9 @@ func TestCreateFileFromReader(t *testing.T) {
 	assert.Equal(t, "random.txt", file.Name)
 	assert.Equal(t, ChunkSize*2+145, file.Object.Size)
 	assert.Equal(t, randomBytesHash, file.Object.Hash)
+	assert.Equal(t, app.ID, file.App.ID)
+	assert.Equal(t, app.ID, file.AppID)
+	assert.Equal(t, "txt", file.Ext)
 
 	root, err := CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
@@ -178,6 +184,8 @@ func TestFile_AppendFromReader(t *testing.T) {
 	assert.Equal(t, hex.EncodeToString(h.Sum(nil)), file.Object.Hash)
 	assert.Equal(t, ChunkSize*2+145+256, file.Size)
 	assert.Equal(t, ChunkSize*2+145+256, file.Object.Size)
+	assert.Equal(t, app.ID, file.App.ID)
+	assert.Equal(t, app.ID, file.AppID)
 
 	root, err := CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
@@ -241,6 +249,8 @@ func TestFile_OverWriteFromReader(t *testing.T) {
 	randomBytesHash, err = util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
 	assert.Equal(t, randomBytesHash, file.Object.Hash)
+	assert.Equal(t, app.ID, file.App.ID)
+	assert.Equal(t, app.ID, file.AppID)
 	assert.Equal(t, 1, trx.Model(file).Association("Histories").Count())
 
 	root, err = CreateOrGetRootPath(app, trx)

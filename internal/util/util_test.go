@@ -7,6 +7,7 @@ package util
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -86,4 +87,9 @@ func TestSha256Hash2String2(t *testing.T) {
 	assert.Nil(t, err)
 	h := sha256.New()
 	assert.Equal(t, sh, hex.EncodeToString(h.Sum(nil)))
+}
+
+func TestIsRecordNotFound(t *testing.T) {
+	assert.False(t, IsRecordNotFound(errors.New("")))
+	assert.True(t, IsRecordNotFound(errors.New("record not found")))
 }

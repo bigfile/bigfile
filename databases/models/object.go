@@ -296,14 +296,6 @@ func appendContentToObject(obj *Object, oc []ObjectChunk, readerContent []byte, 
 		})
 	}
 
-	if !isTesting {
-		db = db.Begin()
-		defer func() {
-			if rErr := recover(); rErr != nil || err != nil {
-				db.Rollback()
-			}
-		}()
-	}
 	if err = db.Save(obj).Error; err != nil {
 		return err
 	}
@@ -313,10 +305,6 @@ func appendContentToObject(obj *Object, oc []ObjectChunk, readerContent []byte, 
 		if err := db.Save(&objectChunk).Error; err != nil {
 			return err
 		}
-	}
-
-	if !isTesting {
-		return db.Commit().Error
 	}
 
 	return nil
