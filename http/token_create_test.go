@@ -16,12 +16,13 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	janitor "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 )
 
+// direct test TokenCreateHandler
 func TestTokenCreateHandler(t *testing.T) {
 	var (
 		readOnly       bool
@@ -61,6 +62,8 @@ func TestTokenCreateHandler(t *testing.T) {
 	assert.Equal(t, availableTimes, int(respAvailableTimes))
 }
 
+// test TokenCreateHandler in a complete request, it will go through kinds of
+// middleware. In this test case, we omit optional parameters and check the result.
 func TestTokenCreateHandler2(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
@@ -96,6 +99,9 @@ func TestTokenCreateHandler2(t *testing.T) {
 	assert.Nil(t, respData["expiredAt"])
 }
 
+// test TokenCreateHandler in a complete request, it will go through kinds of
+// middleware. But in this test case, we set optional parameters manually and
+// check the result.
 func TestTokenCreateHandler3(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
@@ -139,6 +145,9 @@ func TestTokenCreateHandler3(t *testing.T) {
 	assert.Equal(t, int64(respExpiredAt), expiredAtUnix)
 }
 
+// TestTokenCreateHandler4 is used to test this case.
+// If there are errors in parameters passed to service.TokenCreate,
+// some errors should be raised.
 func TestTokenCreateHandler4(t *testing.T) {
 	app, trx, down, err := models.NewAppForTest(nil, t)
 	assert.Nil(t, err)
@@ -190,7 +199,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var (
 			w    = httptest.NewRecorder()
-			body = signRequestParams(map[string]interface{}{
+			body = getParamsSignBody(map[string]interface{}{
 				"appUid":         app.UID,
 				"availableTimes": 1000,
 				"expiredAt":      expiredAtUnix,
@@ -204,7 +213,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 		req, _ := http.NewRequest("POST", api, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		router.ServeHTTP(w, req)
-		if w.Code != 200 {
+		if w.Code != http.StatusOK {
 			b.Fatal("response code should be 200")
 		}
 	}

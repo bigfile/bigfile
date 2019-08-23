@@ -6,7 +6,13 @@ package service
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+)
+
+var (
+	// ErrInvalidPath represent that path is not a legal unix path
+	ErrInvalidPath = errors.New("path is not a legal unix path")
 )
 
 // ValidateError is defined validate error information
@@ -76,6 +82,7 @@ func (v ValidateErrors) ContainsErrCode(code int) bool {
 var (
 	// PreDefinedValidateErrors map service field to specific error
 	PreDefinedValidateErrors = map[string]*ValidateError{
+		// TokenCreate Field Errors
 		"TokenCreate.App": {
 			Code:  10002,
 			Field: "TokenCreate.App",
@@ -106,6 +113,8 @@ var (
 			Field: "TokenCreate.ReadOnly",
 			Msg:   "readOnly of token is 0 or 1",
 		},
+
+		// TokenUpdate Field Errors
 		"TokenUpdate.Token": {
 			Code:  10008,
 			Field: "TokenUpdate.Token",
@@ -141,5 +150,50 @@ var (
 			Field: "TokenUpdate.AvailableTimes",
 			Msg:   "availableTimes must be a integer, and must be greater than -1, it's optional",
 		},
+
+		// FileCreate Field Errors
+		"FileCreate.App": {
+			Code:  10015,
+			Field: "FileCreate.App",
+			Msg:   "can't find specific application by input params",
+		},
+		"FileCreate.Token": {
+			Code:  10016,
+			Field: "FileCreate.Token",
+			Msg:   "can't find specific token by input params",
+		},
+		"FileCreate.Path": {
+			Code:  10017,
+			Field: "FileCreate.Path",
+			Msg:   "path of file or directory can't be empty, max of length is 1000, and must be a legal unix path",
+		},
+		"FileCreate.Hidden": {
+			Code:  10018,
+			Field: "FileCreate.Hidden",
+			Msg:   "hidden must be 0 or 1",
+		},
+		"FileCreate.Overwrite": {
+			Code:  10019,
+			Field: "FileCreate.Overwrite",
+			Msg:   "overwrite must be 0 or 1",
+		},
+		"FileCreate.Rename": {
+			Code:  10020,
+			Field: "FileCreate.Rename",
+			Msg:   "rename must be 0 or 1",
+		},
+		"FileCreate.Append": {
+			Code:  10021,
+			Field: "FileCreate.Append",
+			Msg:   "append must be 0 or 1",
+		},
 	}
 )
+
+func generateErrorByField(field string, err error) *ValidateError {
+	return &ValidateError{
+		Code:      PreDefinedValidateErrors[field].Code,
+		Field:     field,
+		Exception: err,
+	}
+}

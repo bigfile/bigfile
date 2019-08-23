@@ -11,8 +11,8 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
-	models "github.com/bigfile/bigfile/databases/mdoels"
 	"github.com/bigfile/bigfile/databases/migrate"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 	"github.com/olekukonko/tablewriter"

@@ -113,9 +113,6 @@ func (m *MigrationCollection) Upgrade() {
 // represents the number of fallback versions.
 func (m *MigrationCollection) Rollback(step uint) {
 	fallbackTo := m.MaxBatch() - step + 1
-	if fallbackTo < 1 {
-		return
-	}
 	var migrations []MigrationModel
 	m.connection.Where("batch >= ?", fallbackTo).Order("id desc").Find(&migrations)
 	for _, migration := range migrations {

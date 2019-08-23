@@ -145,7 +145,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 		{
 			Name:      "migrate:rollback",
 			Usage:     "rollback database",
-			UsageText: "migrate rollback [command options]",
+			UsageText: "migrate:rollback [command options]",
 			Category:  cmdCategory,
 			Flags: []cli.Flag{
 				&cli.IntFlag{
@@ -158,6 +158,24 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 			Action: func(context *cli.Context) error {
 				migrate.DefaultMC.Rollback(uint(context.Int("step")))
 				fmt.Println("\033[31mRollback: done!\033[0m")
+				return nil
+			},
+			Before: func(context *cli.Context) error {
+				connection, err = databases.NewConnection(&config.DefaultConfig.Database)
+				migrate.DefaultMC.SetConnection(connection)
+				return err
+			},
+		},
+		{
+			Name:      "migrate:refresh",
+			Usage:     "refresh database",
+			UsageText: "migrate:refresh",
+			Category:  cmdCategory,
+			Action: func(context *cli.Context) error {
+				step := migrate.DefaultMC.MaxBatch()
+				migrate.DefaultMC.Rollback(step)
+				migrate.DefaultMC.Upgrade()
+				fmt.Println("\033[31mRefresh: done!\033[0m")
 				return nil
 			},
 			Before: func(context *cli.Context) error {

@@ -8,7 +8,7 @@ import (
 	"errors"
 	"regexp"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/jinzhu/gorm"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -26,6 +26,31 @@ func ValidateApp(db *gorm.DB, app *models.App) error {
 	if _, err := models.FindAppByUID(app.UID, db); err != nil {
 		return err
 	}
+	return nil
+}
+
+// ValidateToken is used to validate whether the token is valid
+func ValidateToken(db *gorm.DB, ip *string, canReadOnly bool, token *models.Token) error {
+	var err error
+	if token == nil {
+		return errors.New("invalid token")
+	}
+	if token, err = models.FindTokenByUID(token.UID, db); err != nil {
+		return err
+	}
+
+	if ip != nil && !token.AllowIPAccess(*ip) {
+		return errors.New("token can't be used by this ip")
+	}
+
+	if token.AvailableTimes != -1 && token.AvailableTimes <= 0 {
+		return errors.New("the available times of token has already exhausted")
+	}
+
+	if !canReadOnly && token.ReadOnly == 1 {
+		return errors.New("this token is read only")
+	}
+
 	return nil
 }
 

@@ -14,7 +14,7 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	janitor "github.com/json-iterator/go"
@@ -42,10 +42,13 @@ func (bw *bodyWriter) Write(p []byte) (int, error) {
 // It's should be put behind ConfigContextMiddleware
 func RecordRequestMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+		var (
+			db        = ctx.MustGet("db").(*gorm.DB)
+			bw        = &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+			reqRecord = models.MustNewHTTPRequest(ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL.String(), db)
+		)
+
 		ctx.Writer = bw
-		db := ctx.MustGet("db").(*gorm.DB)
-		reqRecord := models.MustNewHTTPRequest(ctx.ClientIP(), ctx.Request.Method, ctx.Request.URL.String(), db)
 		ctx.Set("requestId", int64(reqRecord.ID))
 		ctx.Set("reqRecord", reqRecord)
 		ctx.Next()
@@ -105,6 +108,46 @@ func ParseAppMiddleware() gin.HandlerFunc {
 	}
 }
 
+// ParseTokenMiddleware is used to parse request context and get a token
+// It's should be put behind RecordRequestMiddleware
+func ParseTokenMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var (
+			db        = ctx.MustGet("db").(*gorm.DB)
+			err       error
+			input     TokenInput
+			token     *models.Token
+			requestID = ctx.GetInt64("requestId")
+			reqRecord = ctx.MustGet("reqRecord").(*models.Request)
+		)
+		if err = ctx.ShouldBind(&input); err == nil {
+			if token, err = models.FindTokenByUID(input.Token, db); err != nil {
+				ctx.AbortWithStatusJSON(400, &Response{
+					RequestID: requestID,
+					Success:   false,
+					Errors: map[string][]string{
+						"token": {"token find failed"},
+					},
+				})
+			} else {
+				reqRecord.Token = &token.UID
+				reqRecord.AppID = &token.AppID
+				ctx.Set("app", &token.App)
+				ctx.Set("token", token)
+			}
+		} else {
+			ctx.AbortWithStatusJSON(400, &Response{
+				RequestID: requestID,
+				Success:   false,
+				Errors: map[string][]string{
+					"token": {err.Error()},
+				},
+			})
+		}
+		ctx.Next()
+	}
+}
+
 // ConfigContextMiddleware will config context for each request. such as: db connection
 func ConfigContextMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -135,9 +178,38 @@ func SignWithAppMiddleware(input interface{}) gin.HandlerFunc {
 
 		} else {
 			ctx.Set("inputParam", input)
-			appValue, _ := ctx.Get("app")
-			app := appValue.(*models.App)
+			app := ctx.MustGet("app").(*models.App)
 			if !ValidateRequestSignature(ctx, app.Secret) {
+				ctx.AbortWithStatusJSON(400, &Response{
+					RequestID: ctx.GetInt64("requestId"),
+					Success:   false,
+					Errors: map[string][]string{
+						"sign": {"request param sign error"},
+					},
+				})
+			}
+		}
+		ctx.Next()
+	}
+}
+
+// SignWithTokenMiddleware will validate request signature of request.
+// It's should be put behind SignWithTokenMiddleware
+func SignWithTokenMiddleware(input interface{}) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := ctx.ShouldBind(input); err != nil {
+			ctx.AbortWithStatusJSON(400, &Response{
+				RequestID: ctx.GetInt64("requestId"),
+				Success:   false,
+				Errors: map[string][]string{
+					"inputParamError": {err.Error()},
+				},
+			})
+
+		} else {
+			ctx.Set("inputParam", input)
+			token := ctx.MustGet("token").(*models.Token)
+			if token.Secret != nil && !ValidateRequestSignature(ctx, *token.Secret) {
 				ctx.AbortWithStatusJSON(400, &Response{
 					RequestID: ctx.GetInt64("requestId"),
 					Success:   false,

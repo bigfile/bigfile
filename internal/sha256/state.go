@@ -86,8 +86,11 @@ func GetHashState(digest hash.Hash) (*State, error) {
 	)
 	// sha256.digest.h
 	rfh := digestElem.FieldByName("h")
-	rfh = reflect.NewAt(rfh.Type(), unsafe.Pointer(rfh.UnsafeAddr())).Elem()
-	h = rfh.Interface().([8]uint32)
+	for i := 0; i < rfh.Len(); i++ {
+		h[i] = *((*uint32)(unsafe.Pointer(rfh.Index(i).UnsafeAddr())))
+	}
+	//rfh = reflect.NewAt(rfh.Type(), unsafe.Pointer(rfh.UnsafeAddr())).Elem()
+	//h = rfh.Interface().([8]uint32)
 
 	// sha256.digest.x
 	rfx := digestElem.FieldByName("x")

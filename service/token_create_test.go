@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )

@@ -8,13 +8,14 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
@@ -265,4 +266,134 @@ func TestBodyWriter_Write(t *testing.T) {
 	n, err := bw.Write([]byte("hello"))
 	assert.Nil(t, err)
 	assert.True(t, n == 5)
+}
+
+// TestParseTokenMiddleware is used to test TestParseTokenMiddleware, assume that
+// not provide token value
+func TestParseTokenMiddleware(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	ctx.Set("db", db)
+	ctx.Set("reqRecord", reqRecord)
+	ctx.Set("requestId", int64(reqRecord.ID))
+	ParseTokenMiddleware()(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "Error:Field validation for 'Token' failed on the 'required' tag")
+}
+
+// TestParseTokenMiddleware is used to test TestParseTokenMiddleware, assume that
+// provide a fake token value
+func TestParseTokenMiddleware2(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("token=123"))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	db, down := models.SetUpTestCaseWithTrx(nil, t)
+	defer down(t)
+
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	ctx.Set("db", db)
+	ctx.Set("reqRecord", reqRecord)
+	ctx.Set("requestId", int64(reqRecord.ID))
+	ParseTokenMiddleware()(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "token find failed")
+}
+
+func TestParseTokenMiddleware3(t *testing.T) {
+	token, db, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("token="+token.UID))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	ctx.Set("db", db)
+	ctx.Set("reqRecord", reqRecord)
+	ctx.Set("requestId", int64(reqRecord.ID))
+	ParseTokenMiddleware()(ctx)
+
+	assert.Equal(t, *reqRecord.Token, token.UID)
+	app := ctx.MustGet("app").(*models.App)
+	assert.Equal(t, app.ID, token.AppID)
+	assert.Equal(t, app.ID, token.App.ID)
+	ctx.MustGet("token").(*models.Token).ID = token.ID
+}
+
+func TestSignWithTokenMiddleware(t *testing.T) {
+
+	type TestInput struct {
+		A string `form:"a" binding:"required"`
+		B int64  `form:"b" binding:"required"`
+		C int64  `form:"c" binding:"required"`
+		D int    `form:"d"`
+	}
+
+	var it = &TestInput{}
+
+	token, db, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	reqRecord := models.MustNewRequestWithProtocol("http", db)
+	ctx.Set("db", db)
+	ctx.Set("token", token)
+	ctx.Set("reqRecord", reqRecord)
+	ctx.Set("requestId", int64(reqRecord.ID))
+
+	// parse param error
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("a=1&b=2&d=1"))
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	SignWithTokenMiddleware(it)(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "Error:Field validation for 'C' failed on the 'required' tag")
+	bw.body.Reset()
+
+	// sign wrongly
+	secret := models.RandomWithMd5(127)
+	token.Secret = &secret
+	assert.Nil(t, db.Save(token).Error)
+
+	ctx.Request, err = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("a=1&b=2&c=3&sign=sign"))
+	assert.Nil(t, err)
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	SignWithTokenMiddleware(&TestInput{})(ctx)
+	assert.Equal(t, 400, ctx.Writer.Status())
+	assert.Contains(t, bw.body.String(), "request param sign error")
+	bw.body.Reset()
+
+	// sign correctly
+	sign := SignStrWithSecret("a=1&b=2&c=3", secret)
+	bodyWithSign := fmt.Sprintf("a=1&b=2&c=3&sign=%s", sign)
+	ctx.Request, err = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(bodyWithSign))
+	assert.Nil(t, err)
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	SignWithTokenMiddleware(&TestInput{})(ctx)
+	assert.Equal(t, 0, bw.body.Len())
+	bw.body.Reset()
+
+	// dont need to sign, because the secret of token is nil
+	token.Secret = nil
+	assert.Nil(t, db.Save(token).Error)
+	ctx.Request, err = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("a=1&b=2&c=3&sign=sign"))
+	assert.Nil(t, err)
+	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+	SignWithTokenMiddleware(&TestInput{})(ctx)
+	assert.Equal(t, 0, bw.body.Len())
+	bw.body.Reset()
 }

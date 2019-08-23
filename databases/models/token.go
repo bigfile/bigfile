@@ -5,6 +5,7 @@
 package models
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -45,6 +46,14 @@ func (t *Token) Scope() string {
 	return t.Path
 }
 
+// PathWithScope will return a complete path with scope of token
+func (t *Token) PathWithScope(path string) string {
+	return fmt.Sprintf(
+		"%s/%s",
+		strings.TrimSuffix(t.Path, "/"), strings.Trim(path, "/"),
+	)
+}
+
 // BeforeSave will be called before token saved
 func (t *Token) BeforeSave() (err error) {
 	if !strings.HasPrefix(t.Path, "/") {
@@ -60,6 +69,18 @@ func (t *Token) AllowIPAccess(ip string) bool {
 		return true
 	}
 	return strings.Contains(*t.IP, ip)
+}
+
+// UpdateAvailableTimes is used to update the available times of this token
+func (t *Token) UpdateAvailableTimes(inc int, db *gorm.DB) error {
+	if t.AvailableTimes == -1 {
+		return nil
+	}
+	if err := db.Model(t).UpdateColumn("availableTimes", gorm.Expr("availableTimes + ?", inc)).Error; err != nil {
+		return err
+	}
+	t.AvailableTimes--
+	return nil
 }
 
 // NewToken will generate a token by input params

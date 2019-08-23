@@ -6,10 +6,9 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -42,15 +41,7 @@ func (t *TokenUpdate) Validate() ValidateErrors {
 
 	if t.Path != nil {
 		if !ValidatePath(*t.Path) {
-			var (
-				field   = "TokenCreate.Path"
-				pathErr = &ValidateError{
-					Code:      PreDefinedValidateErrors[field].Code,
-					Field:     field,
-					Exception: errors.New("path is not a legal unix path"),
-				}
-			)
-			validateErrors = append(validateErrors, pathErr)
+			validateErrors = append(validateErrors, generateErrorByField("TokenCreate.Path", ErrInvalidPath))
 		}
 	}
 
@@ -63,12 +54,6 @@ func (t *TokenUpdate) Execute(ctx context.Context) (result interface{}, err erro
 	var (
 		token *models.Token
 	)
-
-	defer func() {
-		if recover() != nil || err != nil {
-			t.DB.Rollback()
-		}
-	}()
 
 	if err = t.CallBefore(ctx, t); err != nil {
 		return nil, err

@@ -14,10 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bigfile/bigfile/databases"
-
 	"github.com/bigfile/bigfile/config"
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -112,7 +111,7 @@ func TestTokenUpdateHandler3(t *testing.T) {
 		api       = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/update")
 		expiredAt = time.Now().Add(time.Hour).Unix()
 		secret    = models.NewSecret()
-		body      = signRequestParams(map[string]interface{}{
+		body      = getParamsSignBody(map[string]interface{}{
 			"appUid":         app.UID,
 			"nonce":          models.RandomWithMd5(32),
 			"token":          token.UID,
@@ -141,7 +140,7 @@ func TestTokenUpdateHandler3(t *testing.T) {
 }
 
 func BenchmarkTokenUpdateHandler(b *testing.B) {
-	b.StartTimer()
+	b.StopTimer()
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -174,7 +173,7 @@ func BenchmarkTokenUpdateHandler(b *testing.B) {
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		body := signRequestParams(map[string]interface{}{
+		body := getParamsSignBody(map[string]interface{}{
 			"appUid":         app.UID,
 			"nonce":          models.RandomWithMd5(32),
 			"token":          token.UID,

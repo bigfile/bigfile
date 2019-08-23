@@ -29,6 +29,18 @@ func (app *App) TableName() string {
 	return "apps"
 }
 
+// AfterCreate hooks will be called automatically after app created
+func (app *App) AfterCreate(tx *gorm.DB) error {
+	var file = &File{
+		UID:   bson.NewObjectId().Hex(),
+		PID:   0,
+		AppID: app.ID,
+		Name:  "",
+		IsDir: 1,
+	}
+	return tx.Save(file).Error
+}
+
 // NewApp generate a new application by name and note
 func NewApp(name string, note *string, db *gorm.DB) (*App, error) {
 	var (

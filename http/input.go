@@ -13,3 +13,8 @@ type AppUIDInput struct {
 type NonceInput struct {
 	Nonce *string `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
 }
+
+// TokenInput represent `token` request param
+type TokenInput struct {
+	Token string `form:"token" binding:"required"`
+}

@@ -132,3 +132,15 @@ func TestFindAppByUIDWithTrashed(t *testing.T) {
 func TestApp_TableName(t *testing.T) {
 	assert.Equal(t, (&App{}).TableName(), "apps")
 }
+
+func TestApp_AfterCreate(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Equal(t, err, nil)
+	defer down(t)
+
+	file := &File{}
+	assert.Nil(t, trx.Where("appId = ?", app.ID).Find(file).Error)
+	assert.True(t, file.ID > 0)
+	assert.Equal(t, file.AppID, app.ID)
+	assert.Equal(t, int8(1), file.IsDir)
+}

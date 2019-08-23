@@ -5,8 +5,9 @@
 package http
 
 import (
-	models "github.com/bigfile/bigfile/databases/mdoels"
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/service"
+	"github.com/jinzhu/gorm"
 )
 
 // Response represent http response for client
@@ -18,17 +19,21 @@ type Response struct {
 }
 
 // generateErrors is used to generate errors
-func generateErrors(err error) map[string][]string {
+func generateErrors(err error, key string) map[string][]string {
 
 	if err == nil {
 		return nil
+	}
+
+	if key == "" {
+		key = "system"
 	}
 
 	if vErr, ok := err.(service.ValidateErrors); ok {
 		return vErr.MapFieldErrors()
 	}
 	return map[string][]string{
-		"system": {err.Error()},
+		key: {err.Error()},
 	}
 }
 
@@ -50,4 +55,33 @@ func tokenResp(token *models.Token) map[string]interface{} {
 		"path":           token.Path,
 		"secret":         token.Secret,
 	}
+}
+
+// fileResp is used to generate file json response
+func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
+
+	var (
+		err    error
+		path   string
+		result map[string]interface{}
+	)
+
+	if path, err = file.Path(db); err != nil {
+		return nil, err
+	}
+
+	result = map[string]interface{}{
+		"fileUID": file.UID,
+		"path":    path,
+		"size":    file.Size,
+		"isDir":   file.IsDir,
+		"hidden":  file.Hidden,
+	}
+
+	if file.IsDir == 0 {
+		result["hash"] = file.Object.Hash
+		result["ext"] = file.Ext
+	}
+
+	return result, err
 }

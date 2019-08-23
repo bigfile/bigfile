@@ -154,3 +154,54 @@ func TestToken_BeforeSave(t *testing.T) {
 	confirm.NotNil(token)
 	confirm.Equal("/test", token.Path)
 }
+
+func TestToken_PathWithScope(t *testing.T) {
+	var (
+		token *Token
+		down  func(t *testing.T)
+		err   error
+	)
+	confirm := assert.New(t)
+	token, _, down, err = newTokenForTest(nil, t, "test", nil, nil, nil, -1, int8(0))
+	confirm.Nil(err)
+	defer down(t)
+	confirm.NotNil(token)
+	confirm.Equal("/test", token.Path)
+	confirm.Equal("/test/save/to/pkg/golang.pkg", token.PathWithScope("save/to/pkg/golang.pkg"))
+	confirm.Equal("/test/save/to/pkg/golang.pkg", token.PathWithScope("/save/to/pkg/golang.pkg"))
+	confirm.Equal("/test/save/to/pkg/golang.pkg", token.PathWithScope("/save/to/pkg/golang.pkg/"))
+}
+
+func TestToken_UpdateAvailableTimes(t *testing.T) {
+	var (
+		trx   *gorm.DB
+		token *Token
+		down  func(t *testing.T)
+		err   error
+	)
+	confirm := assert.New(t)
+	token, trx, down, err = newTokenForTest(nil, t, "test", nil, nil, nil, 100, int8(0))
+	confirm.Nil(err)
+	defer down(t)
+	confirm.NotNil(token)
+
+	assert.Nil(t, token.UpdateAvailableTimes(-1, trx))
+	assert.Equal(t, token.AvailableTimes, 99)
+}
+
+func TestToken_UpdateAvailableTimes2(t *testing.T) {
+	var (
+		trx   *gorm.DB
+		token *Token
+		down  func(t *testing.T)
+		err   error
+	)
+	confirm := assert.New(t)
+	token, trx, down, err = newTokenForTest(nil, t, "test", nil, nil, nil, -1, int8(0))
+	confirm.Nil(err)
+	defer down(t)
+	confirm.NotNil(token)
+
+	assert.Nil(t, token.UpdateAvailableTimes(-1, trx))
+	assert.Equal(t, token.AvailableTimes, -1)
+}
