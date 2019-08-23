@@ -117,13 +117,13 @@ func ParseTokenMiddleware() gin.HandlerFunc {
 			err       error
 			input     TokenInput
 			token     *models.Token
-			requestId = ctx.GetInt64("requestId")
+			requestID = ctx.GetInt64("requestId")
 			reqRecord = ctx.MustGet("reqRecord").(*models.Request)
 		)
 		if err = ctx.ShouldBind(&input); err == nil {
 			if token, err = models.FindTokenByUID(input.Token, db); err != nil {
 				ctx.AbortWithStatusJSON(400, &Response{
-					RequestID: requestId,
+					RequestID: requestID,
 					Success:   false,
 					Errors: map[string][]string{
 						"token": {"token find failed"},
@@ -137,7 +137,7 @@ func ParseTokenMiddleware() gin.HandlerFunc {
 			}
 		} else {
 			ctx.AbortWithStatusJSON(400, &Response{
-				RequestID: requestId,
+				RequestID: requestID,
 				Success:   false,
 				Errors: map[string][]string{
 					"token": {err.Error()},

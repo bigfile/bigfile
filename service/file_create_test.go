@@ -78,7 +78,7 @@ func newFileCreateForTest(t *testing.T, path string) (*FileCreate, func(*testing
 	fileCreate := &FileCreate{
 		BaseService: BaseService{
 			DB:       trx,
-			rootPath: &tempDir,
+			RootPath: &tempDir,
 		},
 		Token: token,
 	}

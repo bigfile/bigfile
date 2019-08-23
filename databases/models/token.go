@@ -79,7 +79,7 @@ func (t *Token) UpdateAvailableTimes(inc int, db *gorm.DB) error {
 	if err := db.Model(t).UpdateColumn("availableTimes", gorm.Expr("availableTimes + ?", inc)).Error; err != nil {
 		return err
 	}
-	t.AvailableTimes -= 1
+	t.AvailableTimes--
 	return nil
 }
 

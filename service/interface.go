@@ -49,7 +49,7 @@ type BaseService struct {
 	Value map[string]interface{}
 
 	// rootPath is used to set chunk storage path in test environment
-	rootPath *string
+	RootPath *string
 }
 
 // CallBefore will call BeforeHandler in turn, return err if something goes wrong

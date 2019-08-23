@@ -86,15 +86,15 @@ func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 	}
 
 	if file == nil || file.ID == 0 {
-		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.rootPath, f.DB)
+		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.RootPath, f.DB)
 	}
 
 	if f.Overwrite == 1 {
-		return file, file.OverWriteFromReader(f.Reader, f.Hidden, f.rootPath, f.DB)
+		return file, file.OverWriteFromReader(f.Reader, f.Hidden, f.RootPath, f.DB)
 	}
 
 	if f.Append == 1 {
-		return file, file.AppendFromReader(f.Reader, f.Hidden, f.rootPath, f.DB)
+		return file, file.AppendFromReader(f.Reader, f.Hidden, f.RootPath, f.DB)
 	}
 
 	if f.Rename == 1 {
@@ -103,7 +103,7 @@ func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 			basename = filepath.Base(path)
 		)
 		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMd5(256), basename)
-		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.rootPath, f.DB)
+		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.RootPath, f.DB)
 	}
 
 	if f.CallAfter(ctx, f) != nil {

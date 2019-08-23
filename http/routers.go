@@ -57,6 +57,13 @@ func Routers() *gin.Engine {
 		TokenUpdateHandler,
 	)
 
+	requestWithTokenGroup := r.Group("", ParseTokenMiddleware(), ReplayAttackMiddleware())
+	requestWithTokenGroup.POST(
+		buildRouteWithPrefix("/file/create"),
+		SignWithAppMiddleware(&fileCreateInput{}),
+		FileCreateHandler,
+	)
+
 	return r
 }
 
