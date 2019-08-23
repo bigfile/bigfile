@@ -25,6 +25,9 @@ var (
 
 	// NewTokenForTest export newTokenForTest for other package
 	NewTokenForTest = newTokenForTest
+
+	// NewArbitrarilyTokenForTest export newArbitrarilyTokenForTest
+	NewArbitrarilyTokenForTest = newArbitrarilyTokenForTest
 )
 
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {
@@ -81,6 +84,25 @@ func newTokenForTest(
 		t.Fatal(err)
 	}
 	token, err = NewToken(app, path, expiredAt, ip, secret, availableTimes, readOnly, trx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return token, trx, down, err
+}
+
+func newArbitrarilyTokenForTest(cfg *config.Database, t *testing.T) (*Token, *gorm.DB, func(*testing.T), error) {
+	var (
+		app   *App
+		trx   *gorm.DB
+		down  func(*testing.T)
+		err   error
+		token *Token
+	)
+	app, trx, down, err = newAppForTest(cfg, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err = NewToken(app, "/", nil, nil, nil, -1, int8(0), trx)
 	if err != nil {
 		t.Fatal(err)
 	}
