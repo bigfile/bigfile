@@ -6,6 +6,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -265,6 +266,16 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 
 // FindFileByPath is used to find a file by the specify path
 func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
+	var cacheKey = fmt.Sprintf("%d-%s", app.ID, path)
+
+	if fileValue, ok := pathToFileCache.Get(cacheKey); ok {
+		file := fileValue.(*File)
+		if err := db.Where("id = ?", file.ID).Find(file).Error; err != nil {
+			file.App = *app
+			return file, nil
+		}
+	}
+
 	var (
 		err    error
 		parent = &File{}
@@ -283,5 +294,8 @@ func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
 		parent = file
 	}
 	parent.App = *app
+
+	_ = pathToFileCache.Add(cacheKey, parent, time.Hour)
+
 	return parent, nil
 }

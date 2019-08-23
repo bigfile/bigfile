@@ -199,7 +199,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var (
 			w    = httptest.NewRecorder()
-			body = signRequestParams(map[string]interface{}{
+			body = getParamsSignBody(map[string]interface{}{
 				"appUid":         app.UID,
 				"availableTimes": 1000,
 				"expiredAt":      expiredAtUnix,

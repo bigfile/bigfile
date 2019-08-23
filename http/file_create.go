@@ -40,6 +40,7 @@ func FileCreateHandler(ctx *gin.Context) {
 	var (
 		fh     *multipart.FileHeader
 		err    error
+		buf    = bytes.NewBuffer(nil)
 		reader io.Reader
 
 		code     = 400
@@ -73,26 +74,33 @@ func FileCreateHandler(ctx *gin.Context) {
 
 	if fh, err = ctx.FormFile("file"); err != nil {
 		if err != http.ErrMissingFile {
-			reErrors = generateErrors(err)
+			reErrors = generateErrors(err, "file")
 			return
 		}
 	} else {
 		if reader, err = fh.Open(); err != nil {
-			reErrors = generateErrors(err)
+			reErrors = generateErrors(err, "file")
 			return
 		}
+
+		if _, err = io.Copy(buf, reader); err != nil {
+			reErrors = generateErrors(err, "")
+			return
+		}
+
+		if buf.Len() > models.ChunkSize {
+			reErrors = generateErrors(models.ErrChunkExceedLimit, "file")
+			return
+		}
+
+		// here, assign buf to reader, because the origin reader is multipart.sectionReadCloser
+		// and the content of the origin reader has exhausted
+		reader = buf
+
 		if input.Hash != nil || input.Size != nil {
-			var (
-				err  error
-				buf  = bytes.NewBuffer(nil)
-				size int64
-			)
-			if size, err = io.Copy(buf, reader); err != nil {
-				reErrors = generateErrors(err)
-				return
-			}
-			if input.Size != nil && int(size) != *input.Size {
-				reErrors = generateErrors(errors.New("the size of file doesn't match"))
+
+			if input.Size != nil && buf.Len() != *input.Size {
+				reErrors = generateErrors(errors.New("the size of file doesn't match"), "size")
 				return
 			}
 			if input.Hash != nil {
@@ -101,11 +109,11 @@ func FileCreateHandler(ctx *gin.Context) {
 					err error
 				)
 				if h, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
-					reErrors = generateErrors(err)
+					reErrors = generateErrors(err, "")
 					return
 				}
 				if h != *input.Hash {
-					reErrors = generateErrors(errors.New("the hash of file doesn't match"))
+					reErrors = generateErrors(errors.New("the hash of file doesn't match"), "hash")
 					return
 				}
 			}
@@ -130,17 +138,17 @@ func FileCreateHandler(ctx *gin.Context) {
 	}
 
 	if err := fileCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 
 	if fileCreateValue, err = fileCreateSrv.Execute(context.Background()); err != nil {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 
 	if data, err = fileResp(fileCreateValue.(*models.File), db); err != nil {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 

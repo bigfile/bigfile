@@ -75,12 +75,12 @@ func TokenCreateHandler(ctx *gin.Context) {
 	}
 
 	if err := tokenCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 
 	if tokenCreateValue, err = tokenCreateSrv.Execute(context.Background()); err != nil {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 

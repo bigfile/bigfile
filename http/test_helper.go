@@ -30,9 +30,17 @@ func parseResponse(body string) (*Response, error) {
 	return response, err
 }
 
-func signRequestParams(p map[string]interface{}, secret string) string {
+// signRequestParams calculate the signature of params
+func getParamsSignBody(p map[string]interface{}, secret string) string {
+	sign, buf := getParamsSignatureWithBuf(p, secret)
+	buf.WriteString(fmt.Sprintf("&sign=%s", sign))
+	return buf.String()
+}
+
+// getParamsSignatureWithBuf
+func getParamsSignatureWithBuf(p map[string]interface{}, secret string) (string, *strings.Builder) {
 	var (
-		buf   strings.Builder
+		buf   = new(strings.Builder)
 		index = 0
 		keys  = make([]string, len(p))
 	)
@@ -49,7 +57,10 @@ func signRequestParams(p map[string]interface{}, secret string) string {
 			buf.WriteRune('&')
 		}
 	}
-	sign := SignStrWithSecret(buf.String(), secret)
-	buf.WriteString(fmt.Sprintf("&sign=%s", sign))
-	return buf.String()
+	return SignStrWithSecret(buf.String(), secret), buf
+}
+
+func getParamsSignature(p map[string]interface{}, secret string) string {
+	sign, _ := getParamsSignatureWithBuf(p, secret)
+	return sign
 }

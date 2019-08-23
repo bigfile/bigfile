@@ -74,12 +74,12 @@ func TokenUpdateHandler(ctx *gin.Context) {
 	}
 
 	if err = tokenUpdateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 
 	if tokenUpdateValue, err = tokenUpdateSrv.Execute(context.TODO()); err != nil {
-		reErrors = generateErrors(err)
+		reErrors = generateErrors(err, "")
 		return
 	}
 

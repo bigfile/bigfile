@@ -19,17 +19,21 @@ type Response struct {
 }
 
 // generateErrors is used to generate errors
-func generateErrors(err error) map[string][]string {
+func generateErrors(err error, key string) map[string][]string {
 
 	if err == nil {
 		return nil
+	}
+
+	if key == "" {
+		key = "system"
 	}
 
 	if vErr, ok := err.(service.ValidateErrors); ok {
 		return vErr.MapFieldErrors()
 	}
 	return map[string][]string{
-		"system": {err.Error()},
+		key: {err.Error()},
 	}
 }
 
@@ -76,6 +80,7 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 
 	if file.IsDir == 0 {
 		result["hash"] = file.Object.Hash
+		result["ext"] = file.Ext
 	}
 
 	return result, err
