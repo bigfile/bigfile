@@ -69,4 +69,28 @@ func TestValidateToken(t *testing.T) {
 	assert.Contains(t, err.Error(), "record not found")
 
 	assert.Nil(t, ValidateToken(trx, nil, false, token))
+
+	token.AvailableTimes = -2
+	assert.Nil(t, trx.Save(token).Error)
+	err = ValidateToken(trx, nil, false, token)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "the available times of token has already exhausted")
+
+	token.AvailableTimes = -1
+	assert.Nil(t, trx.Save(token).Error)
+	ip := "192.168.0.1"
+	assert.Nil(t, ValidateToken(trx, &ip, false, token))
+	ip2 := "192.168.0.2"
+	token.IP = &ip2
+	assert.Nil(t, trx.Save(token).Error)
+
+	err = ValidateToken(trx, &ip, false, token)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "token can't be used by this ip")
+
+	token.ReadOnly = int8(1)
+	assert.Nil(t, trx.Save(token).Error)
+	err = ValidateToken(trx, nil, false, token)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "this token is read only")
 }

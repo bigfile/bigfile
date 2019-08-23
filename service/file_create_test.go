@@ -18,11 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bigfile/bigfile/internal/util"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/bigfile/bigfile/databases/models"
+	"github.com/bigfile/bigfile/internal/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFileCreate_Validate(t *testing.T) {
