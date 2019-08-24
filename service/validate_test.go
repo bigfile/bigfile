@@ -3,6 +3,7 @@ package service
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"labix.org/v2/mgo/bson"
 
@@ -93,4 +94,11 @@ func TestValidateToken(t *testing.T) {
 	err = ValidateToken(trx, nil, false, token)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "this token is read only")
+
+	expiredAt := time.Now().Add(-1 * time.Hour)
+	token.ExpiredAt = &expiredAt
+	assert.Nil(t, trx.Save(token).Error)
+	err = ValidateToken(trx, nil, true, token)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "token is expired")
 }
