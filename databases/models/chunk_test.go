@@ -6,6 +6,7 @@ package models
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -237,4 +238,37 @@ func TestCreateEmptyContentChunk(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, chunk.ID > 0)
 	fmt.Println(tempDir)
+}
+
+func TestChunk_Reader(t *testing.T) {
+	var (
+		randomBytes = Random(ChunkSize)
+		tempDir     = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		trx         *gorm.DB
+		err         error
+		down        func(*testing.T)
+		chunk       *Chunk
+	)
+
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	chunk, err = CreateChunkFromBytes(randomBytes, &tempDir, trx)
+	assert.Nil(t, err)
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, chunk.Hash)
+
+	chunkReader, err := chunk.Reader(&tempDir)
+	assert.Nil(t, err)
+	allContent, err := ioutil.ReadAll(chunkReader)
+	assert.Nil(t, err)
+	allContentHash, err := util.Sha256Hash2String(allContent)
+	assert.Nil(t, err)
+	assert.Equal(t, allContentHash, randomBytesHash)
 }

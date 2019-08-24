@@ -3,6 +3,9 @@ package service
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/bigfile/bigfile/internal/util"
 
 	"labix.org/v2/mgo/bson"
 
@@ -93,4 +96,25 @@ func TestValidateToken(t *testing.T) {
 	err = ValidateToken(trx, nil, false, token)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "this token is read only")
+
+	expiredAt := time.Now().Add(-1 * time.Hour)
+	token.ExpiredAt = &expiredAt
+	assert.Nil(t, trx.Save(token).Error)
+	err = ValidateToken(trx, nil, true, token)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "token is expired")
+}
+
+func TestValidateFile(t *testing.T) {
+	assert.Equal(t, ValidateFile(nil, nil), ErrInvalidFile)
+
+	app, trx, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+
+	assert.True(t, util.IsRecordNotFound(ValidateFile(trx, &models.File{UID: "a fake uid"})))
+
+	file, err := models.CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Nil(t, ValidateFile(trx, file))
 }

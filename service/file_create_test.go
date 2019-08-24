@@ -46,6 +46,7 @@ func TestFileCreate_Validate(t *testing.T) {
 	confirm.True(err.ContainsErrCode(10019))
 	confirm.True(err.ContainsErrCode(10020))
 	confirm.True(err.ContainsErrCode(10021))
+	confirm.True(err.ContainsErrCode(10022))
 	confirm.Contains(err.Error(), "path is not a legal unix path")
 }
 

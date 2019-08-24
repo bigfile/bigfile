@@ -187,6 +187,23 @@ var (
 			Field: "FileCreate.Append",
 			Msg:   "append must be 0 or 1",
 		},
+		"FileCreate.Operate": {
+			Code:  10022,
+			Field: "FileCreate.Operate",
+			Msg:   ErrOnlyOneRenameAppendOverWrite.Error(),
+		},
+
+		// FileRead Field error
+		"FileRead.Token": {
+			Code:  10023,
+			Field: "FileRead.Token",
+			Msg:   "token is required",
+		},
+		"FileRead.File": {
+			Code:  10024,
+			Field: "FileRead.Token",
+			Msg:   "file is required",
+		},
 	}
 )
 

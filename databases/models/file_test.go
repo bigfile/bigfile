@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -256,4 +257,80 @@ func TestFile_OverWriteFromReader(t *testing.T) {
 	root, err = CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 120, root.Size)
+}
+
+func TestFile_Reader(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	file, err := CreateOrGetLastDirectory(app, "/test", trx)
+	assert.Nil(t, err)
+	_, err = file.Reader(nil, trx)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "can't read a directory")
+}
+
+func TestFile_Reader2(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	tempDir := filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	randomBytes := Random(ChunkSize*2 + 3)
+	randomBytesReader := bytes.NewReader(randomBytes)
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	file, err := CreateFileFromReader(app, "/test/random.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, file.Object.Hash)
+
+	reader, err := file.Reader(&tempDir, trx)
+	assert.Nil(t, err)
+	allContent, err := ioutil.ReadAll(reader)
+	assert.Nil(t, err)
+	allContentHash, err := util.Sha256Hash2String(allContent)
+	assert.Nil(t, err)
+	assert.Equal(t, allContentHash, file.Object.Hash)
+}
+
+func TestFindFileByUID(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	file, err := CreateOrGetLastDirectory(app, "/test", trx)
+	assert.Nil(t, err)
+
+	file1, err := FindFileByUID(file.UID, false, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, file1.ID, file.ID)
+
+	assert.Nil(t, trx.Delete(file).Error)
+
+	_, err = FindFileByUID(file.UID, false, trx)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	file2, err := FindFileByUID(file.UID, true, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, file2.ID, file.ID)
+}
+
+func TestFile_CanBeAccessedByToken(t *testing.T) {
+	token, trx, down, err := NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	dir, err := CreateOrGetLastDirectory(&token.App, "/test/create/a/directory", trx)
+	assert.Nil(t, err)
+
+	token.Path = "/test"
+	assert.Nil(t, trx.Save(token).Error)
+	assert.Nil(t, dir.CanBeAccessedByToken(token, trx))
+
+	token.Path = "/create"
+	assert.Nil(t, trx.Save(token).Error)
+	assert.Equal(t, dir.CanBeAccessedByToken(token, trx), ErrAccessDenied)
 }

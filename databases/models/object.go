@@ -185,6 +185,11 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	return object, readerContentLen, nil
 }
 
+// Reader is used to implement io.Reader
+func (o *Object) Reader(rootPath *string) (io.Reader, error) {
+	return NewObjectReader(o, rootPath)
+}
+
 // FindObjectByHash will find object by the specify hash
 func FindObjectByHash(h string, db *gorm.DB) (*Object, error) {
 	var object Object

@@ -25,6 +25,10 @@ var (
 	ErrOverwriteDir = errors.New("directory can't be overwritten")
 	// ErrAppendToDir represent that try to append content to directory
 	ErrAppendToDir = errors.New("can't append data to directory")
+	// ErrReadDir represent that can't read data from directory, only file
+	ErrReadDir = errors.New("can't read a directory")
+	// ErrAccessDenied represent a file can't be accessed by some tokens
+	ErrAccessDenied = errors.New("file can't be accessed by some tokens")
 )
 
 // File represent a file or a directory of system. If it's a file
@@ -55,6 +59,38 @@ type File struct {
 // TableName represent the name of files table
 func (f *File) TableName() string {
 	return "files"
+}
+
+// CanBeAccessedByToken represent whether the file can be accessed by the token
+func (f *File) CanBeAccessedByToken(token *Token, db *gorm.DB) error {
+	var (
+		err  error
+		path string
+	)
+	if path, err = f.Path(db); err != nil {
+		return err
+	}
+	if !strings.HasPrefix(path, token.Path) {
+		return ErrAccessDenied
+	}
+	return nil
+}
+
+// Reader is used to get reader that continues to read data from underlying
+// chunk until io.EOF
+func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
+	if f.IsDir == 1 {
+		return nil, ErrReadDir
+	}
+	var (
+		err error
+	)
+	if len(f.Object.Chunks) == 0 {
+		if err = db.Preload("Chunks").Find(&f.Object).Error; err != nil {
+			return nil, err
+		}
+	}
+	return (&f.Object).Reader(rootPath)
 }
 
 // Path is used to get the complete path of file
@@ -262,6 +298,21 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 	}
 
 	return file, err
+}
+
+// FindFileByUID is used to find a file by uid
+func FindFileByUID(uid string, trashed bool, db *gorm.DB) (*File, error) {
+	var (
+		file = &File{}
+		err  error
+	)
+	if trashed {
+		db = db.Unscoped()
+	}
+	if err = db.Where("uid = ?", uid).Find(file).Error; err != nil {
+		return file, err
+	}
+	return file, nil
 }
 
 // FindFileByPath is used to find a file by the specify path
