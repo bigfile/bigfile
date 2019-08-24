@@ -15,9 +15,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/bigfile/bigfile/internal/util"
-
 	"github.com/bigfile/bigfile/databases/models"
+	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -73,6 +72,9 @@ func TestFileRead_Execute(t *testing.T) {
 		}
 	}()
 
+	token.AvailableTimes = 1000
+	assert.Nil(t, trx.Save(token).Error)
+
 	randomBytes := models.Random(556)
 	randomBytesReader := bytes.NewReader(randomBytes)
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
@@ -100,4 +102,7 @@ func TestFileRead_Execute(t *testing.T) {
 	allContentHash, err := util.Sha256Hash2String(allContent)
 	assert.Nil(t, err)
 	assert.Equal(t, randomBytesHash, allContentHash)
+
+	assert.Nil(t, trx.Find(token).Error)
+	assert.Equal(t, 999, token.AvailableTimes)
 }

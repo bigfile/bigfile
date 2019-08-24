@@ -59,7 +59,15 @@ func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
 		return f.Token.UpdateAvailableTimes(-1, f.DB)
 	})
 
+	if err = fr.CallBefore(ctx, fr); err != nil {
+		return nil, err
+	}
+
 	if fileReader, err = fr.File.Reader(fr.RootPath, fr.DB); err != nil {
+		return nil, err
+	}
+
+	if fr.CallAfter(ctx, fr) != nil {
 		return nil, err
 	}
 
