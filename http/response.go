@@ -71,7 +71,7 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 	}
 
 	result = map[string]interface{}{
-		"fileUID": file.UID,
+		"fileUid": file.UID,
 		"path":    path,
 		"size":    file.Size,
 		"isDir":   file.IsDir,
