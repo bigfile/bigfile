@@ -496,3 +496,10 @@ func TestObject_AppendFromReader3(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, oc.ChunkID, oc2.ChunkID)
 }
+
+func TestObject_Reader(t *testing.T) {
+	object, rootPath, down := newObjectForObjectReaderTest(t)
+	defer down(t)
+	_, err := object.Reader(rootPath)
+	assert.Nil(t, err)
+}

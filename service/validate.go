@@ -24,7 +24,7 @@ var (
 	// ErrInvalidToken represent invalid tokens
 	ErrInvalidToken = errors.New("invalid token")
 
-	// ErrTokenIp represent that token forbid some ips to access
+	// ErrTokenIP represent that token forbid some ips to access
 	ErrTokenIP = errors.New("token can't be used by this ip")
 
 	// ErrTokenAvailableTimesExhausted represent that the available

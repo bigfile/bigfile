@@ -46,6 +46,18 @@ func (c Chunk) TableName() string {
 	return "chunks"
 }
 
+// Reader return a reader with buffer
+func (c *Chunk) Reader(rootPath *string) (*os.File, error) {
+	var (
+		err  error
+		file *os.File
+	)
+	if file, err = os.Open(c.Path(rootPath)); err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
 // Path represent the actual storage path
 func (c Chunk) Path(rootPath *string) string {
 
