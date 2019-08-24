@@ -25,6 +25,8 @@ var (
 	ErrOverwriteDir = errors.New("directory can't be overwritten")
 	// ErrAppendToDir represent that try to append content to directory
 	ErrAppendToDir = errors.New("can't append data to directory")
+	// ErrReadDir represent that can't read data from directory, only file
+	ErrReadDir = errors.New("can't read a directory")
 )
 
 // File represent a file or a directory of system. If it's a file
@@ -55,6 +57,23 @@ type File struct {
 // TableName represent the name of files table
 func (f *File) TableName() string {
 	return "files"
+}
+
+// Reader is used to get reader that continues to read data from underlying
+// chunk until io.EOF
+func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
+	if f.IsDir == 1 {
+		return nil, ErrReadDir
+	}
+	var (
+		err error
+	)
+	if len(f.Object.Chunks) == 0 {
+		if err = db.Preload("Chunks").Find(&f.Object).Error; err != nil {
+			return nil, err
+		}
+	}
+	return (&f.Object).Reader(rootPath)
 }
 
 // Path is used to get the complete path of file
