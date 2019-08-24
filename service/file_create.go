@@ -77,7 +77,7 @@ func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 		file *models.File
 	)
 
-	f.BaseService.After = append(f.BaseService.After, func(ctx context.Context, service Service) error {
+	f.BaseService.Before = append(f.BaseService.After, func(ctx context.Context, service Service) error {
 		f := service.(*FileCreate)
 		return f.Token.UpdateAvailableTimes(-1, f.DB)
 	})

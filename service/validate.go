@@ -36,7 +36,18 @@ var (
 
 	// ErrTokenExpired represent token is expired
 	ErrTokenExpired = errors.New("token is expired")
+
+	// ErrInvalidFile represent the file is invalid
+	ErrInvalidFile = errors.New("invalid file")
 )
+
+// ValidateFile is used to validate whether a file is valid
+func ValidateFile(db *gorm.DB, file *models.File) error {
+	if file == nil {
+		return ErrInvalidFile
+	}
+	return db.Where("id = ?", file.ID).Find(file).Error
+}
 
 // ValidateApp is used to validate whether app is valid
 func ValidateApp(db *gorm.DB, app *models.App) error {

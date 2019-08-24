@@ -296,3 +296,41 @@ func TestFile_Reader2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, allContentHash, file.Object.Hash)
 }
+
+func TestFindFileByUID(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	file, err := CreateOrGetLastDirectory(app, "/test", trx)
+	assert.Nil(t, err)
+
+	file1, err := FindFileByUID(file.UID, false, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, file1.ID, file.ID)
+
+	assert.Nil(t, trx.Delete(file).Error)
+
+	_, err = FindFileByUID(file.UID, false, trx)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	file2, err := FindFileByUID(file.UID, true, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, file2.ID, file.ID)
+}
+
+func TestFile_CanBeAccessedByToken(t *testing.T) {
+	token, trx, down, err := NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	dir, err := CreateOrGetLastDirectory(&token.App, "/test/create/a/directory", trx)
+	assert.Nil(t, err)
+
+	token.Path = "/test"
+	assert.Nil(t, trx.Save(token).Error)
+	assert.Nil(t, dir.CanBeAccessedByToken(token, trx))
+
+	token.Path = "/create"
+	assert.Nil(t, trx.Save(token).Error)
+	assert.Equal(t, dir.CanBeAccessedByToken(token, trx), ErrAccessDenied)
+}
