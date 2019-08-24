@@ -63,6 +63,11 @@ func Routers() *gin.Engine {
 		SignWithTokenMiddleware(&fileCreateInput{}),
 		FileCreateHandler,
 	)
+	requestWithTokenGroup.GET(
+		buildRouteWithPrefix("/file/read"),
+		SignWithTokenMiddleware(&fileReadInput{}),
+		FileReadHandler,
+	)
 
 	return r
 }

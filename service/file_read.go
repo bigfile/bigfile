@@ -12,6 +12,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
+// FileRead is used to provide file read service
 type FileRead struct {
 	BaseService
 
