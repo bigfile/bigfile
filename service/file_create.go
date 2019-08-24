@@ -19,6 +19,8 @@ import (
 var (
 	// ErrPathExisted represent the path has already existed
 	ErrPathExisted = errors.New("the path has already existed")
+	// ErrOnlyOneRenameAppendOverWrite represent uncertain operation
+	ErrOnlyOneRenameAppendOverWrite = errors.New("only one of rename, append and overwrite is allowed")
 )
 
 // FileCreate is used to upload file or create directory
@@ -41,6 +43,13 @@ func (f *FileCreate) Validate() ValidateErrors {
 		validateErrors ValidateErrors
 		errs           error
 	)
+
+	if f.Overwrite+f.Rename+f.Append > 1 {
+		validateErrors = append(
+			validateErrors,
+			generateErrorByField("FileCreate.Operate", ErrOnlyOneRenameAppendOverWrite),
+		)
+	}
 
 	if errs = Validate.Struct(f); errs != nil {
 		for _, err := range errs.(validator.ValidationErrors) {

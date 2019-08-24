@@ -187,6 +187,11 @@ var (
 			Field: "FileCreate.Append",
 			Msg:   "append must be 0 or 1",
 		},
+		"FileCreate.Operate": {
+			Code:  10022,
+			Field: "FileCreate.Operate",
+			Msg:   ErrOnlyOneRenameAppendOverWrite.Error(),
+		},
 	}
 )
 
