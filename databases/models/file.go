@@ -29,6 +29,8 @@ var (
 	ErrReadDir = errors.New("can't read a directory")
 	// ErrAccessDenied represent a file can't be accessed by some tokens
 	ErrAccessDenied = errors.New("file can't be accessed by some tokens")
+	// ErrDeleteNonEmptyDir represent delete non-empty directory
+	ErrDeleteNonEmptyDir = errors.New("delete non-empty directory")
 )
 
 // File represent a file or a directory of system. If it's a file
@@ -50,9 +52,10 @@ type File struct {
 	UpdatedAt     time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 	DeletedAt     *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt"`
 
-	Object    Object    `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
 	App       App       `gorm:"foreignkey:appId;association_autoupdate:false;association_autocreate:false"`
+	Object    Object    `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
 	Parent    *File     `gorm:"foreignkey:id;association_foreignkey:pid;association_autoupdate:false;association_autocreate:false"`
+	Children  []File    `gorm:"foreignkey:pid;association_foreignkey:id;association_autoupdate:false;association_autocreate:false"`
 	Histories []History `gorm:"foreignkey:fileId;association_autoupdate:false;association_autocreate:false"`
 }
 
@@ -63,6 +66,73 @@ func pathCacheKey(app *App, path string) string {
 // TableName represent the name of files table
 func (f *File) TableName() string {
 	return "files"
+}
+
+func (f *File) executeDelete(forceDelete bool, db *gorm.DB) error {
+	if f.IsDir == 0 {
+		return db.Delete(f).Error
+	}
+
+	var err error
+
+	if err = db.Preload("Children").Find(f).Error; err != nil {
+		return err
+	}
+
+	if len(f.Children) == 0 {
+		return db.Delete(f).Error
+	}
+
+	if forceDelete {
+		for _, child := range f.Children {
+			if err = child.executeDelete(forceDelete, db); err != nil {
+				return err
+			}
+		}
+		db.Model(f).Update("size", 0)
+		return db.Delete(f).Error
+	}
+	return ErrDeleteNonEmptyDir
+}
+
+// Delete is used to delete file or directory. if the file is a non-empty directory,
+// 'forceDelete' determine to delete or not sub directories and files
+func (f *File) Delete(forceDelete bool, db *gorm.DB) error {
+	var (
+		updateSizeChan = make(chan error, 1)
+		deleteFileChan = make(chan error, 1)
+	)
+	go func() {
+		var err error
+		defer func() {
+			updateSizeChan <- err
+		}()
+		if f.Size > 0 {
+			if f.Parent == nil {
+				if err = db.Preload("Parent").Find(f).Error; err != nil {
+					return
+				}
+			}
+			updateSizeChan <- f.Parent.UpdateParentSize(-f.Size, db)
+		}
+	}()
+	go func() {
+		deleteFileChan <- f.executeDelete(forceDelete, db)
+	}()
+
+	updateSizeErr := <-updateSizeChan
+	deleteFileErr := <-deleteFileChan
+
+	if updateSizeErr != nil {
+		return updateSizeErr
+	}
+
+	if deleteFileErr != nil {
+		return deleteFileErr
+	}
+
+	return db.Unscoped().Find(f).Error
+
 }
 
 // CanBeAccessedByToken represent whether the file can be accessed by the token
@@ -429,7 +499,8 @@ func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
 
 	for _, part := range parts {
 		var file = &File{}
-		if err = db.Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).Find(file).Error; err != nil {
+		// deleted files should be considered
+		if err = db.Unscoped().Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).Find(file).Error; err != nil {
 			return nil, err
 		}
 		parent = file

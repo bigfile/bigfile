@@ -40,9 +40,9 @@ func (o Object) TableName() string {
 	return "objects"
 }
 
-// FileCount count the files they are associated with this object
-func (o *Object) FileCount(db *gorm.DB) int {
-	return db.Model(o).Association("Files").Count()
+// FileCountWithTrashed count the files they are associated with this object
+func (o *Object) FileCountWithTrashed(db *gorm.DB) int {
+	return db.Unscoped().Model(o).Association("Files").Count()
 }
 
 // ChunkCount count the chunks of object and return
@@ -135,7 +135,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 		return o, 0, err
 	}
 	// determine if we need to copy the object
-	if o.FileCount(db)+db.Model(o).Association("Histories").Count() <= 1 {
+	if o.FileCountWithTrashed(db)+db.Model(o).Association("Histories").Count() <= 1 {
 		object.ID = o.ID
 		object.CreatedAt = o.CreatedAt
 		object.UpdatedAt = o.UpdatedAt
