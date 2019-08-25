@@ -16,14 +16,16 @@ import (
 	"github.com/bigfile/bigfile/databases"
 
 	"github.com/bigfile/bigfile/config"
+
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
-	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/gin-gonic/gin"
 )
 
-func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
+func newFileUpdateForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	var (
 		ctx     *gin.Context
 		trx     *gorm.DB
@@ -38,7 +40,7 @@ func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	assert.Nil(t, err)
 	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
 	ctx.Writer = &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
-	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	ctx.Request, _ = http.NewRequest("PATCH", "http://bigfile.io", strings.NewReader(""))
 	ctx.Request.Header.Set("X-Forwarded-For", "192.168.0.1")
 	ctx.Set("db", trx)
 	ctx.Set("token", token)
@@ -50,12 +52,15 @@ func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
 	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, "/test/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
+	path := "/another/another.bytes"
 	ctx.Set("randomBytesHash", randomBytesHash)
-	ctx.Set("inputParam", &fileReadInput{
+	ctx.Set("path", path)
+	ctx.Set("inputParam", &fileUpdateInput{
 		FileUID: file.UID,
+		Path:    &path,
 	})
 
 	return ctx, func(t *testing.T) {
@@ -66,23 +71,23 @@ func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	}
 }
 
-func TestFileReadHandler(t *testing.T) {
-	ctx, down := newFileReadForTest(t)
+func TestFileUpdateHandler(t *testing.T) {
+	ctx, down := newFileUpdateForTest(t)
 	defer down(t)
 	writer := ctx.Writer.(*bodyWriter)
 
-	input := ctx.MustGet("inputParam").(*fileReadInput)
+	input := ctx.MustGet("inputParam").(*fileUpdateInput)
 	input.FileUID = ""
 
-	FileReadHandler(ctx)
+	FileUpdateHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
 	assert.Equal(t, "record not found", response.Errors["fileUid"][0])
 }
 
-func TestFileReadHandler2(t *testing.T) {
-	ctx, down := newFileReadForTest(t)
+func TestFileUpdateHandler2(t *testing.T) {
+	ctx, down := newFileUpdateForTest(t)
 	defer down(t)
 	writer := ctx.Writer.(*bodyWriter)
 
@@ -91,39 +96,38 @@ func TestFileReadHandler2(t *testing.T) {
 	token.AvailableTimes = 0
 	assert.Nil(t, db.Save(token).Error)
 
-	FileReadHandler(ctx)
+	FileUpdateHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
-	assert.Equal(t, "the available times of token has already exhausted", response.Errors["FileRead.Token"][0])
+	assert.Equal(t, "the available times of token has already exhausted", response.Errors["FileUpdate.Token"][0])
 }
 
-func TestFileReadHandler3(t *testing.T) {
-	ctx, down := newFileReadForTest(t)
+func TestFileUpdateHandler3(t *testing.T) {
+	ctx, down := newFileUpdateForTest(t)
 	defer down(t)
 	writer := ctx.Writer.(*bodyWriter)
-	FileReadHandler(ctx)
 
-	bodyHash, err := util.Sha256Hash2String(writer.body.Bytes())
+	FileUpdateHandler(ctx)
+	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
-	assert.Equal(t, bodyHash, ctx.GetString("randomBytesHash"))
+	assert.True(t, response.Success)
+	responseData := response.Data.(map[string]interface{})
+	assert.Equal(t, ctx.GetString("randomBytesHash"), responseData["hash"].(string))
+	assert.Equal(t, ctx.GetString("path"), responseData["path"].(string))
 }
 
-func TestFileReadHandler4(t *testing.T) {
+func TestFileUpdateHandler4(t *testing.T) {
 	var (
 		w       = httptest.NewRecorder()
-		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/read")
+		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/update")
 		trx     *gorm.DB
 		err     error
-		down    func(*testing.T)
 		token   *models.Token
+		down    func(*testing.T)
 		tempDir = models.NewTempDirForTest()
 	)
 
-	testingChunkRootPath = &tempDir
-	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
-	assert.Nil(t, err)
-	testDBConn = trx
 	defer func() {
 		down(t)
 		if util.IsDir(tempDir) {
@@ -131,71 +135,37 @@ func TestFileReadHandler4(t *testing.T) {
 		}
 	}()
 
-	randomBytes := models.Random(128)
-	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
-	assert.Nil(t, err)
-	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
-	assert.Nil(t, err)
-
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s", api, token.UID, file.UID), nil)
-	Routers().ServeHTTP(w, req)
-	responseBodyHash, err := util.Sha256Hash2String(w.Body.Bytes())
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Nil(t, err)
-	assert.Equal(t, responseBodyHash, randomBytesHash)
-}
-
-func TestFileReadHandler5(t *testing.T) {
-	var (
-		w       = httptest.NewRecorder()
-		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/read")
-		trx     *gorm.DB
-		err     error
-		down    func(*testing.T)
-		token   *models.Token
-		secret  = models.RandomWithMd5(222)
-		tempDir = models.NewTempDirForTest()
-	)
-
 	testingChunkRootPath = &tempDir
 	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
 	assert.Nil(t, err)
-	token.Secret = &secret
-	assert.Nil(t, trx.Save(token).Error)
 	testDBConn = trx
-	defer func() {
-		down(t)
-		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
-		}
-	}()
 
 	randomBytes := models.Random(128)
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
 	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, "/test/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
-	qs := getParamsSignBody(map[string]interface{}{
-		"token":   token.UID,
-		"fileUid": file.UID,
-		"nonce":   models.RandomWithMd5(333),
-	}, secret)
+	body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMd5(2))
+	req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
+	req.Header.Set("X-Forwarded-For", "192.168.0.1")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?%s", api, qs), nil)
 	Routers().ServeHTTP(w, req)
-	responseBodyHash, err := util.Sha256Hash2String(w.Body.Bytes())
+	response, err := parseResponse(w.Body.String())
 	assert.Nil(t, err)
-	assert.Equal(t, responseBodyHash, randomBytesHash)
+	assert.True(t, response.Success)
+	responseData := response.Data.(map[string]interface{})
+	assert.Equal(t, randomBytesHash, responseData["hash"].(string))
+	assert.Equal(t, "/another/another.bytes", responseData["path"].(string))
 }
 
-func BenchmarkFileReadHandler(b *testing.B) {
+func BenchmarkFileUpdateHandler(b *testing.B) {
 	b.StopTimer()
 
 	var (
-		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/read")
+		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/update")
 		trx     *gorm.DB
 		err     error
 		token   *models.Token
@@ -230,11 +200,13 @@ func BenchmarkFileReadHandler(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s", api, token.UID, file.UID), nil)
-
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
+		body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMd5(2))
+		req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
+		req.Header.Set("X-Forwarded-For", "192.168.0.1")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
 		Routers().ServeHTTP(w, req)
 		if w.Code != http.StatusOK {

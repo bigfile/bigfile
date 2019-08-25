@@ -9,10 +9,7 @@ import (
 	sha2562 "crypto/sha256"
 	"encoding/hex"
 	"hash"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -242,7 +239,7 @@ func TestFindObjectByHash(t *testing.T) {
 
 func TestCreateObjectFromReader(t *testing.T) {
 	var (
-		tempDir   = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir   = NewTempDirForTest()
 		randomStr = Random(uint(ChunkSize * 2.5))
 		reader    = strings.NewReader(string(randomStr))
 	)
@@ -299,7 +296,7 @@ func TestCreateEmptyObject(t *testing.T) {
 		err              error
 		chunk            *Chunk
 		object           *Object
-		tempDir          = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir          = NewTempDirForTest()
 		stateHash        hash.Hash
 		emptyContentHash string
 	)
@@ -333,7 +330,7 @@ func TestObject_AppendFromReader(t *testing.T) {
 		oc        *ObjectChunk
 		err       error
 		size      int
-		tempDir   = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir   = NewTempDirForTest()
 		randomStr = Random(uint(ChunkSize * 2.5))
 		stateHash hash.Hash
 		object    *Object
@@ -398,7 +395,7 @@ func TestObject_AppendFromReader2(t *testing.T) {
 		oc                *ObjectChunk
 		err               error
 		size              int
-		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir           = NewTempDirForTest()
 		randomStr         = Random(uint(ChunkSize * 2.5))
 		stateHash         hash.Hash
 		object            *Object
@@ -460,7 +457,7 @@ func TestObject_AppendFromReader3(t *testing.T) {
 		oc        *ObjectChunk
 		err       error
 		size      int
-		tempDir   = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir   = NewTempDirForTest()
 		randomStr = Random(uint(ChunkSize))
 		stateHash hash.Hash
 		object    *Object

@@ -7,10 +7,7 @@ package models
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -35,7 +32,7 @@ func TestChunk_Path(t *testing.T) {
 
 func TestChunk_Path2(t *testing.T) {
 
-	tempDir := filepath.Join(os.TempDir(), RandomWithMd5(32))
+	tempDir := NewTempDirForTest()
 	defer func() {
 		os.RemoveAll(tempDir)
 	}()
@@ -74,7 +71,7 @@ func TestFindChunkByHash(t *testing.T) {
 func TestCreateChunkFromBytes(t *testing.T) {
 	var (
 		bigBytes = []byte(strings.Repeat("s", ChunkSize+1))
-		tempDir  = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir  = NewTempDirForTest()
 		trx      *gorm.DB
 		err      error
 		down     func(*testing.T)
@@ -109,7 +106,7 @@ func TestCreateChunkFromBytes(t *testing.T) {
 func TestChunk_AppendBytes(t *testing.T) {
 	var (
 		bigBytes   = []byte("hello")
-		tempDir    = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir    = NewTempDirForTest()
 		trx        *gorm.DB
 		err        error
 		down       func(*testing.T)
@@ -140,7 +137,7 @@ func TestChunk_AppendBytes(t *testing.T) {
 func TestChunk_AppendBytes2(t *testing.T) {
 	var (
 		bigBytes     = []byte("hello")
-		tempDir      = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir      = NewTempDirForTest()
 		trx          *gorm.DB
 		err          error
 		down         func(*testing.T)
@@ -177,7 +174,7 @@ func TestChunk_AppendBytes2(t *testing.T) {
 func TestChunk_AppendBytes3(t *testing.T) {
 	var (
 		bigBytes   = []byte("hello")
-		tempDir    = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir    = NewTempDirForTest()
 		trx        *gorm.DB
 		err        error
 		down       func(*testing.T)
@@ -224,7 +221,7 @@ func TestCreateEmptyContentChunk(t *testing.T) {
 		err     error
 		down    func(*testing.T)
 		chunk   *Chunk
-		tempDir = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir = NewTempDirForTest()
 	)
 	trx, down = setUpTestCaseWithTrx(nil, t)
 	defer func() {
@@ -243,7 +240,7 @@ func TestCreateEmptyContentChunk(t *testing.T) {
 func TestChunk_Reader(t *testing.T) {
 	var (
 		randomBytes = Random(ChunkSize)
-		tempDir     = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir     = NewTempDirForTest()
 		trx         *gorm.DB
 		err         error
 		down        func(*testing.T)

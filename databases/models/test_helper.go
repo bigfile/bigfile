@@ -5,6 +5,8 @@
 package models
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -28,6 +30,9 @@ var (
 
 	// NewArbitrarilyTokenForTest export newArbitrarilyTokenForTest
 	NewArbitrarilyTokenForTest = newArbitrarilyTokenForTest
+
+	// NewTempDirForTest create a test directory for test
+	NewTempDirForTest = newTempDirForTest
 )
 
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {
@@ -107,4 +112,8 @@ func newArbitrarilyTokenForTest(cfg *config.Database, t *testing.T) (*Token, *go
 		t.Fatal(err)
 	}
 	return token, trx, down, err
+}
+
+func newTempDirForTest() string {
+	return filepath.Join(os.TempDir(), RandomWithMd5(512))
 }

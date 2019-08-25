@@ -70,6 +70,12 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	if file.Object.ID == 0 {
+		if err = db.Preload("Object").Find(file).Error; err != nil {
+			return nil, err
+		}
+	}
+
 	result = map[string]interface{}{
 		"fileUid": file.UID,
 		"path":    path,

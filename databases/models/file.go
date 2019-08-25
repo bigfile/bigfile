@@ -135,8 +135,8 @@ func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
 	return f.Parent.UpdateParentSize(size, db)
 }
 
-func (f *File) createHistory(objectId uint64, path string, db *gorm.DB) error {
-	return db.Save(&History{ObjectID: objectId, FileID: f.ID, Path: path}).Error
+func (f *File) createHistory(objectID uint64, path string, db *gorm.DB) error {
+	return db.Save(&History{ObjectID: objectID, FileID: f.ID, Path: path}).Error
 }
 
 // OverWriteFromReader is used to overwrite the object
@@ -246,7 +246,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) error {
 		return db.Save(f).Error
 	}
 
-	if f.Parent.ID == 0 {
+	if f.Parent == nil || f.Parent.ID == 0 {
 		if err = db.Preload("Parent").Find(f).Error; err != nil {
 			return err
 		}
@@ -261,6 +261,8 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) error {
 	}
 	f.PID = newPathDirFile.ID
 	f.Parent = newPathDirFile
+	f.Name = newPathFileName
+	f.Ext = newPathExt
 	return db.Save(f).Error
 }
 

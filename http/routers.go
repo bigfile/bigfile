@@ -18,6 +18,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var brw = buildRouteWithPrefix
+
 // Routers will define all routers for service
 func Routers() *gin.Engine {
 	r := gin.New()
@@ -46,29 +48,15 @@ func Routers() *gin.Engine {
 	}
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware(), ReplayAttackMiddleware())
-	requestWithAppGroup.POST(
-		buildRouteWithPrefix("/token/create"),
-		SignWithAppMiddleware(&tokenCreateInput{}),
-		TokenCreateHandler,
-	)
-	requestWithAppGroup.POST(
-		buildRouteWithPrefix("/token/update"),
-		SignWithAppMiddleware(&tokenUpdateInput{}),
-		TokenUpdateHandler,
-	)
+	requestWithAppGroup.POST(brw("/token/create"), SignWithAppMiddleware(&tokenCreateInput{}), TokenCreateHandler)
+	requestWithAppGroup.POST(brw("/token/update"), SignWithAppMiddleware(&tokenUpdateInput{}), TokenUpdateHandler)
 
 	requestWithTokenGroup := r.Group("", ParseTokenMiddleware(), ReplayAttackMiddleware())
-	requestWithTokenGroup.POST(
-		buildRouteWithPrefix("/file/create"),
-		SignWithTokenMiddleware(&fileCreateInput{}),
-		FileCreateHandler,
-	)
-	requestWithTokenGroup.GET(
-		buildRouteWithPrefix("/file/read"),
-		SignWithTokenMiddleware(&fileReadInput{}),
-		FileReadHandler,
-	)
+	requestWithTokenGroup.POST(brw("/file/create"), SignWithTokenMiddleware(&fileCreateInput{}), FileCreateHandler)
+	requestWithTokenGroup.GET(brw("/file/read"), SignWithTokenMiddleware(&fileReadInput{}), FileReadHandler)
+	requestWithTokenGroup.PATCH(brw("/file/update"), SignWithTokenMiddleware(&fileUpdateInput{}), FileUpdateHandler)
 
+	r.Routes()
 	return r
 }
 

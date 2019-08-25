@@ -9,10 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io/ioutil"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -129,7 +126,7 @@ func TestCreateFileFromReader(t *testing.T) {
 		randomBytes     = Random(uint(ChunkSize*2 + 145))
 		randomBytesHash string
 		reader          = bytes.NewReader(randomBytes)
-		tempDir         = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir         = NewTempDirForTest()
 	)
 
 	app, trx, down, err = newAppForTest(nil, t)
@@ -172,7 +169,7 @@ func TestFile_AppendFromReader(t *testing.T) {
 		down        func(*testing.T)
 		randomBytes = Random(uint(ChunkSize*2 + 145))
 		reader      = bytes.NewReader(randomBytes)
-		tempDir     = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir     = NewTempDirForTest()
 	)
 
 	app, trx, down, err = newAppForTest(nil, t)
@@ -231,7 +228,7 @@ func TestFile_OverWriteFromReader(t *testing.T) {
 		down            func(*testing.T)
 		file            *File
 		object          Object
-		tempDir         = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir         = NewTempDirForTest()
 		randomBytes     = Random(uint(127))
 		randomBytesHash string
 		reader          = bytes.NewReader(randomBytes)
@@ -286,7 +283,7 @@ func TestFile_Reader(t *testing.T) {
 
 func TestFile_Reader2(t *testing.T) {
 	app, trx, down, err := newAppForTest(nil, t)
-	tempDir := filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	tempDir := NewTempDirForTest()
 	assert.Nil(t, err)
 	defer func() {
 		down(t)
@@ -357,7 +354,7 @@ func TestFile_MoveTo(t *testing.T) {
 		trx               *gorm.DB
 		file              *File
 		down              func(*testing.T)
-		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir           = NewTempDirForTest()
 		rootDir           *File
 		randomBytes       = Random(255)
 		randomBytesReader = bytes.NewReader(randomBytes)
@@ -417,7 +414,7 @@ func TestFile_MoveTo2(t *testing.T) {
 		trx               *gorm.DB
 		file              *File
 		down              func(*testing.T)
-		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir           = NewTempDirForTest()
 		rootDir           *File
 		randomBytes       = Random(255)
 		randomBytesReader = bytes.NewReader(randomBytes)
