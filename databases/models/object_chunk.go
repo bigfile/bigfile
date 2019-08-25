@@ -20,8 +20,8 @@ type ObjectChunk struct {
 	CreatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt"`
 	UpdatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 
-	Object Object `gorm:"foreignkey:objectId"`
-	Chunk  Chunk  `gorm:"foreignkey:chunkId"`
+	Object Object `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
+	Chunk  Chunk  `gorm:"foreignkey:chunkId;association_autoupdate:false;association_autocreate:false"`
 }
 
 // TableName represent the db table name

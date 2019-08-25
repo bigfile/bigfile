@@ -19,6 +19,7 @@ import (
 	"github.com/bigfile/bigfile/http"
 	"github.com/bigfile/bigfile/log"
 	"github.com/gin-gonic/gin"
+	"github.com/olekukonko/tablewriter"
 	"gopkg.in/urfave/cli.v2"
 )
 
@@ -34,6 +35,20 @@ var (
 			Usage:     "run http service",
 			UsageText: "http command [command options]",
 			Subcommands: []*cli.Command{
+				{
+					Name:      "routes",
+					Usage:     "list http routes",
+					UsageText: "http routes",
+					Action: func(context *cli.Context) error {
+						table := tablewriter.NewWriter(os.Stdout)
+						table.SetHeader([]string{"method", "path", "handler"})
+						for _, route := range http.Routers().Routes() {
+							table.Append([]string{route.Method, route.Path, route.Handler})
+						}
+						table.Render()
+						return nil
+					},
+				},
 				{
 					Name:      "start",
 					Usage:     "start http service",
@@ -97,7 +112,6 @@ var (
 						},
 					},
 					Action: func(context *cli.Context) error {
-						gin.SetMode(gin.ReleaseMode)
 						addr := fmt.Sprintf("%s:%d", context.String("host"), context.Int64("port"))
 						server := libHTTP.Server{
 							Addr:              addr,
@@ -145,6 +159,7 @@ var (
 				},
 			},
 			Before: func(context *cli.Context) error {
+				gin.SetMode(gin.ReleaseMode)
 				migrate.DefaultMC.SetConnection(databases.MustNewConnection(&config.DefaultConfig.Database))
 				migrate.DefaultMC.Upgrade()
 				return nil

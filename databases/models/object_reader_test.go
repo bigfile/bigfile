@@ -7,10 +7,7 @@ package models
 import (
 	"bytes"
 	"io/ioutil"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/bigfile/bigfile/internal/util"
@@ -32,7 +29,7 @@ func newObjectForObjectReaderTest(t *testing.T) (*Object, *string, func(*testing
 	var (
 		err               error
 		object            *Object
-		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir           = NewTempDirForTest()
 		randomBytes       = Random(ChunkSize*2 + 123)
 		randomBytesHash   string
 		randomBytesReader = bytes.NewReader(randomBytes)

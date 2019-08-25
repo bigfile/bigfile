@@ -32,7 +32,7 @@ func newFileCreateForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 		err            error
 		token          *models.Token
 		down           func(*testing.T)
-		tempDir        = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		tempDir        = models.NewTempDirForTest()
 		body           = &bytes.Buffer{}
 		formBodyWriter = multipart.NewWriter(body)
 	)
