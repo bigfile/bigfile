@@ -204,6 +204,28 @@ var (
 			Field: "FileRead.Token",
 			Msg:   "file is required",
 		},
+
+		// FileUpdate Field error
+		"FileUpdate.Token": {
+			Code:  10025,
+			Field: "FileUpdate.Token",
+			Msg:   "token is required",
+		},
+		"FileUpdate.File": {
+			Code:  10026,
+			Field: "FileUpdate.Token",
+			Msg:   "file is required",
+		},
+		"FileUpdate.Hidden": {
+			Code:  10027,
+			Field: "FileUpdate.Hidden",
+			Msg:   "file is required",
+		},
+		"FileUpdate.Path": {
+			Code:  10028,
+			Field: "FileUpdate.Path",
+			Msg:   "file is required",
+		},
 	}
 )
 

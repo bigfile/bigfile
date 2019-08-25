@@ -56,6 +56,10 @@ type File struct {
 	Histories []History `gorm:"foreignkey:fileId;association_autoupdate:false;association_autocreate:false"`
 }
 
+func pathCacheKey(app *App, path string) string {
+	return fmt.Sprintf("%d-%s", app.ID, path)
+}
+
 // TableName represent the name of files table
 func (f *File) TableName() string {
 	return "files"
@@ -234,6 +238,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) error {
 
 	defer func() {
 		pathToFileCache.Delete(previousPath)
+		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
 	}()
 
 	// only change the file name, still is in the same directory
@@ -400,7 +405,7 @@ func FindFileByUID(uid string, trashed bool, db *gorm.DB) (*File, error) {
 
 // FindFileByPath is used to find a file by the specify path
 func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
-	var cacheKey = fmt.Sprintf("%d-%s", app.ID, path)
+	var cacheKey = pathCacheKey(app, path)
 
 	if fileValue, ok := pathToFileCache.Get(cacheKey); ok {
 		file := fileValue.(*File)
@@ -429,7 +434,7 @@ func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
 	}
 	parent.App = *app
 
-	_ = pathToFileCache.Add(cacheKey, parent, time.Hour)
+	_ = pathToFileCache.Add(cacheKey, parent, time.Hour*48)
 
 	return parent, nil
 }
