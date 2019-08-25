@@ -34,21 +34,34 @@ func TestCreateOrGetRootPath(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, app.ID, file.AppID)
 	assert.Equal(t, app.ID, file.App.ID)
+	file.Size = 255
+	assert.Nil(t, trx.Save(file).Error)
+
+	rootDir, err := CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, rootDir.Size, file.Size)
 }
 
 func TestCreateOrGetLastDirectory(t *testing.T) {
 	app, trx, down, err := newAppForTest(nil, t)
 	assert.Nil(t, err)
 	defer down(t)
-	file, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
+	images, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
 	assert.Nil(t, err)
-	assert.Equal(t, app.ID, file.AppID)
-	assert.Equal(t, app.ID, file.App.ID)
-	assert.Equal(t, int8(1), file.IsDir)
-	assert.Equal(t, "images", file.Name)
+	assert.Equal(t, app.ID, images.AppID)
+	assert.Equal(t, app.ID, images.App.ID)
+	assert.Equal(t, int8(1), images.IsDir)
+	assert.Equal(t, "images", images.Name)
+	images.Size = 255
+	assert.Nil(t, trx.Save(images).Error)
 	var subDirCount int
 	assert.Nil(t, trx.Model(&File{}).Where("appId = ?", app.ID).Count(&subDirCount).Error)
 	assert.Equal(t, 4, subDirCount)
+
+	images2, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, images.ID, images2.ID)
+	assert.Equal(t, images.Size, images2.Size)
 }
 
 func TestFile_UpdateParentSize(t *testing.T) {
@@ -252,6 +265,7 @@ func TestFile_OverWriteFromReader(t *testing.T) {
 	assert.Equal(t, randomBytesHash, file.Object.Hash)
 	assert.Equal(t, app.ID, file.App.ID)
 	assert.Equal(t, app.ID, file.AppID)
+	assert.Equal(t, 120, file.Size)
 	assert.Equal(t, 1, trx.Model(file).Association("Histories").Count())
 
 	root, err = CreateOrGetRootPath(app, trx)
@@ -333,4 +347,116 @@ func TestFile_CanBeAccessedByToken(t *testing.T) {
 	token.Path = "/create"
 	assert.Nil(t, trx.Save(token).Error)
 	assert.Equal(t, dir.CanBeAccessedByToken(token, trx), ErrAccessDenied)
+}
+
+// TestFile_MoveTo is used to test move file
+func TestFile_MoveTo(t *testing.T) {
+	var (
+		err               error
+		app               *App
+		trx               *gorm.DB
+		file              *File
+		down              func(*testing.T)
+		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		rootDir           *File
+		randomBytes       = Random(255)
+		randomBytesReader = bytes.NewReader(randomBytes)
+	)
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file, err = CreateFileFromReader(app, "/save/to/a/1.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 255, file.Size)
+	assert.Equal(t, 255, file.Parent.Size)
+	assert.Equal(t, "/save/to/a/1.bytes", file.mustPath(trx))
+	aDir := file.Parent
+	assert.Equal(t, 255, aDir.Size)
+	rootDir, _ = CreateOrGetRootPath(app, trx)
+	assert.Equal(t, 255, rootDir.Size)
+
+	// only rename
+	err = file.MoveTo("/save/to/a/2.bytes", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/a/2.bytes", file.mustPath(trx))
+	assert.Equal(t, aDir.ID, file.Parent.ID)
+	rootDir, err = CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 255, rootDir.Size)
+
+	// move to another dir
+	err = file.MoveTo("/save/to/b/2.bytes", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/b/2.bytes", file.mustPath(trx))
+	assert.NotEqual(t, aDir.ID, file.Parent.ID)
+	bDir := file.Parent
+	assert.Equal(t, file.Parent.ID, bDir.ID)
+	assert.Equal(t, 255, bDir.Size)
+
+	// nothing change
+	err = file.MoveTo("/save/to/b/2.bytes", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/b/2.bytes", file.mustPath(trx))
+
+	rootDir, err = CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 255, rootDir.Size)
+}
+
+// TestFile_MoveTo2 is used to move a directory
+func TestFile_MoveTo2(t *testing.T) {
+	var (
+		err               error
+		app               *App
+		trx               *gorm.DB
+		file              *File
+		down              func(*testing.T)
+		tempDir           = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+		rootDir           *File
+		randomBytes       = Random(255)
+		randomBytesReader = bytes.NewReader(randomBytes)
+	)
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file, err = CreateFileFromReader(app, "/save/to/a/1.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/a/1.bytes", file.mustPath(trx))
+	dir := file.Parent
+
+	// rename directory
+	err = dir.MoveTo("/save/to/b", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "b", dir.Name)
+	assert.Equal(t, int8(1), dir.IsDir)
+	assert.Equal(t, "/save/to/b/1.bytes", file.mustPath(trx))
+
+	// move to another directory
+	err = dir.MoveTo("/save/as/b", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/as/b/1.bytes", file.mustPath(trx))
+
+	rootDir, err = CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 255, rootDir.Size)
+
+	saveToDir, err := FindFileByPath(app, "/save/to", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, saveToDir.Size)
+
+	saveAsDir, err := FindFileByPath(app, "/save/as", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 255, saveAsDir.Size)
 }

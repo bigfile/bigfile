@@ -65,7 +65,7 @@ func TestObject_ChunkCount2(t *testing.T) {
 			},
 		},
 	}
-	assert.Nil(t, trx.Save(object).Error)
+	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
 	assert.True(t, object.ID > 0)
 	assert.Equal(t, 1, object.ChunkCount(trx))
 }
@@ -123,7 +123,7 @@ func TestObject_LastChunk2(t *testing.T) {
 			},
 		},
 	}
-	assert.Nil(t, trx.Save(object).Error)
+	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
 	assert.True(t, object.ID > 0)
 	assert.Equal(t, 2, object.ChunkCount(trx))
 
@@ -188,7 +188,7 @@ func TestObject_LastChunkNumber2(t *testing.T) {
 			},
 		},
 	}
-	assert.Nil(t, trx.Save(object).Error)
+	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
 	assert.True(t, object.ID > 0)
 	assert.Equal(t, 2, object.ChunkCount(trx))
 

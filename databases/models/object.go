@@ -29,10 +29,10 @@ type Object struct {
 	CreatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:createdAt"`
 	UpdatedAt time.Time `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 
-	Files        []File        `gorm:"foreignkey:objectId"`
-	Chunks       []Chunk       `gorm:"many2many:object_chunk;association_jointable_foreignkey:chunkId;jointable_foreignkey:objectId"`
-	ObjectChunks []ObjectChunk `gorm:"foreignkey:objectId"`
-	Histories    []History     `gorm:"foreignkey:objectId"`
+	Files        []File        `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
+	Chunks       []Chunk       `gorm:"many2many:object_chunk;association_jointable_foreignkey:chunkId;jointable_foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
+	ObjectChunks []ObjectChunk `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
+	Histories    []History     `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
 }
 
 // TableName represent the db table name
@@ -266,7 +266,7 @@ func CreateEmptyObject(rootPath *string, db *gorm.DB) (*Object, error) {
 		},
 	}
 
-	return object, db.Save(object).Error
+	return object, db.Set("gorm:association_autocreate", true).Save(object).Error
 }
 
 func appendContentToObject(obj *Object, oc []ObjectChunk, readerContent []byte, index int, hash hash.Hash, rootPath *string, db *gorm.DB) error {

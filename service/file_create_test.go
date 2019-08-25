@@ -178,7 +178,7 @@ func TestFileCreate_Execute3(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, file2.ID, file.ID)
 	assert.NotEqual(t, file2.ObjectID, file.ObjectID)
-	assert.Equal(t, file2.Size, 2*models.ChunkSize+225)
+	assert.Equal(t, 2*models.ChunkSize+225, file2.Size)
 	assert.Equal(t, file2.Object.Hash, hex.EncodeToString(h2.Sum(nil)))
 	assert.Equal(t, 1, fileCreate.DB.Model(file2).Association("Histories").Count())
 
