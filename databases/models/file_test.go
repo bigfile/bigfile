@@ -463,3 +463,44 @@ func TestFile_MoveTo2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 255, saveAsDir.Size)
 }
+
+func TestFile_Delete(t *testing.T) {
+	var (
+		err               error
+		app               *App
+		trx               *gorm.DB
+		file              *File
+		down              func(*testing.T)
+		tempDir           = NewTempDirForTest()
+		rootDir           *File
+		randomBytes       = Random(255)
+		randomBytesReader = bytes.NewReader(randomBytes)
+	)
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file, err = CreateFileFromReader(app, "/save/to/a/1.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/a/1.bytes", file.mustPath(trx))
+	assert.Nil(t, file.Delete(true, trx))
+	assert.NotNil(t, file.DeletedAt)
+	rootDir, err = CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, rootDir.Size)
+
+	toDir, err := FindFileByPath(app, "/save/to", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, ErrDeleteNonEmptyDir, toDir.Delete(false, trx))
+	assert.Nil(t, toDir.Delete(true, trx))
+	assert.NotNil(t, toDir.DeletedAt)
+
+	aDir, err := FindFileByPath(app, "/save/to", trx)
+	assert.Nil(t, err)
+	assert.NotNil(t, aDir.DeletedAt)
+}

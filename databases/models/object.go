@@ -40,7 +40,7 @@ func (o Object) TableName() string {
 	return "objects"
 }
 
-// FileCount count the files they are associated with this object
+// FileCountWithTrashed count the files they are associated with this object
 func (o *Object) FileCountWithTrashed(db *gorm.DB) int {
 	return db.Unscoped().Model(o).Association("Files").Count()
 }

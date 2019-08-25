@@ -126,6 +126,12 @@ func (m *MigrationCollection) Rollback(step uint) {
 	}
 }
 
+// Refresh is used to refresh the whole database
+func (m *MigrationCollection) Refresh() {
+	m.Rollback(m.MaxBatch())
+	m.Upgrade()
+}
+
 // DefaultMC  In fact, is not available, unless you set
 // the database connection by SetConnection method
 var DefaultMC = &MigrationCollection{}
