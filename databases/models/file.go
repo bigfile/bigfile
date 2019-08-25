@@ -97,11 +97,25 @@ func (f *File) executeDelete(forceDelete bool, db *gorm.DB) error {
 
 // Delete is used to delete file or directory. if the file is a non-empty directory,
 // 'forceDelete' determine to delete or not sub directories and files
-func (f *File) Delete(forceDelete bool, db *gorm.DB) error {
+func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 	var (
 		updateSizeChan = make(chan error, 1)
 		deleteFileChan = make(chan error, 1)
+		inTrx          = util.InTransaction(db)
 	)
+	if !inTrx {
+		db = db.Begin()
+	}
+	defer func() {
+		if !inTrx {
+			if reErr := recover(); reErr != nil || err != nil {
+				db.Rollback()
+				if reErr != nil {
+					panic(reErr)
+				}
+			}
+		}
+	}()
 	go func() {
 		var err error
 		defer func() {
@@ -131,8 +145,15 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) error {
 		return deleteFileErr
 	}
 
-	return db.Unscoped().Find(f).Error
+	if err = db.Unscoped().Find(f).Error; err != nil {
+		return err
+	}
 
+	if !inTrx {
+		return db.Commit().Error
+	}
+
+	return nil
 }
 
 // CanBeAccessedByToken represent whether the file can be accessed by the token

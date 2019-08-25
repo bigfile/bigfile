@@ -15,6 +15,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -92,4 +94,20 @@ func TestSha256Hash2String2(t *testing.T) {
 func TestIsRecordNotFound(t *testing.T) {
 	assert.False(t, IsRecordNotFound(errors.New("")))
 	assert.True(t, IsRecordNotFound(errors.New("record not found")))
+}
+
+func TestInTransaction(t *testing.T) {
+	dbFile := filepath.Join(os.TempDir(), fmt.Sprintf("%d-gorm.db", rand.Int63()))
+	db, err := gorm.Open("sqlite3", dbFile)
+	assert.Nil(t, err)
+	defer func() {
+		_ = db.Close()
+		if IsFile(dbFile) {
+			os.Remove(dbFile)
+		}
+	}()
+	assert.False(t, InTransaction(db))
+	db = db.Begin()
+	assert.True(t, InTransaction(db))
+	fmt.Println(InTransaction(nil))
 }
