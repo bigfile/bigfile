@@ -258,7 +258,7 @@ func TestCreateObjectFromReader(t *testing.T) {
 	assert.Equal(t, int(ChunkSize*2.5), object.Size)
 }
 
-func TestObject_FileCount(t *testing.T) {
+func TestObject_FileCountWithTrashed(t *testing.T) {
 	var (
 		content = "hello world"
 		size    = len(content)
@@ -272,10 +272,12 @@ func TestObject_FileCount(t *testing.T) {
 	assert.Nil(t, trx.Save(object).Error)
 	file1 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID}
 	assert.Nil(t, trx.Save(file1).Error)
-	assert.Equal(t, object.FileCount(trx), 1)
+	assert.Equal(t, object.FileCountWithTrashed(trx), 1)
+	assert.Nil(t, trx.Delete(file1).Error)
+	assert.Equal(t, object.FileCountWithTrashed(trx), 1)
 }
 
-func TestObject_FileCount2(t *testing.T) {
+func TestObject_FileCountWithTrashed2(t *testing.T) {
 	var (
 		content = "hello world"
 		size    = len(content)
@@ -287,7 +289,7 @@ func TestObject_FileCount2(t *testing.T) {
 	assert.Nil(t, err)
 	object := &Object{Size: size, Hash: h}
 	assert.Nil(t, trx.Save(object).Error)
-	assert.Equal(t, object.FileCount(trx), 0)
+	assert.Equal(t, object.FileCountWithTrashed(trx), 0)
 }
 
 func TestCreateEmptyObject(t *testing.T) {

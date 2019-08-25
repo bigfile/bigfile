@@ -50,9 +50,10 @@ type File struct {
 	UpdatedAt     time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 	DeletedAt     *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt"`
 
-	Object    Object    `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
 	App       App       `gorm:"foreignkey:appId;association_autoupdate:false;association_autocreate:false"`
+	Object    Object    `gorm:"foreignkey:objectId;association_autoupdate:false;association_autocreate:false"`
 	Parent    *File     `gorm:"foreignkey:id;association_foreignkey:pid;association_autoupdate:false;association_autocreate:false"`
+	Children  []File    `gorm:"foreignkey:pid;association_foreignkey:id;association_autoupdate:false;association_autocreate:false"`
 	Histories []History `gorm:"foreignkey:fileId;association_autoupdate:false;association_autocreate:false"`
 }
 

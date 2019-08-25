@@ -111,6 +111,12 @@ func TestFindFileByPath(t *testing.T) {
 	assert.Equal(t, "test.png", testPngFile.Name)
 	assert.Equal(t, imagesDir.ID, testPngFile.PID)
 
+	imagesDir, err = FindFileByPath(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+	assert.Nil(t, trx.Preload("Children").Find(imagesDir).Error)
+	assert.NotNil(t, imagesDir.Children)
+	assert.Equal(t, 1, len(imagesDir.Children))
+
 	_, err = FindFileByPath(app, "/save/to/images/test.jpg", trx)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "record not found")
