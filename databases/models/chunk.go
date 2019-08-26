@@ -131,19 +131,6 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chu
 	c.Size = buf.Len()
 	c.Hash = hash
 
-	var inTrx = util.InTransaction(db)
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					panic(reErr)
-				}
-			}
-		}()
-	}
-
 	if file, err = os.OpenFile(c.Path(rootPath), os.O_APPEND|os.O_WRONLY, 0644); err != nil {
 		return nil, 0, err
 	}
@@ -155,10 +142,6 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chu
 
 	if err = db.Save(c).Error; err != nil {
 		return nil, 0, err
-	}
-
-	if !inTrx {
-		err = db.Commit().Error
 	}
 
 	return c, writeCount, err
@@ -188,29 +171,12 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk
 		Hash: hashStr,
 	}
 
-	var inTrx = util.InTransaction(db)
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					panic(reErr)
-				}
-			}
-		}()
-	}
-
 	if err = db.Create(chunk).Error; err != nil {
 		return nil, err
 	}
 
 	if err = ioutil.WriteFile(chunk.Path(rootPath), p, 0644); err != nil {
 		return nil, err
-	}
-
-	if !inTrx {
-		err = db.Commit().Error
 	}
 
 	return chunk, err
@@ -239,29 +205,12 @@ func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (chunk *Chunk, err e
 		Hash: emptyContentHash,
 	}
 
-	var inTrx = util.InTransaction(db)
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					panic(reErr)
-				}
-			}
-		}()
-	}
-
 	if err = db.Create(chunk).Error; err != nil {
 		return nil, err
 	}
 
 	if err = ioutil.WriteFile(chunk.Path(rootPath), nil, 0644); err != nil {
 		return nil, err
-	}
-
-	if !inTrx {
-		err = db.Commit().Error
 	}
 
 	return chunk, err

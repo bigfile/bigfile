@@ -102,20 +102,7 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 	var (
 		updateSizeChan = make(chan error, 1)
 		deleteFileChan = make(chan error, 1)
-		inTrx          = util.InTransaction(db)
 	)
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					log.MustNewLogger(nil).Error(reErr)
-					panic(reErr)
-				}
-			}
-		}()
-	}
 	go func() {
 		var err error
 		defer func() {
@@ -147,10 +134,6 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 
 	if err = db.Unscoped().Find(f).Error; err != nil {
 		return err
-	}
-
-	if !inTrx {
-		return db.Commit().Error
 	}
 
 	return nil
@@ -239,19 +222,9 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 
 	var (
 		path     string
-		inTrx    = util.InTransaction(db)
 		object   *Object
 		sizeDiff int
 	)
-
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err == nil {
-				db.Rollback()
-			}
-		}()
-	}
 
 	if path, err = f.Path(db); err != nil {
 		return err
@@ -287,10 +260,6 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 		return err
 	}
 
-	if !inTrx {
-		err = db.Commit().Error
-	}
-
 	return err
 }
 
@@ -310,25 +279,12 @@ func (f *File) mustPath(db *gorm.DB) string {
 // if the input path ios the same as the previous path, nothing changes.
 func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 	var (
-		inTrx           = util.InTransaction(db)
 		newPathDir      = filepath.Dir(newPath)
 		newPathDirFile  *File
 		newPathFileName = filepath.Base(newPath)
 		newPathExt      = strings.TrimPrefix(filepath.Ext(newPathFileName), ".")
 		previousPath    string
 	)
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					log.MustNewLogger(nil).Error(reErr)
-					panic(reErr)
-				}
-			}
-		}()
-	}
 
 	if previousPath, err = f.Path(db); err != nil {
 		return err
@@ -392,10 +348,6 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 		return err
 	}
 
-	if !inTrx {
-		err = db.Commit().Error
-	}
-
 	return err
 }
 
@@ -408,22 +360,8 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 
 	var (
 		size   int
-		inTrx  = util.InTransaction(db)
 		object *Object
 	)
-
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					log.MustNewLogger(nil).Error(reErr)
-					panic(reErr)
-				}
-			}
-		}()
-	}
 
 	if err = db.Preload("Object").Preload("Parent").Preload("App").Find(f).Error; err != nil {
 		return err
@@ -444,14 +382,6 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 
 	if err = f.Parent.UpdateParentSize(size, db); err != nil {
 		return err
-	}
-
-	if !inTrx {
-		err = db.Commit().Error
-	}
-
-	if err == nil {
-		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
 	}
 
 	return err
@@ -504,7 +434,6 @@ func CreateOrGetRootPath(app *App, db *gorm.DB) (*File, error) {
 // CreateFileFromReader is used to create a file from reader.
 func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) (file *File, err error) {
 	var (
-		inTrx     = util.InTransaction(db)
 		object    *Object
 		parentDir *File
 		dirPrefix = filepath.Dir(path)
@@ -517,19 +446,6 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 
 	if parentDir, err = CreateOrGetLastDirectory(app, dirPrefix, db); err != nil {
 		return nil, err
-	}
-
-	if !inTrx {
-		db = db.Begin()
-		defer func() {
-			if reErr := recover(); reErr != nil || err != nil {
-				db.Rollback()
-				if reErr != nil {
-					log.MustNewLogger(nil).Error(reErr)
-					panic(reErr)
-				}
-			}
-		}()
 	}
 
 	if object, err = CreateObjectFromReader(reader, rootPath, db); err != nil {
@@ -556,10 +472,6 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 
 	if err = parentDir.UpdateParentSize(object.Size, db); err != nil {
 		return file, err
-	}
-
-	if !inTrx {
-		err = db.Commit().Error
 	}
 
 	return file, err
