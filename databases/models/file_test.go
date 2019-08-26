@@ -464,6 +464,36 @@ func TestFile_MoveTo2(t *testing.T) {
 	assert.Equal(t, 255, saveAsDir.Size)
 }
 
+// TestFile_MoveTo3 is used to test move to the path thar has already existed
+func TestFile_MoveTo3(t *testing.T) {
+	var (
+		err               error
+		app               *App
+		trx               *gorm.DB
+		down              func(*testing.T)
+		tempDir           = NewTempDirForTest()
+		randomBytes       = Random(255)
+		randomBytesReader = bytes.NewReader(randomBytes)
+	)
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file1, err := CreateFileFromReader(app, "/save/to/a/1.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/a/1.bytes", file1.mustPath(trx))
+
+	file2, err := CreateFileFromReader(app, "/save/to/a/2.bytes", randomBytesReader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/save/to/a/2.bytes", file2.mustPath(trx))
+	assert.Equal(t, file1.MoveTo(file2.mustPath(trx), trx), ErrFileExisted)
+}
+
 func TestFile_Delete(t *testing.T) {
 	var (
 		err               error

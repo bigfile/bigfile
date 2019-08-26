@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/bigfile/bigfile/internal/util"
+	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 	"labix.org/v2/mgo/bson"
 )
@@ -109,6 +110,7 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 			if reErr := recover(); reErr != nil || err != nil {
 				db.Rollback()
 				if reErr != nil {
+					log.MustNewLogger(nil).Error(reErr)
 					panic(reErr)
 				}
 			}
@@ -298,6 +300,7 @@ func (f *File) mustPath(db *gorm.DB) string {
 		path string
 	)
 	if path, err = f.Path(db); err != nil {
+		log.MustNewLogger(nil).Error(err)
 		panic(err)
 	}
 	return path
@@ -320,6 +323,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 			if reErr := recover(); reErr != nil || err != nil {
 				db.Rollback()
 				if reErr != nil {
+					log.MustNewLogger(nil).Error(reErr)
 					panic(reErr)
 				}
 			}
@@ -340,6 +344,10 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 		}
 	}
 
+	if _, err := FindFileByPath(&f.App, newPath, db); err == nil {
+		return ErrFileExisted
+	}
+
 	if newPathDirFile, err = CreateOrGetLastDirectory(&f.App, newPathDir, db); err != nil {
 		return err
 	}
@@ -355,7 +363,6 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 
 	defer func() {
 		pathToFileCache.Delete(previousPath)
-		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
 	}()
 
 	// only change the file name, still is in the same directory
@@ -411,6 +418,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 			if reErr := recover(); reErr != nil || err != nil {
 				db.Rollback()
 				if reErr != nil {
+					log.MustNewLogger(nil).Error(reErr)
 					panic(reErr)
 				}
 			}
@@ -440,6 +448,10 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 
 	if !inTrx {
 		err = db.Commit().Error
+	}
+
+	if err == nil {
+		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
 	}
 
 	return err
@@ -513,6 +525,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 			if reErr := recover(); reErr != nil || err != nil {
 				db.Rollback()
 				if reErr != nil {
+					log.MustNewLogger(nil).Error(reErr)
 					panic(reErr)
 				}
 			}
