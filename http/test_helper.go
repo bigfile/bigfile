@@ -6,6 +6,9 @@ package http
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 
@@ -63,4 +66,39 @@ func getParamsSignatureWithBuf(p map[string]interface{}, secret string) (string,
 func getParamsSignature(p map[string]interface{}, secret string) string {
 	sign, _ := getParamsSignatureWithBuf(p, secret)
 	return sign
+}
+
+// fileChunk is used to split the whole file to chunks
+func fileChunk(f string, size int) error {
+	var (
+		err  error
+		file *os.File
+	)
+
+	if file, err = os.Open(f); err != nil {
+		return err
+	}
+
+	for index := 0; ; index++ {
+		var (
+			chunk     = make([]byte, size)
+			readCount int
+			finished  bool
+		)
+		if readCount, err = file.Read(chunk); err != nil {
+			if err != io.EOF {
+				return err
+			}
+			finished = true
+		}
+		if readCount > 0 {
+			if err = ioutil.WriteFile(fmt.Sprintf("%d-%s", index, f), chunk[:readCount], 0644); err != nil {
+				return err
+			}
+		}
+		if finished {
+			break
+		}
+	}
+	return nil
 }
