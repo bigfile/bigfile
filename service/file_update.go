@@ -65,8 +65,8 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 	)
 
 	fu.BaseService.Before = append(fu.BaseService.After, func(ctx context.Context, service Service) error {
-		f := service.(*FileUpdate)
-		return f.Token.UpdateAvailableTimes(-1, f.DB)
+		fu := service.(*FileUpdate)
+		return fu.Token.UpdateAvailableTimes(-1, fu.DB)
 	})
 
 	if err = fu.CallBefore(ctx, fu); err != nil {
@@ -105,7 +105,7 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	if fu.CallAfter(ctx, fu) != nil {
+	if err = fu.CallAfter(ctx, fu); err != nil {
 		return fu.File, err
 	}
 

@@ -99,37 +99,22 @@ func (f *File) executeDelete(forceDelete bool, db *gorm.DB) error {
 // Delete is used to delete file or directory. if the file is a non-empty directory,
 // 'forceDelete' determine to delete or not sub directories and files
 func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
-	var (
-		updateSizeChan = make(chan error, 1)
-		deleteFileChan = make(chan error, 1)
-	)
-	go func() {
-		var err error
-		defer func() {
-			updateSizeChan <- err
-		}()
-		if f.Size > 0 {
-			if f.Parent == nil {
-				if err = db.Preload("Parent").Find(f).Error; err != nil {
-					return
-				}
-			}
-			updateSizeChan <- f.Parent.UpdateParentSize(-f.Size, db)
+
+	if f.Parent == nil {
+		if err = db.Preload("Parent").Find(f).Error; err != nil {
+			return err
 		}
-	}()
-	go func() {
-		deleteFileChan <- f.executeDelete(forceDelete, db)
-	}()
-
-	updateSizeErr := <-updateSizeChan
-	deleteFileErr := <-deleteFileChan
-
-	if updateSizeErr != nil {
-		return updateSizeErr
 	}
 
-	if deleteFileErr != nil {
-		return deleteFileErr
+	originSize := f.Size
+	if err = f.executeDelete(forceDelete, db); err != nil {
+		return err
+	}
+
+	if originSize != 0 {
+		if err = f.Parent.UpdateParentSize(-originSize, db); err != nil {
+			return err
+		}
 	}
 
 	if err = db.Unscoped().Find(f).Error; err != nil {
@@ -198,13 +183,14 @@ func (f *File) Path(db *gorm.DB) (string, error) {
 
 // UpdateParentSize is used to update parent size. note, size may be a negative number.
 func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
-	if err := db.Model(f).UpdateColumn("size", gorm.Expr("size + ?", size)).Error; err != nil {
+	f.Size += size
+	if err := db.Model(f).Update("size", f.Size).Error; err != nil {
 		return err
 	}
 	if f.PID == 0 {
 		return nil
 	}
-	if err := db.Preload("Parent").Find(f).Error; err != nil {
+	if err := db.Preload("Parent").First(f).Error; err != nil {
 		return err
 	}
 	return f.Parent.UpdateParentSize(size, db)

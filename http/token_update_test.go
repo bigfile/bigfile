@@ -7,7 +7,6 @@ package http
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -196,14 +195,14 @@ func BenchmarkTokenUpdateHandler(b *testing.B) {
 
 func TestTokenUpdateHandler4(t *testing.T) {
 	//fmt.Println(fileChunk("WX20190712-111204@2x.png", 838860))
-	fmt.Println(getParamsSignBody(map[string]interface{}{
-		"appUid": "5d638f7c58aaff79b9000001",
-		"nonce":  models.RandomWithMd5(222),
-	}, "8a57b9ae8bbc8ae11c51db14b1bacc1c"))
-
-	theSameStr := strings.Repeat("a", models.ChunkSize)
-
-	_ = ioutil.WriteFile("chunk-0", []byte(theSameStr), 0644)
+	//fmt.Println(getParamsSignBody(map[string]interface{}{
+	//	"appUid": "5d638f7c58aaff79b9000001",
+	//	"nonce":  models.RandomWithMd5(222),
+	//}, "8a57b9ae8bbc8ae11c51db14b1bacc1c"))
+	//
+	//theSameStr := strings.Repeat("a", models.ChunkSize)
+	//
+	//_ = ioutil.WriteFile("chunk-0", []byte(theSameStr), 0644)
 
 	_ = fileChunk
 }

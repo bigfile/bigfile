@@ -10,10 +10,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"hash"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -74,7 +71,7 @@ func TestFileCreate_Validate2(t *testing.T) {
 
 func newFileCreateForTest(t *testing.T, path string) (*FileCreate, func(*testing.T)) {
 	token, trx, down, err := models.NewTokenForTest(nil, t, path, nil, nil, nil, 10, 0)
-	tempDir := filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	tempDir := models.NewTempDirForTest()
 	assert.Nil(t, err)
 	fileCreate := &FileCreate{
 		BaseService: BaseService{

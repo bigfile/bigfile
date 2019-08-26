@@ -165,6 +165,38 @@ func TestCreateFileFromReader(t *testing.T) {
 	assert.Contains(t, err.Error(), ErrFileExisted.Error())
 }
 
+func TestCreateFileFromReader2(t *testing.T) {
+	var (
+		app         *App
+		trx         *gorm.DB
+		err         error
+		file        *File
+		down        func(*testing.T)
+		randomBytes = Random(uint(556))
+		reader      = bytes.NewReader(randomBytes)
+		tempDir     = NewTempDirForTest()
+	)
+
+	app, trx, down, err = newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	file, err = CreateFileFromReader(app, "/test/save/to/random.txt", reader, int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 556, file.Size)
+	assert.Equal(t, 556, file.Parent.Size)
+	assert.Equal(t, 556, file.Parent.Parent.Size)
+	assert.Equal(t, 556, file.Parent.Parent.Parent.Size)
+	root, err := CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 556, root.Size)
+}
+
 func TestFile_AppendFromReader(t *testing.T) {
 	var (
 		h           = sha256.New()

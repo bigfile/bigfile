@@ -38,30 +38,30 @@ type FileCreate struct {
 }
 
 // Validate is used to validate params
-func (f *FileCreate) Validate() ValidateErrors {
+func (fc *FileCreate) Validate() ValidateErrors {
 	var (
+		err            error
 		validateErrors ValidateErrors
-		errs           error
 	)
 
-	if f.Overwrite+f.Rename+f.Append > 1 {
+	if fc.Overwrite+fc.Rename+fc.Append > 1 {
 		validateErrors = append(
 			validateErrors,
 			generateErrorByField("FileCreate.Operate", ErrOnlyOneRenameAppendOverWrite),
 		)
 	}
 
-	if errs = Validate.Struct(f); errs != nil {
-		for _, err := range errs.(validator.ValidationErrors) {
+	if err = Validate.Struct(fc); err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
 			validateErrors = append(validateErrors, PreDefinedValidateErrors[err.Namespace()])
 		}
 	}
 
-	if err := ValidateToken(f.DB, f.IP, false, f.Token); err != nil {
+	if err = ValidateToken(fc.DB, fc.IP, false, fc.Token); err != nil {
 		validateErrors = append(validateErrors, generateErrorByField("FileCreate.Token", err))
 	}
 
-	if !ValidatePath(f.Path) {
+	if !ValidatePath(fc.Path) {
 		validateErrors = append(validateErrors, generateErrorByField("FileCreate.Path", ErrInvalidPath))
 	}
 
@@ -69,72 +69,72 @@ func (f *FileCreate) Validate() ValidateErrors {
 }
 
 // Execute is used to upload file or create directory
-func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
+func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	var (
 		err   error
-		path  = f.Token.PathWithScope(f.Path)
+		path  = fc.Token.PathWithScope(fc.Path)
 		file  *models.File
-		inTrx = util.InTransaction(f.DB)
+		inTrx = util.InTransaction(fc.DB)
 	)
 
-	f.BaseService.Before = append(f.BaseService.After, func(ctx context.Context, service Service) error {
-		f := service.(*FileCreate)
-		return f.Token.UpdateAvailableTimes(-1, f.DB)
+	fc.BaseService.Before = append(fc.BaseService.Before, func(ctx context.Context, service Service) error {
+		fc := service.(*FileCreate)
+		return service.(*FileCreate).Token.UpdateAvailableTimes(-1, fc.DB)
 	})
 
-	if err = f.CallBefore(ctx, f); err != nil {
+	if err = fc.CallBefore(ctx, fc); err != nil {
 		return nil, err
 	}
 
 	if !inTrx {
-		f.DB = f.DB.Begin()
+		fc.DB = fc.DB.Begin()
 		defer func() {
 			if reErr := recover(); reErr != nil {
-				f.DB.Rollback()
+				fc.DB.Rollback()
 			} else if err != nil {
 				if _, ok := err.(*commitError); !ok {
-					f.DB.Rollback()
+					fc.DB.Rollback()
 				}
 			}
 		}()
 		defer func() {
-			if err = f.DB.Commit().Error; err != nil {
+			if err = fc.DB.Commit().Error; err != nil {
 				err = &commitError{err: err}
 			}
 		}()
 	}
 
-	if f.Reader == nil {
-		return models.CreateOrGetLastDirectory(&f.Token.App, path, f.DB)
+	if fc.Reader == nil {
+		return models.CreateOrGetLastDirectory(&fc.Token.App, path, fc.DB)
 	}
 
-	if file, err = models.FindFileByPath(&f.Token.App, path, f.DB); err != nil && !util.IsRecordNotFound(err) {
+	if file, err = models.FindFileByPath(&fc.Token.App, path, fc.DB); err != nil && !util.IsRecordNotFound(err) {
 		return nil, err
 	}
 
 	if file == nil || file.ID == 0 {
-		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.RootPath, f.DB)
+		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
 	}
 
-	if f.Overwrite == 1 {
-		return file, file.OverWriteFromReader(f.Reader, f.Hidden, f.RootPath, f.DB)
+	if fc.Overwrite == 1 {
+		return file, file.OverWriteFromReader(fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
 	}
 
-	if f.Append == 1 {
-		return file, file.AppendFromReader(f.Reader, f.Hidden, f.RootPath, f.DB)
+	if fc.Append == 1 {
+		return file, file.AppendFromReader(fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
 	}
 
-	if f.Rename == 1 {
+	if fc.Rename == 1 {
 		var (
 			dir      = filepath.Dir(path)
 			basename = filepath.Base(path)
 		)
 		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMd5(256), basename)
-		return models.CreateFileFromReader(&f.Token.App, path, f.Reader, f.Hidden, f.RootPath, f.DB)
+		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
 	}
 
-	if f.CallAfter(ctx, f) != nil {
+	if err = fc.CallAfter(ctx, fc); err != nil {
 		return nil, err
 	}
 
