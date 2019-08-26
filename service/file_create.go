@@ -72,9 +72,10 @@ func (f *FileCreate) Validate() ValidateErrors {
 func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	var (
-		err  error
-		path = f.Token.PathWithScope(f.Path)
-		file *models.File
+		err   error
+		path  = f.Token.PathWithScope(f.Path)
+		file  *models.File
+		inTrx = util.InTransaction(f.DB)
 	)
 
 	f.BaseService.Before = append(f.BaseService.After, func(ctx context.Context, service Service) error {
@@ -84,6 +85,24 @@ func (f *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	if err = f.CallBefore(ctx, f); err != nil {
 		return nil, err
+	}
+
+	if !inTrx {
+		f.DB = f.DB.Begin()
+		defer func() {
+			if reErr := recover(); reErr != nil {
+				f.DB.Rollback()
+			} else if err != nil {
+				if _, ok := err.(*commitError); !ok {
+					f.DB.Rollback()
+				}
+			}
+		}()
+		defer func() {
+			if err = f.DB.Commit().Error; err != nil {
+				err = &commitError{err: err}
+			}
+		}()
 	}
 
 	if f.Reader == nil {

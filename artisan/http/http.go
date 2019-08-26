@@ -16,9 +16,10 @@ import (
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/migrate"
+	"github.com/gin-gonic/gin"
+
 	"github.com/bigfile/bigfile/http"
 	"github.com/bigfile/bigfile/log"
-	"github.com/gin-gonic/gin"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/urfave/cli.v2"
 )

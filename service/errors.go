@@ -15,6 +15,15 @@ var (
 	ErrInvalidPath = errors.New("path is not a legal unix path")
 )
 
+// commitError is used to wrap an commit error
+type commitError struct {
+	err error
+}
+
+func (c *commitError) Error() string {
+	return c.err.Error()
+}
+
 // ValidateError is defined validate error information
 type ValidateError struct {
 	Msg       string `json:"msg"`

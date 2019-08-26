@@ -160,10 +160,11 @@ func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
 	if f.IsDir == 1 {
 		return nil, ErrReadDir
 	}
-	var (
-		err error
-	)
+	var err error
 	if len(f.Object.Chunks) == 0 {
+		if err = db.Preload("Object").Find(&f).Error; err != nil {
+			return nil, err
+		}
 		if err = db.Preload("Chunks").Find(&f.Object).Error; err != nil {
 			return nil, err
 		}

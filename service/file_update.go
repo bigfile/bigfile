@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/bigfile/bigfile/databases/models"
+	"github.com/bigfile/bigfile/internal/util"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -58,9 +59,9 @@ func (fu *FileUpdate) Validate() ValidateErrors {
 
 // Execute is used to update file
 func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
-
 	var (
-		err error
+		err   error
+		inTrx = util.InTransaction(fu.DB)
 	)
 
 	fu.BaseService.Before = append(fu.BaseService.After, func(ctx context.Context, service Service) error {
@@ -70,6 +71,24 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 
 	if err = fu.CallBefore(ctx, fu); err != nil {
 		return nil, err
+	}
+
+	if !inTrx {
+		fu.DB = fu.DB.Begin()
+		defer func() {
+			if reErr := recover(); reErr != nil {
+				fu.DB.Rollback()
+			} else if err != nil {
+				if _, ok := err.(*commitError); !ok {
+					fu.DB.Rollback()
+				}
+			}
+		}()
+		defer func() {
+			if err = fu.DB.Commit().Error; err != nil {
+				err = &commitError{err: err}
+			}
+		}()
 	}
 
 	if fu.Path != nil {
