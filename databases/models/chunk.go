@@ -77,23 +77,21 @@ func (c Chunk) Path(rootPath *string) string {
 	parts[index] = idStr
 	parts = parts[1:]
 	util.ReverseSlice(parts)
-	dir := fmt.Sprintf("%s/%s", strings.TrimSuffix(*rootPath, "/"), filepath.Join(parts...))
+	dir := filepath.Join(strings.TrimSuffix(*rootPath, string(os.PathSeparator)), filepath.Join(parts...))
 	if !util.IsDir(dir) {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			panic(err)
 		}
 	}
-	return fmt.Sprintf("%s/%s", dir, strconv.FormatUint(c.ID, 10))
+	return filepath.Join(dir, strconv.FormatUint(c.ID, 10))
 }
 
 // AppendBytes is used to append bytes to chunk. Firstly, this function will check whether
 // there is already a chunk its hash value is equal to the hash of complete content. If exist,
 // return it, otherwise, append content to origin chunk.
-func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, int, error) {
+func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk, writeCount int, err error) {
 	var (
 		file       *os.File
-		err        error
-		writeCount int
 		buf        bytes.Buffer
 		oldContent []byte
 		hash       string
@@ -115,7 +113,7 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, in
 	}
 
 	// find chunk by the hash value of complete content
-	if chunk, err := FindChunkByHash(hash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
+	if chunk, err = FindChunkByHash(hash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
 		return chunk, len(p), err
 	}
 
@@ -150,10 +148,8 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, in
 }
 
 // CreateChunkFromBytes will crate a chunk from the specify byte content
-func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, error) {
+func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk, err error) {
 	var (
-		chunk   *Chunk
-		err     error
 		hashStr string
 		size    int
 	)
@@ -174,6 +170,7 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, erro
 		Size: size,
 		Hash: hashStr,
 	}
+
 	if err = db.Create(chunk).Error; err != nil {
 		return nil, err
 	}
@@ -182,7 +179,7 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (*Chunk, erro
 		return nil, err
 	}
 
-	return chunk, nil
+	return chunk, err
 }
 
 // FindChunkByHash will find chunk by the specify hash
@@ -193,12 +190,8 @@ func FindChunkByHash(h string, db *gorm.DB) (*Chunk, error) {
 }
 
 // CreateEmptyContentChunk is used to create a chunk with empty content
-func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (*Chunk, error) {
-	var (
-		chunk            *Chunk
-		err              error
-		emptyContentHash string
-	)
+func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (chunk *Chunk, err error) {
+	var emptyContentHash string
 	if emptyContentHash, err = util.Sha256Hash2String(nil); err != nil {
 		return nil, err
 	}
@@ -220,5 +213,5 @@ func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (*Chunk, error) {
 		return nil, err
 	}
 
-	return chunk, nil
+	return chunk, err
 }

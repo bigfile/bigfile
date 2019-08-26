@@ -33,7 +33,7 @@ type Token struct {
 	UpdatedAt      time.Time  `gorm:"type:TIMESTAMP(6) NOT NULL;DEFAULT:CURRENT_TIMESTAMP(6);column:updatedAt"`
 	DeletedAt      *time.Time `gorm:"type:TIMESTAMP(6);INDEX;column:deletedAt"`
 
-	App App `gorm:"association_foreignkey:id;foreignkey:AppID"`
+	App App `gorm:"association_foreignkey:id;foreignkey:AppID;association_autoupdate:false;association_autocreate:false"`
 }
 
 // TableName represent token table name
@@ -76,10 +76,10 @@ func (t *Token) UpdateAvailableTimes(inc int, db *gorm.DB) error {
 	if t.AvailableTimes == -1 {
 		return nil
 	}
-	if err := db.Model(t).UpdateColumn("availableTimes", gorm.Expr("availableTimes + ?", inc)).Error; err != nil {
+	t.AvailableTimes--
+	if err := db.Model(t).Update("availableTimes", t.AvailableTimes).Error; err != nil {
 		return err
 	}
-	t.AvailableTimes--
 	return nil
 }
 

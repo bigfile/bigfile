@@ -9,10 +9,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -62,7 +59,7 @@ func TestFileRead_Validate(t *testing.T) {
 }
 
 func TestFileRead_Execute(t *testing.T) {
-	tempDir := filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	tempDir := models.NewTempDirForTest()
 	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
 	assert.Nil(t, err)
 	defer func() {

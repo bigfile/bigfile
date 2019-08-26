@@ -10,6 +10,8 @@ import (
 	"errors"
 	"os"
 	"reflect"
+
+	"github.com/jinzhu/gorm"
 )
 
 // IsDir is used to judge whether the specific path is a valid directory
@@ -85,4 +87,12 @@ func Sha256Hash2String(p []byte) (string, error) {
 // "record not found" will be returned.
 func IsRecordNotFound(err error) bool {
 	return err != nil && err.Error() == "record not found"
+}
+
+// InTransaction is used check whether current db is in transaction
+func InTransaction(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+	return reflect.ValueOf(db).Elem().FieldByName("db").Elem().Type().String() == "*sql.Tx"
 }

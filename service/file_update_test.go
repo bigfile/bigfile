@@ -7,10 +7,7 @@ package service
 import (
 	"bytes"
 	"context"
-	"math/rand"
 	"os"
-	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/bigfile/bigfile/internal/util"
@@ -66,7 +63,7 @@ func TestFileUpdate_Validate(t *testing.T) {
 }
 
 func TestFileUpdate_Execute(t *testing.T) {
-	tempDir := filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
+	tempDir := models.NewTempDirForTest()
 	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
 	assert.Nil(t, err)
 	defer func() {

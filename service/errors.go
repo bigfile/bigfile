@@ -15,6 +15,15 @@ var (
 	ErrInvalidPath = errors.New("path is not a legal unix path")
 )
 
+// commitError is used to wrap an commit error
+type commitError struct {
+	err error
+}
+
+func (c *commitError) Error() string {
+	return c.err.Error()
+}
+
 // ValidateError is defined validate error information
 type ValidateError struct {
 	Msg       string `json:"msg"`
@@ -201,7 +210,7 @@ var (
 		},
 		"FileRead.File": {
 			Code:  10024,
-			Field: "FileRead.Token",
+			Field: "FileRead.File",
 			Msg:   "file is required",
 		},
 
@@ -213,7 +222,7 @@ var (
 		},
 		"FileUpdate.File": {
 			Code:  10026,
-			Field: "FileUpdate.Token",
+			Field: "FileUpdate.File",
 			Msg:   "file is required",
 		},
 		"FileUpdate.Hidden": {
@@ -224,6 +233,18 @@ var (
 		"FileUpdate.Path": {
 			Code:  10028,
 			Field: "FileUpdate.Path",
+			Msg:   "file is required",
+		},
+
+		// FileDelete Field error
+		"FileDelete.Token": {
+			Code:  10029,
+			Field: "FileDelete.Token",
+			Msg:   "token is required",
+		},
+		"FileDelete.File": {
+			Code:  10030,
+			Field: "FileDelete.File",
 			Msg:   "file is required",
 		},
 	}

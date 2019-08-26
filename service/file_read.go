@@ -55,9 +55,9 @@ func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
 		fileReader io.Reader
 	)
 
-	fr.BaseService.Before = append(fr.BaseService.After, func(ctx context.Context, service Service) error {
-		f := service.(*FileRead)
-		return f.Token.UpdateAvailableTimes(-1, f.DB)
+	fr.BaseService.Before = append(fr.BaseService.Before, func(ctx context.Context, service Service) error {
+		fr := service.(*FileRead)
+		return fr.Token.UpdateAvailableTimes(-1, fr.DB)
 	})
 
 	if err = fr.CallBefore(ctx, fr); err != nil {
@@ -68,8 +68,8 @@ func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	if fr.CallAfter(ctx, fr) != nil {
-		return nil, err
+	if err = fr.CallAfter(ctx, fr); err != nil {
+		return fr.File, err
 	}
 
 	return fileReader, nil
