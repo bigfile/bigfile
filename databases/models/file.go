@@ -190,7 +190,10 @@ func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
 	if f.PID == 0 {
 		return nil
 	}
-	if err := db.Preload("Parent").First(f).Error; err != nil {
+	if f.Parent == nil {
+		f.Parent = &File{}
+	}
+	if err := db.Model(f).Association("Parent").Find(f.Parent).Error; err != nil {
 		return err
 	}
 	return f.Parent.UpdateParentSize(size, db)
@@ -306,15 +309,17 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 
 	defer func() {
 		pathToFileCache.Delete(previousPath)
+		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
 	}()
 
 	// only change the file name, still is in the same directory
 	if newPathDirFile.ID == f.PID {
-		return db.Save(f).Error
+		return db.Model(f).Updates(map[string]interface{}{"name": f.Name, "ext": f.Ext}).Error
 	}
 
 	if f.Parent == nil || f.Parent.ID == 0 {
-		if err = db.Preload("Parent").Find(f).Error; err != nil {
+		f.Parent = &File{}
+		if err = db.Model(f).Association("Parent").Find(f.Parent).Error; err != nil {
 			return err
 		}
 	}
@@ -331,7 +336,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 	f.Name = newPathFileName
 	f.Ext = newPathExt
 
-	if err = db.Save(f).Error; err != nil {
+	if err = db.Model(f).Updates(map[string]interface{}{"pid": f.PID, "name": f.Name, "ext": f.Ext}).Error; err != nil {
 		return err
 	}
 
@@ -350,7 +355,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 		object *Object
 	)
 
-	if err = db.Preload("Object").Preload("Parent").Preload("App").Find(f).Error; err != nil {
+	if err = db.Preload("Object").Preload("Parent").Preload("App").First(f).Error; err != nil {
 		return err
 	}
 
@@ -363,7 +368,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 	f.Object = *object
 	f.ObjectID = object.ID
 
-	if err = db.Save(f).Error; err != nil {
+	if err = db.Model(f).Updates(map[string]interface{}{"hidden": f.Hidden, "size": f.Size, "objectId": f.ObjectID}).Error; err != nil {
 		return err
 	}
 
@@ -388,7 +393,7 @@ func CreateOrGetLastDirectory(app *App, parentDirs string, db *gorm.DB) (*File, 
 
 	for _, part := range parts {
 		file := &File{}
-		if err = db.Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).Find(file).Error; err != nil {
+		if err = db.Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).First(file).Error; err != nil {
 			if !util.IsRecordNotFound(err) {
 				return nil, err
 			}
@@ -413,7 +418,7 @@ func CreateOrGetRootPath(app *App, db *gorm.DB) (*File, error) {
 		file = &File{}
 		err  error
 	)
-	err = db.Where("appId = ? & pid = 0 and name = ''", app.ID).Find(file).Error
+	err = db.Where("appId = ? and pid = 0 and name = ''", app.ID).First(file).Error
 	file.App = *app
 	return file, err
 }
@@ -453,7 +458,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 		Parent:   parentDir,
 	}
 
-	if err = db.Save(file).Error; err != nil {
+	if err = db.Create(file).Error; err != nil {
 		return nil, err
 	}
 
@@ -504,7 +509,7 @@ func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
 	for _, part := range parts {
 		var file = &File{}
 		// deleted files should be considered
-		if err = db.Unscoped().Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).Find(file).Error; err != nil {
+		if err = db.Unscoped().Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).First(file).Error; err != nil {
 			return nil, err
 		}
 		parent = file
