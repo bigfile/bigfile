@@ -49,7 +49,7 @@ func Routers() *gin.Engine {
 
 	requestWithAppGroup := r.Group("", ParseAppMiddleware(), ReplayAttackMiddleware())
 	requestWithAppGroup.POST(brw("/token/create"), SignWithAppMiddleware(&tokenCreateInput{}), TokenCreateHandler)
-	requestWithAppGroup.POST(brw("/token/update"), SignWithAppMiddleware(&tokenUpdateInput{}), TokenUpdateHandler)
+	requestWithAppGroup.PATCH(brw("/token/update"), SignWithAppMiddleware(&tokenUpdateInput{}), TokenUpdateHandler)
 
 	requestWithTokenGroup := r.Group("", ParseTokenMiddleware(), ReplayAttackMiddleware())
 	requestWithTokenGroup.POST(brw("/file/create"), SignWithTokenMiddleware(&fileCreateInput{}), FileCreateHandler)

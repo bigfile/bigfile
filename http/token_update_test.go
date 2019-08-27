@@ -82,7 +82,7 @@ func TestTokenUpdateHandler2(t *testing.T) {
 		sign = SignStrWithSecret(body, app.Secret)
 	)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
-	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
+	req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	Routers().ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -123,7 +123,7 @@ func TestTokenUpdateHandler3(t *testing.T) {
 			"path":           "hello",
 		}, app.Secret)
 	)
-	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
+	req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	Routers().ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
@@ -184,7 +184,7 @@ func BenchmarkTokenUpdateHandler(b *testing.B) {
 			"readOnly":       1,
 			"path":           "hello",
 		}, app.Secret)
-		req, _ := http.NewRequest("POST", api, strings.NewReader(body))
+		req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		routers.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
