@@ -1,0 +1,25 @@
+language: go
+
+services:
+  - mysql
+
+matrix:
+  fast_finish: true
+  include:
+    - go: 1.12.x
+      env:
+        - GO111MODULE=on
+        - GOPROXY=https://goproxy.io
+
+before_install:
+  - mkdir "${HOME}/go"; export GOPATH="${HOME}/go"
+  - export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}
+
+go_import_path: github.com/bigfile/bigfile
+
+before_script:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
+  - BIGFILE_MODE=dev go run artisan/bigfile.go migrate:upgrade
+
+script:
+  - go test ./...
