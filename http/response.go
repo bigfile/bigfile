@@ -66,7 +66,7 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 		result map[string]interface{}
 	)
 
-	if path, err = file.Path(db); err != nil {
+	if path, err = file.Path(db.Unscoped()); err != nil {
 		return nil, err
 	}
 
@@ -87,6 +87,10 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 	if file.IsDir == 0 {
 		result["hash"] = file.Object.Hash
 		result["ext"] = file.Ext
+	}
+
+	if file.DeletedAt != nil {
+		result["deletedAt"] = file.DeletedAt.Unix()
 	}
 
 	return result, err
