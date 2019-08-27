@@ -13,9 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bigfile/bigfile/databases"
-
 	"github.com/bigfile/bigfile/config"
+	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/gin-gonic/gin"

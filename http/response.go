@@ -71,7 +71,7 @@ func fileResp(file *models.File, db *gorm.DB) (map[string]interface{}, error) {
 	}
 
 	if file.Object.ID == 0 {
-		if err = db.Preload("Object").Find(file).Error; err != nil {
+		if err = db.Unscoped().Preload("Object").Find(file).Error; err != nil {
 			return nil, err
 		}
 	}

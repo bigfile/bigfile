@@ -55,8 +55,8 @@ func Routers() *gin.Engine {
 	requestWithTokenGroup.POST(brw("/file/create"), SignWithTokenMiddleware(&fileCreateInput{}), FileCreateHandler)
 	requestWithTokenGroup.GET(brw("/file/read"), SignWithTokenMiddleware(&fileReadInput{}), FileReadHandler)
 	requestWithTokenGroup.PATCH(brw("/file/update"), SignWithTokenMiddleware(&fileUpdateInput{}), FileUpdateHandler)
+	requestWithTokenGroup.DELETE(brw("/file/delete"), SignWithTokenMiddleware(&fileDeleteInput{}), FileDeleteHandler)
 
-	r.Routes()
 	return r
 }
 

@@ -59,6 +59,12 @@ func TestCreateOrGetLastDirectory(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, images.ID, images2.ID)
 	assert.Equal(t, images.Size, images2.Size)
+
+	rootDir1, _ := CreateOrGetLastDirectory(app, "/", trx)
+	rootDir2, _ := CreateOrGetLastDirectory(app, "", trx)
+	rootDir3, _ := CreateOrGetRootPath(app, trx)
+	assert.Equal(t, rootDir1.ID, rootDir2.ID)
+	assert.Equal(t, rootDir1.ID, rootDir3.ID)
 }
 
 func TestFile_UpdateParentSize(t *testing.T) {
@@ -242,20 +248,34 @@ func TestFile_AppendFromReader(t *testing.T) {
 }
 
 func TestFile_Path(t *testing.T) {
+	tempDir := NewTempDirForTest()
 	app, trx, down, err := newAppForTest(nil, t)
 	assert.Nil(t, err)
-	defer down(t)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
 	dir, err := CreateOrGetLastDirectory(app, "/save/to/images", trx)
 	assert.Nil(t, err)
 	path, err := dir.Path(trx)
 	assert.Nil(t, err)
 	assert.Equal(t, "/save/to/images", path)
 
+	relativeDir, err := CreateOrGetLastDirectory(app, "save/to/images", trx)
+	assert.Nil(t, err)
+	assert.Equal(t, relativeDir.ID, dir.ID)
+
 	file := &File{UID: bson.NewObjectId().Hex(), PID: dir.ID, Name: "test.png", AppID: app.ID}
 	assert.Nil(t, trx.Save(file).Error)
 	path, err = file.Path(trx)
 	assert.Nil(t, err)
 	assert.Equal(t, "/save/to/images/test.png", path)
+
+	randomFile, err := CreateFileFromReader(app, "/random.bytes", strings.NewReader(""), int8(0), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/random.bytes", randomFile.mustPath(trx))
 }
 
 func TestFile_OverWriteFromReader(t *testing.T) {
