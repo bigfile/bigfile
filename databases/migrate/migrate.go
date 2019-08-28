@@ -39,8 +39,9 @@ func (m MigrationModel) TableName() string {
 
 // MigrationCollection is a collection of migrations
 type MigrationCollection struct {
-	migrations map[string]Migrator
-	connection *gorm.DB
+	migrations      map[string]Migrator
+	migrationOrders []string
+	connection      *gorm.DB
 }
 
 // SetConnection is used to set the db connection of database that
@@ -55,6 +56,7 @@ func (m *MigrationCollection) Register(migrate Migrator) {
 		m.migrations = make(map[string]Migrator)
 	}
 	m.migrations[migrate.Name()] = migrate
+	m.migrationOrders = append(m.migrationOrders, migrate.Name())
 }
 
 // CreateMigrateTable is used to create "migrations" table that
@@ -94,8 +96,9 @@ func (m *MigrationCollection) Upgrade() {
 		finishedMigrations[migration.Migration] = struct{}{}
 	}
 
-	for name, migration := range m.migrations {
+	for _, name := range m.migrationOrders {
 		if _, ok := finishedMigrations[name]; !ok {
+			migration := m.migrations[name]
 			if err := migration.Up(m.connection); err == nil {
 				m.connection.Create(&MigrationModel{
 					Migration: name,
@@ -129,7 +132,10 @@ func (m *MigrationCollection) Rollback(step uint) {
 
 // Refresh is used to refresh the whole database
 func (m *MigrationCollection) Refresh() {
-	m.Rollback(m.MaxBatch())
+	maxBatch := m.MaxBatch()
+	if maxBatch > 0 {
+		m.Rollback(maxBatch)
+	}
 	m.Upgrade()
 }
 
