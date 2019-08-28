@@ -28,4 +28,7 @@ before_script:
   - BIGFILE_MODE=dev go run artisan/bigfile.go migrate:upgrade
 
 script:
-  - go test ./...
+  - go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash
