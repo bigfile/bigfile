@@ -5,11 +5,14 @@
 package migrate
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/gookit/color"
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
@@ -78,7 +81,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 			},
 			Action: func(context *cli.Context) error {
 				if context.NArg() < 1 {
-					return fmt.Errorf("\033[31mmigration file name is empty\033[0m")
+					return errors.New("migration file name is empty")
 				}
 				var (
 					path          = context.String("path")
@@ -121,7 +124,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 					return err
 				}
 
-				fmt.Printf("\033[32mCreate migration file: %s\033[0m\n", fileName)
+				color.Green.Printf("Create migration file: %s\n", fileName)
 
 				return nil
 			},
@@ -133,7 +136,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 			Category:  cmdCategory,
 			Action: func(context *cli.Context) error {
 				migrate.DefaultMC.Upgrade()
-				fmt.Println("\033[32mMigrate: done!\033[0m")
+				color.Green.Println("Migrate: done!")
 				return nil
 			},
 			Before: func(context *cli.Context) error {
@@ -157,7 +160,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 			},
 			Action: func(context *cli.Context) error {
 				migrate.DefaultMC.Rollback(uint(context.Int("step")))
-				fmt.Println("\033[31mRollback: done!\033[0m")
+				color.Red.Println("Rollback: done!")
 				return nil
 			},
 			Before: func(context *cli.Context) error {
@@ -175,7 +178,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 				step := migrate.DefaultMC.MaxBatch()
 				migrate.DefaultMC.Rollback(step)
 				migrate.DefaultMC.Upgrade()
-				fmt.Println("\033[31mRefresh: done!\033[0m")
+				color.Blue.Println("Refresh: done!")
 				return nil
 			},
 			Before: func(context *cli.Context) error {

@@ -212,7 +212,6 @@ func BenchmarkDirectoryListHandler(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
