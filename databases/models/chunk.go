@@ -17,6 +17,7 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/internal/util"
+	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 )
 
@@ -65,6 +66,7 @@ func (c Chunk) Path(rootPath *string) string {
 		rootPath = &config.DefaultConfig.Chunk.RootPath
 	}
 	if c.ID < 10000 {
+		log.MustNewLogger(nil).Error(ErrInvalidChunkID)
 		panic(ErrInvalidChunkID)
 	}
 	idStr := strconv.FormatUint(c.ID, 10)
@@ -80,6 +82,7 @@ func (c Chunk) Path(rootPath *string) string {
 	dir := filepath.Join(strings.TrimSuffix(*rootPath, string(os.PathSeparator)), filepath.Join(parts...))
 	if !util.IsDir(dir) {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			log.MustNewLogger(nil).Error(err)
 			panic(err)
 		}
 	}
@@ -98,6 +101,7 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chu
 	)
 
 	if len(p) > ChunkSize-c.Size {
+		log.MustNewLogger(nil).Error(ErrChunkExceedLimit)
 		panic(ErrChunkExceedLimit)
 	}
 

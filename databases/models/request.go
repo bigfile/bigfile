@@ -7,6 +7,7 @@ package models
 import (
 	"time"
 
+	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 )
 
@@ -48,6 +49,7 @@ func NewRequestWithProtocol(protocol string, db *gorm.DB) (*Request, error) {
 // some errors happened, it will panic
 func MustNewRequestWithProtocol(protocol string, db *gorm.DB) *Request {
 	if req, err := NewRequestWithProtocol(protocol, db); err != nil {
+		log.MustNewLogger(nil).Error(err)
 		panic(err)
 	} else {
 		return req
@@ -67,6 +69,7 @@ func MustNewHTTPRequest(ip, method, url string, db *gorm.DB) *Request {
 	)
 	err = db.Create(req).Error
 	if err != nil {
+		log.MustNewLogger(nil).Error(err)
 		panic(err)
 	}
 	return req

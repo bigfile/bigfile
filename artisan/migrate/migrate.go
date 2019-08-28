@@ -12,16 +12,15 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gookit/color"
-
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/migrate"
+	"github.com/gookit/color"
+	"github.com/jinzhu/gorm"
+	"gopkg.in/urfave/cli.v2"
 
 	// import all migrations
 	_ "github.com/bigfile/bigfile/databases/migrate/migrations"
-	"github.com/jinzhu/gorm"
-	"gopkg.in/urfave/cli.v2"
 )
 
 var (
