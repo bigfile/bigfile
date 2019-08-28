@@ -103,3 +103,19 @@ func TestMigrationCollection_Rollback(t *testing.T) {
 	defer connection.DropTableIfExists(&MigrationModel{})
 	defer connection.DropTableIfExists(&UserModelTest{})
 }
+
+func TestMigrationCollection_Refresh(t *testing.T) {
+	connection := getDBConnection(t)
+	DefaultMC.SetConnection(connection)
+	DefaultMC.Register(&CreateUserTableMigration20190725{})
+	DefaultMC.Upgrade()
+	if !connection.HasTable(&UserModelTest{}) {
+		t.Fatalf("table %s should be already existed in database\n", UserModelTest{}.TableName())
+	}
+	DefaultMC.Refresh()
+	if !connection.HasTable(&UserModelTest{}) {
+		t.Fatalf("table %s should be already existed in database\n", UserModelTest{}.TableName())
+	}
+	defer connection.DropTableIfExists(&MigrationModel{})
+	defer connection.DropTableIfExists(&UserModelTest{})
+}

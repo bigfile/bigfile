@@ -26,10 +26,10 @@ before_script:
   - echo "export BIGFILE_MODE=dev" >> ~/.bashrc
   - source ~/.bashrc
   - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
-  - go run artisan/bigfile.go migrate:upgrade
+  - go run artisan/bigfile.go migrate:refresh
 
 script:
-  - go test -coverprofile=coverage.txt -covermode=atomic ./...
+  - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
