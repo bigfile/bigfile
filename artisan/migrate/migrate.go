@@ -15,13 +15,23 @@ import (
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/migrate"
+	"github.com/bigfile/bigfile/databases/migrate/migrations"
 	"github.com/gookit/color"
 	"github.com/jinzhu/gorm"
 	"gopkg.in/urfave/cli.v2"
-
-	// import all migrations
-	_ "github.com/bigfile/bigfile/databases/migrate/migrations"
 )
+
+func init() {
+	migrate.DefaultMC.Register(&migrations.CreateAppsTable20190801213442{})
+	migrate.DefaultMC.Register(&migrations.CreateTokensTable20190803171834{})
+	migrate.DefaultMC.Register(&migrations.CreateRequestsTable20190810180500{})
+	migrate.DefaultMC.Register(&migrations.UpdateRequestsTable20190813104829{})
+	migrate.DefaultMC.Register(&migrations.CreateChunksTable20190815123546{})
+	migrate.DefaultMC.Register(&migrations.CreateObjectsTable20190816152340{})
+	migrate.DefaultMC.Register(&migrations.CreateObjectChunkTable20190816152349{})
+	migrate.DefaultMC.Register(&migrations.CreateFilesTable20190820111006{})
+	migrate.DefaultMC.Register(&migrations.CreateHistoriesTable20190821193012{})
+}
 
 var (
 	connection  *gorm.DB

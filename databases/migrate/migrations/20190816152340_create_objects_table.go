@@ -5,13 +5,8 @@
 package migrations
 
 import (
-	"github.com/bigfile/bigfile/databases/migrate"
 	"github.com/jinzhu/gorm"
 )
-
-func init() {
-	migrate.DefaultMC.Register(&CreateObjectsTable20190816152340{})
-}
 
 // CreateObjectsTable20190816152340 represent some database operate
 type CreateObjectsTable20190816152340 struct{}
