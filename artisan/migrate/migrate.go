@@ -45,13 +45,8 @@ var (
 package migrations
 
 import (
-	"github.com/bigfile/bigfile/databases/migrate"
 	"github.com/jinzhu/gorm"
 )
-
-func init() {
-	migrate.DefaultMC.Register(&{{ .StructureName }}{})
-}
 
 // {{ .StructureName }} represent some database operate
 type {{ .StructureName }} struct{}
