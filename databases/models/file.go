@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -509,11 +508,13 @@ func FindFileByPath(app *App, path string, db *gorm.DB, useCache bool) (*File, e
 	var (
 		err    error
 		parent = &File{}
-		parts  = strings.Split(strings.Trim(strings.TrimSpace(path), "/"), string(os.PathSeparator))
+		parts  = strings.Split(strings.Trim(strings.TrimSpace(path), "/"), "/")
 	)
 
-	if parent, err = CreateOrGetRootPath(app, db); err != nil {
-		return nil, err
+	if parts[0] != "" {
+		if parent, err = CreateOrGetRootPath(app, db); err != nil {
+			return nil, err
+		}
 	}
 
 	for _, part := range parts {

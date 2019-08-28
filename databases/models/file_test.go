@@ -145,6 +145,12 @@ func TestFindFileByPath(t *testing.T) {
 	assert.Nil(t, trx.Delete(imagesDir).Error)
 	_, err = FindFileByPath(app, "/save/to/images", trx, false)
 	assert.True(t, gorm.IsRecordNotFoundError(err))
+
+	rootDirByFindPAth, err := FindFileByPath(app, "/", trx, false)
+	assert.Nil(t, err)
+	rootDir, err := CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, rootDirByFindPAth.ID, rootDir.ID)
 }
 
 func TestCreateFileFromReader(t *testing.T) {
