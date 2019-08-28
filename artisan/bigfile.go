@@ -16,6 +16,7 @@ import (
 	"github.com/bigfile/bigfile/artisan/migrate"
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
+	"github.com/gookit/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 	"gopkg.in/urfave/cli.v2"
@@ -60,15 +61,18 @@ var (
 				viper.AddConfigPath(userHome)
 				viper.AddConfigPath("/etc/bigfile")
 			}
-			if err = viper.ReadInConfig(); err != nil {
-				return err
+
+			if err = viper.ReadInConfig(); err == nil {
+				if err = viper.Unmarshal(config.DefaultConfig); err != nil {
+					return err
+				}
+				if _, err = log.NewLogger(&config.DefaultConfig.Log); err != nil {
+					return err
+				}
+			} else {
+				color.Warn.Println(err.Error())
 			}
-			if err = viper.Unmarshal(config.DefaultConfig); err != nil {
-				return err
-			}
-			if _, err = log.NewLogger(&config.DefaultConfig.Log); err != nil {
-				return err
-			}
+
 			return nil
 		},
 	}
