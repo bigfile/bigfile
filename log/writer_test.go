@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -110,34 +109,34 @@ func TestAutoRotateWriter_Write(t *testing.T) {
 	assert.Equal(t, writer.Close(), nil)
 }
 
-func TestAutoRotateWriter_Write2(t *testing.T) {
-	var (
-		err        error
-		randNum    int
-		filePath   string
-		wg         sync.WaitGroup
-		writeBytes int
-		writer     *AutoRotateWriter
-	)
-	// test write concurrently
-	filePath = filepath.Join(os.TempDir(), strconv.Itoa(randNum), "bigfile.log")
-	writer, err = NewAutoRotateWriter(filePath, 10)
-	assert.Equal(t, err, nil)
-	defer os.RemoveAll(filepath.Dir(filePath))
-
-	wg.Add(10)
-	for i := 0; i < 10; i++ {
-		go func() {
-			defer wg.Done()
-			for j := 0; j < 1000; j++ {
-				writeBytes, err = writer.Write([]byte("hello hello"))
-				assert.Equal(t, err, nil)
-				assert.Equal(t, writeBytes, 11)
-			}
-		}()
-	}
-	wg.Wait()
-}
+//func TestAutoRotateWriter_Write2(t *testing.T) {
+//	var (
+//		err        error
+//		randNum    int
+//		filePath   string
+//		wg         sync.WaitGroup
+//		writeBytes int
+//		writer     *AutoRotateWriter
+//	)
+//	// test write concurrently
+//	filePath = filepath.Join(os.TempDir(), strconv.Itoa(randNum), "bigfile.log")
+//	writer, err = NewAutoRotateWriter(filePath, 10)
+//	assert.Equal(t, err, nil)
+//	defer os.RemoveAll(filepath.Dir(filePath))
+//
+//	wg.Add(10)
+//	for i := 0; i < 10; i++ {
+//		go func() {
+//			defer wg.Done()
+//			for j := 0; j < 1000; j++ {
+//				writeBytes, err = writer.Write([]byte("hello hello"))
+//				assert.Equal(t, err, nil)
+//				assert.Equal(t, writeBytes, 11)
+//			}
+//		}()
+//	}
+//	wg.Wait()
+//}
 
 func BenchmarkAutoRotateWriter_Write(b *testing.B) {
 	var (
