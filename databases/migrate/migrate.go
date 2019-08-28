@@ -10,6 +10,7 @@ package migrate
 import (
 	"fmt"
 
+	"github.com/gookit/color"
 	"github.com/jinzhu/gorm"
 )
 
@@ -100,9 +101,9 @@ func (m *MigrationCollection) Upgrade() {
 					Migration: name,
 					Batch:     currentBatchNumber,
 				})
-				fmt.Printf("\033[32mMigrate: %s\033[0m\n", name)
+				color.Green.Printf("Migrate: %s\n", name)
 			} else {
-				fmt.Printf("\033[31mMigrate: %s, %s\033[0m\n", name, err.Error())
+				color.Red.Printf("Migrate: %s, %s\n", name, err.Error())
 				return
 			}
 		}
@@ -118,9 +119,9 @@ func (m *MigrationCollection) Rollback(step uint) {
 	for _, migration := range migrations {
 		if err := m.migrations[migration.Migration].Down(m.connection); err == nil {
 			m.connection.Delete(&migration)
-			fmt.Printf("\033[31mRollback: %s\033[0m\n", migration.Migration)
+			color.Red.Printf("Rollback: %s\n", migration.Migration)
 		} else {
-			fmt.Printf("\033[31mRollback: %s, %s\033[0m\n", migration.Migration, err.Error())
+			color.Red.Printf("Rollback: %s, %s\n", migration.Migration, err.Error())
 			return
 		}
 	}

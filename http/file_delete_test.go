@@ -138,7 +138,7 @@ func TestFileDeleteHandler5(t *testing.T) {
 	token := ctx.MustGet("token").(*models.Token)
 
 	db := ctx.MustGet("db").(*gorm.DB)
-	toDir, err := models.FindFileByPath(&token.App, "/save/to", db)
+	toDir, err := models.FindFileByPathWithTrashed(&token.App, "/save/to", db)
 	assert.Nil(t, err)
 
 	input := ctx.MustGet("inputParam").(*fileDeleteInput)

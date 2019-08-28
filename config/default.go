@@ -5,20 +5,37 @@
 package config
 
 import (
+	"os"
 	"time"
 
 	"github.com/op/go-logging"
 )
 
-var (
+// DefaultConfig define a default configurator
+var DefaultConfig *Configurator
+
+func init() {
+	var (
+		dbPassword = "root"
+		dbUser     = "root"
+	)
+
+	if v, ok := os.LookupEnv("BIGFILE_DEFAULT_DB_PWD"); ok {
+		dbPassword = v
+	}
+
+	if v, ok := os.LookupEnv("BIGFILE_DEFAULT_DB_USER"); ok {
+		dbUser = v
+	}
+
 	// DefaultConfig define a default configurator
 	DefaultConfig = &Configurator{
 		Database{
 			Driver:   "mysql",
 			Host:     "127.0.0.1",
 			Port:     3306,
-			User:     "root",
-			Password: "root",
+			User:     dbUser,
+			Password: dbPassword,
 			DBName:   "bigfile",
 		},
 		Log{
@@ -53,4 +70,4 @@ var (
 			RootPath: "storage/chunks",
 		},
 	}
-)
+}

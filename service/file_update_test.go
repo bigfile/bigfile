@@ -110,11 +110,11 @@ func TestFileUpdate_Execute(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 556, rootDir.Size)
 
-	testDir, err := models.FindFileByPath(&token.App, "/test", trx)
+	testDir, err := models.FindFileByPathWithTrashed(&token.App, "/test", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, testDir.Size)
 
-	anotherDir, err := models.FindFileByPath(&token.App, "/another", trx)
+	anotherDir, err := models.FindFileByPathWithTrashed(&token.App, "/another", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 556, anotherDir.Size)
 }

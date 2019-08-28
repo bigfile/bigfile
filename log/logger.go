@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/bigfile/bigfile/config"
+	"github.com/gookit/color"
 	"github.com/op/go-logging"
 )
 
@@ -91,6 +92,7 @@ func MustNewLogger(logConfig *config.Log) *logging.Logger {
 		err    error
 	)
 	if logger, err = NewLogger(logConfig); err != nil {
+		color.Red.Println(err)
 		panic(err)
 	}
 	return logger

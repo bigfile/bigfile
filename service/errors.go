@@ -247,6 +247,33 @@ var (
 			Field: "FileDelete.File",
 			Msg:   "file is required",
 		},
+
+		// FileDelete Field error
+		"DirectoryList.Token": {
+			Code:  10031,
+			Field: "DirectoryList.Token",
+			Msg:   "token is required",
+		},
+		"DirectoryList.Sort": {
+			Code:  10032,
+			Field: "DirectoryList.Sort",
+			Msg:   "sort is only allowed to be one of type -type name -name time -time",
+		},
+		"DirectoryList.SubDir": {
+			Code:  10033,
+			Field: "DirectoryList.SubDir",
+			Msg:   "subDir must be a legal unix path",
+		},
+		"DirectoryList.Offset": {
+			Code:  10034,
+			Field: "DirectoryList.Offset",
+			Msg:   "the min value of offset is 0",
+		},
+		"DirectoryList.Limit": {
+			Code:  10035,
+			Field: "DirectoryList.Limit",
+			Msg:   "the min value of limit is 10, and max of limit 20",
+		},
 	}
 )
 

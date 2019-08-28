@@ -56,6 +56,7 @@ func Routers() *gin.Engine {
 	requestWithTokenGroup.GET(brw("/file/read"), SignWithTokenMiddleware(&fileReadInput{}), FileReadHandler)
 	requestWithTokenGroup.PATCH(brw("/file/update"), SignWithTokenMiddleware(&fileUpdateInput{}), FileUpdateHandler)
 	requestWithTokenGroup.DELETE(brw("/file/delete"), SignWithTokenMiddleware(&fileDeleteInput{}), FileDeleteHandler)
+	requestWithTokenGroup.GET(brw("/directory/list"), SignWithTokenMiddleware(&directoryListInput{}), DirectoryListHandler)
 
 	return r
 }

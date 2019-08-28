@@ -12,14 +12,24 @@ matrix:
         - GOPROXY=https://goproxy.io
 
 before_install:
-  - mkdir "${HOME}/go"; export GOPATH="${HOME}/go"
-  - export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}
+  - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
+
+install:
+  - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
+  - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
 
 go_import_path: github.com/bigfile/bigfile
 
 before_script:
+  - echo "export BIGFILE_DEFAULT_DB_USER=root" >> ~/.bashrc
+  - echo "export BIGFILE_DEFAULT_DB_PWD=" >> ~/.bashrc
+  - echo "export BIGFILE_MODE=dev" >> ~/.bashrc
+  - source ~/.bashrc
   - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
-  - BIGFILE_MODE=dev go run artisan/bigfile.go migrate:upgrade
+  - go run artisan/bigfile.go migrate:upgrade
 
 script:
-  - go test ./...
+  - go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

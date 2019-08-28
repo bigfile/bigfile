@@ -80,7 +80,7 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	fc.BaseService.Before = append(fc.BaseService.Before, func(ctx context.Context, service Service) error {
 		fc := service.(*FileCreate)
-		return service.(*FileCreate).Token.UpdateAvailableTimes(-1, fc.DB)
+		return fc.Token.UpdateAvailableTimes(-1, fc.DB)
 	})
 
 	if err = fc.CallBefore(ctx, fc); err != nil {
@@ -109,7 +109,7 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 		return models.CreateOrGetLastDirectory(&fc.Token.App, path, fc.DB)
 	}
 
-	if file, err = models.FindFileByPath(&fc.Token.App, path, fc.DB); err != nil && !util.IsRecordNotFound(err) {
+	if file, err = models.FindFileByPathWithTrashed(&fc.Token.App, path, fc.DB); err != nil && !util.IsRecordNotFound(err) {
 		return nil, err
 	}
 

@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -290,7 +289,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 		}
 	}
 
-	if _, err := FindFileByPath(&f.App, newPath, db); err == nil {
+	if _, err := FindFileByPathWithTrashed(&f.App, newPath, db); err == nil {
 		return ErrFileExisted
 	}
 
@@ -309,7 +308,7 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 
 	defer func() {
 		pathToFileCache.Delete(previousPath)
-		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Hour*48)
+		_ = pathToFileCache.Add(pathCacheKey(&f.App, f.mustPath(db)), f, time.Minute*10)
 	}()
 
 	// only change the file name, still is in the same directory
@@ -435,7 +434,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 		fileName  = filepath.Base(path)
 	)
 
-	if f, err := FindFileByPath(app, path, db); err == nil && f.ID > 0 {
+	if f, err := FindFileByPathWithTrashed(app, path, db); err == nil && f.ID > 0 {
 		return nil, ErrFileExisted
 	}
 
@@ -487,39 +486,48 @@ func FindFileByUID(uid string, trashed bool, db *gorm.DB) (*File, error) {
 	return file, nil
 }
 
+// FindFileByPathWithTrashed is used to find a file by the specify path, include deleted path
+func FindFileByPathWithTrashed(app *App, path string, db *gorm.DB) (*File, error) {
+	return FindFileByPath(app, path, db.Unscoped(), true)
+}
+
 // FindFileByPath is used to find a file by the specify path
-func FindFileByPath(app *App, path string, db *gorm.DB) (*File, error) {
+func FindFileByPath(app *App, path string, db *gorm.DB, useCache bool) (*File, error) {
 	var cacheKey = pathCacheKey(app, path)
 
-	if fileValue, ok := pathToFileCache.Get(cacheKey); ok {
-		file := fileValue.(*File)
-		if err := db.Where("id = ?", file.ID).Find(file).Error; err != nil {
-			file.App = *app
-			return file, nil
+	if useCache {
+		if fileValue, ok := pathToFileCache.Get(cacheKey); ok {
+			file := fileValue.(*File)
+			if err := db.Where("id = ?", file.ID).Find(file).Error; err != nil {
+				file.App = *app
+				return file, nil
+			}
 		}
 	}
 
 	var (
 		err    error
 		parent = &File{}
-		parts  = strings.Split(strings.Trim(strings.TrimSpace(path), "/"), string(os.PathSeparator))
+		parts  = strings.Split(strings.Trim(strings.TrimSpace(path), "/"), "/")
 	)
 
-	if parent, err = CreateOrGetRootPath(app, db); err != nil {
-		return nil, err
+	if parts[0] != "" {
+		if parent, err = CreateOrGetRootPath(app, db); err != nil {
+			return nil, err
+		}
 	}
 
 	for _, part := range parts {
 		var file = &File{}
 		// deleted files should be considered
-		if err = db.Unscoped().Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).First(file).Error; err != nil {
+		if err = db.Where("appId = ? and pid = ? and name = ?", app.ID, parent.ID, part).First(file).Error; err != nil {
 			return nil, err
 		}
 		parent = file
 	}
 	parent.App = *app
 
-	_ = pathToFileCache.Add(cacheKey, parent, time.Hour*48)
+	_ = pathToFileCache.Add(cacheKey, parent, time.Minute*10)
 
 	return parent, nil
 }
