@@ -85,14 +85,14 @@ func TestFile_UpdateParentSize(t *testing.T) {
 	assert.Equal(t, 900, root.Size)
 }
 
-func TestFindFileByPath(t *testing.T) {
+func TestFindFileByPathWithTrashed(t *testing.T) {
 	app, trx, down, err := newAppForTest(nil, t)
 	assert.Nil(t, err)
 	defer down(t)
 	_, err = CreateOrGetLastDirectory(app, "/save/to/images", trx)
 	assert.Nil(t, err)
 
-	imagesDir, err := FindFileByPath(app, "/save/to/images", trx)
+	imagesDir, err := FindFileByPathWithTrashed(app, "/save/to/images", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, int8(1), imagesDir.IsDir)
 	assert.Equal(t, app.ID, imagesDir.AppID)
@@ -109,7 +109,7 @@ func TestFindFileByPath(t *testing.T) {
 		IsDir:    0,
 	}).Error)
 
-	testPngFile, err := FindFileByPath(app, "/save/to/images/test.png", trx)
+	testPngFile, err := FindFileByPathWithTrashed(app, "/save/to/images/test.png", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, int8(0), testPngFile.IsDir)
 	assert.Equal(t, app.ID, testPngFile.AppID)
@@ -117,15 +117,34 @@ func TestFindFileByPath(t *testing.T) {
 	assert.Equal(t, "test.png", testPngFile.Name)
 	assert.Equal(t, imagesDir.ID, testPngFile.PID)
 
-	imagesDir, err = FindFileByPath(app, "/save/to/images", trx)
+	imagesDir, err = FindFileByPathWithTrashed(app, "/save/to/images", trx)
 	assert.Nil(t, err)
 	assert.Nil(t, trx.Preload("Children").Find(imagesDir).Error)
 	assert.NotNil(t, imagesDir.Children)
 	assert.Equal(t, 1, len(imagesDir.Children))
 
-	_, err = FindFileByPath(app, "/save/to/images/test.jpg", trx)
+	_, err = FindFileByPathWithTrashed(app, "/save/to/images/test.jpg", trx)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "record not found")
+
+	assert.Nil(t, trx.Delete(imagesDir).Error)
+	imagesDir, err = FindFileByPathWithTrashed(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+	assert.NotNil(t, imagesDir.DeletedAt)
+}
+
+func TestFindFileByPath(t *testing.T) {
+	app, trx, down, err := newAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	_, err = CreateOrGetLastDirectory(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+
+	imagesDir, err := FindFileByPathWithTrashed(app, "/save/to/images", trx)
+	assert.Nil(t, err)
+	assert.Nil(t, trx.Delete(imagesDir).Error)
+	_, err = FindFileByPath(app, "/save/to/images", trx, false)
+	assert.True(t, gorm.IsRecordNotFoundError(err))
 }
 
 func TestCreateFileFromReader(t *testing.T) {
@@ -507,11 +526,11 @@ func TestFile_MoveTo2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 255, rootDir.Size)
 
-	saveToDir, err := FindFileByPath(app, "/save/to", trx)
+	saveToDir, err := FindFileByPathWithTrashed(app, "/save/to", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, saveToDir.Size)
 
-	saveAsDir, err := FindFileByPath(app, "/save/as", trx)
+	saveAsDir, err := FindFileByPathWithTrashed(app, "/save/as", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 255, saveAsDir.Size)
 }
@@ -576,13 +595,13 @@ func TestFile_Delete(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 0, rootDir.Size)
 
-	toDir, err := FindFileByPath(app, "/save/to", trx)
+	toDir, err := FindFileByPathWithTrashed(app, "/save/to", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, ErrDeleteNonEmptyDir, toDir.Delete(false, trx))
 	assert.Nil(t, toDir.Delete(true, trx))
 	assert.NotNil(t, toDir.DeletedAt)
 
-	aDir, err := FindFileByPath(app, "/save/to", trx)
+	aDir, err := FindFileByPathWithTrashed(app, "/save/to", trx)
 	assert.Nil(t, err)
 	assert.NotNil(t, aDir.DeletedAt)
 }

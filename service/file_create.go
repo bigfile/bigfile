@@ -109,7 +109,7 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 		return models.CreateOrGetLastDirectory(&fc.Token.App, path, fc.DB)
 	}
 
-	if file, err = models.FindFileByPath(&fc.Token.App, path, fc.DB); err != nil && !util.IsRecordNotFound(err) {
+	if file, err = models.FindFileByPathWithTrashed(&fc.Token.App, path, fc.DB); err != nil && !util.IsRecordNotFound(err) {
 		return nil, err
 	}
 

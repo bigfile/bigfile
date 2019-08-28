@@ -79,7 +79,7 @@ func TestDirectoryList_Execute(t *testing.T) {
 	_, err = directoryListSrv.Execute(context.TODO())
 	assert.True(t, gorm.IsRecordNotFoundError(err))
 
-	_, err = models.CreateOrGetLastDirectory(&token.App, "/save", trx)
+	saveDir, err := models.CreateOrGetLastDirectory(&token.App, "/save", trx)
 	assert.Nil(t, err)
 
 	directoryListSrvValue, err = directoryListSrv.Execute(context.TODO())
@@ -124,4 +124,11 @@ func TestDirectoryList_Execute(t *testing.T) {
 	assert.Nil(t, directoryListSrv.Validate())
 	_, err = directoryListSrv.Execute(context.TODO())
 	assert.Equal(t, ErrListFile, err)
+
+	assert.Nil(t, trx.Delete(saveDir).Error)
+	token.Path = "/save"
+	assert.Nil(t, trx.Model(token).Update("path", "/save").Error)
+	assert.Nil(t, directoryListSrv.Validate())
+	_, err = directoryListSrv.Execute(context.TODO())
+	assert.True(t, gorm.IsRecordNotFoundError(err))
 }

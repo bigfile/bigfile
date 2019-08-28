@@ -140,7 +140,7 @@ func TestFileDelete_Execute2(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "delete non-empty directory")
 
-	toDir, err := models.FindFileByPath(&token.App, "/test/to", trx)
+	toDir, err := models.FindFileByPathWithTrashed(&token.App, "/test/to", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 556, toDir.Size)
 

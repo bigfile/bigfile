@@ -15,6 +15,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
+// ErrListFile represent that you are listing a directory
 var ErrListFile = errors.New("can't list the content of a file")
 
 // DirectoryListResponse represent teh response value of DirectoryList service
@@ -79,7 +80,7 @@ func (dl *DirectoryList) Execute(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	if dir, err = models.FindFileByPath(&dl.Token.App, dirPath, dl.DB); err != nil {
+	if dir, err = models.FindFileByPath(&dl.Token.App, dirPath, dl.DB, false); err != nil {
 		return nil, err
 	}
 
