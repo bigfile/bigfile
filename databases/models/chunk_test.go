@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bigfile/bigfile/config"
+
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,7 @@ func TestChunk_Path(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Contains(t, err.(error).Error(), "invalid chunk id")
 	}()
+	config.DefaultConfig.Log.File.Enable = false
 	chunk := &Chunk{}
 	chunk.Path(nil)
 }

@@ -79,7 +79,7 @@ func TestTokenCreateHandler2(t *testing.T) {
 	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	router.ServeHTTP(w, req)
-	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response = &Response{}
 	json := janitor.ConfigCompatibleWithStandardLibrary
@@ -90,7 +90,7 @@ func TestTokenCreateHandler2(t *testing.T) {
 	respAvailableTimes := respData["availableTimes"].(float64)
 	assert.Equal(t, -1, int(respAvailableTimes))
 	respTokenValue := respData["token"].(string)
-	assert.Equal(t, 24, len(respTokenValue))
+	assert.Equal(t, 32, len(respTokenValue))
 	assert.Nil(t, respData["ip"])
 	respReadOnly := respData["readOnly"].(float64)
 	assert.Equal(t, 0, int(respReadOnly))
@@ -134,7 +134,7 @@ func TestTokenCreateHandler3(t *testing.T) {
 	respAvailableTimes := respData["availableTimes"].(float64)
 	assert.Equal(t, 1000, int(respAvailableTimes))
 	respTokenValue := respData["token"].(string)
-	assert.Equal(t, 24, len(respTokenValue))
+	assert.Equal(t, 32, len(respTokenValue))
 	respIP := respData["ip"].(string)
 	assert.Equal(t, "192.168.0.1", respIP)
 	respReadOnly := respData["readOnly"].(float64)

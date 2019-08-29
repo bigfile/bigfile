@@ -4,9 +4,13 @@
 
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/bigfile/bigfile/config"
+	"github.com/gin-gonic/gin"
+)
 
 func init() {
+	config.DefaultConfig.HTTP.AccessLogFile = ""
 	isTesting = true
 	gin.SetMode(gin.ReleaseMode)
 }

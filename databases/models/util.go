@@ -9,6 +9,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	mrand "math/rand"
+	"strconv"
+	"time"
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
@@ -41,5 +43,14 @@ func RandomWithMd5(length uint) string {
 		hash = md5.New()
 	)
 	_, _ = hash.Write(b)
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// UID is used to generate uid
+func UID() string {
+	random := Random(32)
+	random = append(random, []byte(strconv.FormatInt(time.Now().UnixNano(), 10))...)
+	hash := md5.New()
+	_, _ = hash.Write(random)
 	return hex.EncodeToString(hash.Sum(nil))
 }

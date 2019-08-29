@@ -16,7 +16,6 @@ import (
 	"github.com/bigfile/bigfile/internal/sha256"
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
-	"labix.org/v2/mgo/bson"
 )
 
 func TestObject_TableName(t *testing.T) {
@@ -270,7 +269,7 @@ func TestObject_FileCountWithTrashed(t *testing.T) {
 	assert.Nil(t, err)
 	object := &Object{Size: size, Hash: h}
 	assert.Nil(t, trx.Save(object).Error)
-	file1 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID}
+	file1 := &File{UID: UID(), ObjectID: object.ID}
 	assert.Nil(t, trx.Save(file1).Error)
 	assert.Equal(t, object.FileCountWithTrashed(trx), 1)
 	assert.Nil(t, trx.Delete(file1).Error)
@@ -426,8 +425,8 @@ func TestObject_AppendFromReader2(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, object.Hash, hex.EncodeToString(stateHash.Sum(nil)))
 
-	file1 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID, Name: "file1"}
-	file2 := &File{UID: bson.NewObjectId().Hex(), ObjectID: object.ID, Name: "file2"}
+	file1 := &File{UID: UID(), ObjectID: object.ID, Name: "file1"}
+	file2 := &File{UID: UID(), ObjectID: object.ID, Name: "file2"}
 	assert.Nil(t, trx.Save(file1).Error)
 	assert.Nil(t, trx.Save(file2).Error)
 

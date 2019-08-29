@@ -63,7 +63,7 @@ func init() {
 			CORSAllowCredentials:  false,
 			CORSAllowHeaders:      []string{"Origin"},
 			CORSAllowOrigins:      []string{"*"},
-			CORSAllowMethods:      []string{"PUT", "DELETE"},
+			CORSAllowMethods:      []string{"PUT", "DELETE", "PATCH"},
 			CORSMaxAge:            3600 * int64(time.Second),
 		},
 		Chunk{
