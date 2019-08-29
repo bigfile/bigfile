@@ -20,7 +20,7 @@ matrix:
 env:
   global:
     - GO111MODULE=on
-    - GOPROXY=https://goproxy.io
+#    - GOPROXY=https://goproxy.io
     - BIGFILE_DEFAULT_DB_USER=root
     - BIGFILE_DEFAULT_DB_PWD=
     - BIGFILE_MODE=dev
