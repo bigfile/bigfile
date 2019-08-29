@@ -40,21 +40,25 @@ func generateErrors(err error, key string) map[string][]string {
 // tokenResp is sed to generate token json response
 func tokenResp(token *models.Token) map[string]interface{} {
 
-	var expiredAt interface{} = token.ExpiredAt
-
-	if token.ExpiredAt != nil {
-		expiredAt = token.ExpiredAt.Unix()
-	}
-
-	return map[string]interface{}{
+	var result = map[string]interface{}{
 		"token":          token.UID,
 		"ip":             token.IP,
 		"availableTimes": token.AvailableTimes,
 		"readOnly":       token.ReadOnly,
-		"expiredAt":      expiredAt,
+		"expiredAt":      token.ExpiredAt,
 		"path":           token.Path,
 		"secret":         token.Secret,
 	}
+
+	if token.ExpiredAt != nil {
+		result["expiredAt"] = token.ExpiredAt.Unix()
+	}
+
+	if token.DeletedAt != nil {
+		result["deletedAt"] = token.DeletedAt.Unix()
+	}
+
+	return result
 }
 
 // fileResp is used to generate file json response
