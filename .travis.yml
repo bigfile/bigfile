@@ -13,14 +13,14 @@ matrix:
   include:
     - go: 1.11.x
     - go: 1.12.x
-    - go: master
-  allow_failures:
-    - go: master
+#    - go: master
+#  allow_failures:
+#    - go: master
 
 env:
   global:
     - GO111MODULE=on
-    - GOPROXY=https://goproxy.io
+#    - GOPROXY=https://goproxy.io
     - BIGFILE_DEFAULT_DB_USER=root
     - BIGFILE_DEFAULT_DB_PWD=
     - BIGFILE_MODE=dev

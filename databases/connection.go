@@ -13,8 +13,6 @@ import (
 
 	// import mysql database driver
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	// import postgres database driver
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	// import sqlite database driver
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
