@@ -15,7 +15,6 @@ import (
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
-	"labix.org/v2/mgo/bson"
 )
 
 var (
@@ -399,7 +398,7 @@ func CreateOrGetLastDirectory(app *App, parentDirs string, db *gorm.DB) (*File, 
 			file.PID = parent.ID
 			file.Name = part
 			file.IsDir = 1
-			file.UID = bson.NewObjectId().Hex()
+			file.UID = UID()
 			if err = db.Save(file).Error; err != nil {
 				return nil, err
 			}
@@ -443,7 +442,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 	}
 
 	file = &File{
-		UID:      bson.NewObjectId().Hex(),
+		UID:      UID(),
 		PID:      parentDir.ID,
 		AppID:    app.ID,
 		ObjectID: object.ID,

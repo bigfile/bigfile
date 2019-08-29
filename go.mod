@@ -33,6 +33,4 @@ require (
 	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8
 	gopkg.in/yaml.v2 v2.2.2
-	labix.org/v2/mgo v0.0.0-20140701140051-000000000287
-	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )

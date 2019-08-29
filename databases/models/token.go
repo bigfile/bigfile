@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"labix.org/v2/mgo/bson"
-
 	"github.com/jinzhu/gorm"
 )
 
@@ -86,7 +84,7 @@ func NewToken(
 ) (*Token, error) {
 	var (
 		token = &Token{
-			UID:            bson.NewObjectId().Hex(),
+			UID:            UID(),
 			Secret:         secret,
 			AppID:          app.ID,
 			IP:             ip,

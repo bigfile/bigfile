@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	"labix.org/v2/mgo/bson"
 )
 
 // App represent an application in system
@@ -32,7 +31,7 @@ func (app *App) TableName() string {
 // AfterCreate hooks will be called automatically after app created
 func (app *App) AfterCreate(tx *gorm.DB) error {
 	var file = &File{
-		UID:   bson.NewObjectId().Hex(),
+		UID:   UID(),
 		PID:   0,
 		AppID: app.ID,
 		Name:  "",
@@ -47,7 +46,7 @@ func NewApp(name string, note *string, db *gorm.DB) (*App, error) {
 		app = &App{
 			Name:   name,
 			Note:   note,
-			UID:    bson.NewObjectId().Hex(),
+			UID:    UID(),
 			Secret: NewSecret(),
 		}
 		err error

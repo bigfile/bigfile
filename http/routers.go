@@ -23,9 +23,11 @@ var brw = buildRouteWithPrefix
 // Routers will define all routers for service
 func Routers() *gin.Engine {
 	r := gin.New()
-	if !isTesting && config.DefaultConfig.HTTP.AccessLogFile != "" {
+	if config.DefaultConfig.HTTP.AccessLogFile != "" {
 		setGinLogWriter()
 	}
+
+	r.Use(gin.Recovery(), AccessLogMiddleware())
 
 	if config.DefaultConfig.HTTP.CORSEnable {
 		r.Use(cors.New(cors.Config{
@@ -39,9 +41,9 @@ func Routers() *gin.Engine {
 		}))
 	}
 
-	r.Use(gin.Recovery(), AccessLogMiddleware(), ConfigContextMiddleware(nil), RecordRequestMiddleware())
+	r.Use(ConfigContextMiddleware(nil), RecordRequestMiddleware())
 
-	if !isTesting && config.DefaultConfig.HTTP.LimitRateByIPEnable {
+	if config.DefaultConfig.HTTP.LimitRateByIPEnable {
 		interval := time.Duration(config.DefaultConfig.HTTP.LimitRateByIPInterval * int64(time.Millisecond))
 		maxNumber := config.DefaultConfig.HTTP.LimitRateByIPMaxNum
 		r.Use(RateLimitByIPMiddleware(interval, int(maxNumber)))

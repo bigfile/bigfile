@@ -5,11 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bigfile/bigfile/internal/util"
-
-	"labix.org/v2/mgo/bson"
-
 	"github.com/bigfile/bigfile/databases/models"
+	"github.com/bigfile/bigfile/internal/util"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +65,7 @@ func TestValidateToken(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "invalid token")
 
-	err = ValidateToken(trx, nil, false, &models.Token{UID: bson.NewObjectId().Hex()})
+	err = ValidateToken(trx, nil, false, &models.Token{UID: models.UID()})
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "record not found")
 

@@ -33,3 +33,13 @@ func BenchmarkRandom(b *testing.B) {
 func TestRandomWithMd5(t *testing.T) {
 	assert.Equal(t, len(RandomWithMd5(128)), 32)
 }
+
+func TestUID(t *testing.T) {
+	assert.Equal(t, 32, len(UID()))
+}
+
+func BenchmarkUID(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		UID()
+	}
+}

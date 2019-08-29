@@ -16,7 +16,6 @@ import (
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
-	"labix.org/v2/mgo/bson"
 )
 
 func TestFile_TableName(t *testing.T) {
@@ -99,7 +98,7 @@ func TestFindFileByPathWithTrashed(t *testing.T) {
 	assert.Equal(t, "images", imagesDir.Name)
 
 	assert.Nil(t, trx.Save(&File{
-		UID:      bson.NewObjectId().Hex(),
+		UID:      UID(),
 		PID:      imagesDir.ID,
 		AppID:    app.ID,
 		ObjectID: 0,
@@ -292,7 +291,7 @@ func TestFile_Path(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, relativeDir.ID, dir.ID)
 
-	file := &File{UID: bson.NewObjectId().Hex(), PID: dir.ID, Name: "test.png", AppID: app.ID}
+	file := &File{UID: UID(), PID: dir.ID, Name: "test.png", AppID: app.ID}
 	assert.Nil(t, trx.Save(file).Error)
 	path, err = file.Path(trx)
 	assert.Nil(t, err)
