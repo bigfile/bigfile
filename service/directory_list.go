@@ -18,7 +18,7 @@ import (
 // ErrListFile represent that you are listing a directory
 var ErrListFile = errors.New("can't list the content of a file")
 
-// DirectoryListResponse represent teh response value of DirectoryList service
+// DirectoryListResponse represent the response value of DirectoryList service
 type DirectoryListResponse struct {
 	Total int
 	Pages int

@@ -33,8 +33,15 @@ go_import_path: github.com/bigfile/bigfile
 before_script:
   - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
   - go run artisan/bigfile.go migrate:refresh
+  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get -u github.com/mgechev/revive
+  - go get -u github.com/client9/misspell/cmd/misspell
 
 script:
+  - misspell -error ./
+  - diff <(goimports -l .) <(printf "")
+  - diff <(revive ./...) <(printf "")
+  - golangci-lint run
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:

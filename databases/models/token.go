@@ -77,10 +77,7 @@ func (t *Token) UpdateAvailableTimes(inc int, db *gorm.DB) error {
 		return nil
 	}
 	t.AvailableTimes--
-	if err := db.Model(t).Update("availableTimes", t.AvailableTimes).Error; err != nil {
-		return err
-	}
-	return nil
+	return db.Model(t).Update("availableTimes", t.AvailableTimes).Error
 }
 
 // NewToken will generate a token by input params
