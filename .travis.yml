@@ -13,9 +13,9 @@ matrix:
   include:
     - go: 1.11.x
     - go: 1.12.x
-    - go: master
-  allow_failures:
-    - go: master
+#    - go: master
+#  allow_failures:
+#    - go: master
 
 env:
   global:
