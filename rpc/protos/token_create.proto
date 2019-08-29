@@ -1,0 +1,49 @@
+//  Copyright 2019 The bigfile Authors. All rights reserved.
+//  Use of this source code is governed by a MIT-style
+//  license that can be found in the LICENSE file.
+
+// bigfile.token_create is used to describe the message
+// format for token create
+
+syntax = "proto3";
+
+package bigfile.token_create;
+
+import "token.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
+option cc_enable_arenas = true;
+option go_package = "rpc";
+option java_package = "com.bigfile.protobuf";
+option java_outer_classname = "TokenCreateProto";
+option java_multiple_files = true;
+option objc_class_prefix = "BPR";
+
+// TokenCreateRequest is used to describe the input format
+// for creating token
+message TokenCreateRequest {
+    string app_uid = 1;
+    string nonce = 2;
+    google.protobuf.StringValue path = 4;
+    google.protobuf.StringValue ip = 5;
+    google.protobuf.StringValue secret = 6;
+    google.protobuf.UInt32Value available_times = 7;
+    google.protobuf.BoolValue read_only = 8;
+    google.protobuf.Timestamp expired_at = 9;
+}
+
+// TokenCreateResponse
+message TokenCreateResponse {
+    uint64 request_id = 1;
+    bool success = 2;
+    map<string, google.protobuf.ListValue> errors = 3;
+    bigfile.token.Token data = 4;
+}
+
+// TokenCreate is used to create a token
+service TokenCreate {
+    rpc tokenCreate (TokenCreateRequest) returns (TokenCreateResponse) {}
+}
