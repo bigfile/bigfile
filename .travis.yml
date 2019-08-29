@@ -11,10 +11,19 @@ services:
 matrix:
   fast_finish: true
   include:
+    - go: 1.11.x
     - go: 1.12.x
-      env:
-        - GO111MODULE=on
-        - GOPROXY=https://goproxy.io
+    - go: master
+  allow_failures:
+    - go: master
+
+env:
+  global:
+    - GO111MODULE=on
+    - GOPROXY=https://goproxy.io
+    - BIGFILE_DEFAULT_DB_USER=root
+    - BIGFILE_DEFAULT_DB_PWD=
+    - BIGFILE_MODE=dev
 
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
@@ -26,14 +35,18 @@ install:
 go_import_path: github.com/bigfile/bigfile
 
 before_script:
-  - echo "export BIGFILE_DEFAULT_DB_USER=root" >> ~/.bashrc
-  - echo "export BIGFILE_DEFAULT_DB_PWD=" >> ~/.bashrc
-  - echo "export BIGFILE_MODE=dev" >> ~/.bashrc
-  - source ~/.bashrc
   - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
   - go run artisan/bigfile.go migrate:refresh
+  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get -u github.com/mgechev/revive
+  - go get -u github.com/client9/misspell/cmd/misspell
+  - go get -u golang.org/x/tools/cmd/goimports
 
 script:
+  - misspell -error ./
+  - diff <(goimports -l .) <(printf "")
+  - diff <(revive ./...) <(printf "")
+  - golangci-lint run
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:

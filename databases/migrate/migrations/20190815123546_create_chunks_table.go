@@ -5,8 +5,13 @@
 package migrations
 
 import (
+	"github.com/bigfile/bigfile/databases/migrate"
 	"github.com/jinzhu/gorm"
 )
+
+func init() {
+	migrate.DefaultMC.Register(&CreateChunksTable20190815123546{})
+}
 
 // CreateChunksTable20190815123546 represent some database operate
 type CreateChunksTable20190815123546 struct{}

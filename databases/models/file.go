@@ -116,11 +116,7 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 		}
 	}
 
-	if err = db.Unscoped().Find(f).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return db.Unscoped().Find(f).Error
 }
 
 // CanBeAccessedByToken represent whether the file can be accessed by the token

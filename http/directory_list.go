@@ -15,6 +15,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// ErrInvalidSortTypes represents invalid sort types
 var ErrInvalidSortTypes = errors.New("invalid sort types, only one of type, -type, name, -name, time and -time")
 
 type directoryListInput struct {
@@ -26,7 +27,7 @@ type directoryListInput struct {
 	Offset *int    `form:"offset,default=0" binding:"omitempty,min=0"`
 }
 
-// DirectoryList is used to list a directory
+// DirectoryListHandler is used to list a directory
 func DirectoryListHandler(ctx *gin.Context) {
 	var (
 		ip                    = ctx.ClientIP()
