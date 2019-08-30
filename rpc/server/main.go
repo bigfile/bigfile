@@ -17,8 +17,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	server := &rpc.Server{}
 	s := grpc.NewServer()
-	rpc.RegisterTokenCreateServer(s, &rpc.Server{})
+	rpc.RegisterTokenCreateServer(s, server)
+	rpc.RegisterTokenUpdateServer(s, server)
+	rpc.RegisterTokenDeleteServer(s, server)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

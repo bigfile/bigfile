@@ -11,7 +11,7 @@ import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
 option cc_enable_arenas = true;
-option go_package = "rpc";
+option go_package = "github.com/bigfile/bigfile/rpc";
 option java_package = "com.bigfile.protobuf";
 option java_outer_classname = "TokenProto";
 option java_multiple_files = true;
@@ -22,9 +22,9 @@ message Token {
     string token = 1;
     string path = 2;
     google.protobuf.StringValue ip = 3;
-    google.protobuf.Int32Value available_times = 4;
+    int32 available_times = 4;
     google.protobuf.StringValue secret = 5;
-    google.protobuf.BoolValue read_only = 6;
+    bool read_only = 6;
     google.protobuf.Timestamp expired_at = 7;
     google.protobuf.Timestamp deleted_at = 8;
 }
