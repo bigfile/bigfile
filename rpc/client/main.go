@@ -8,24 +8,41 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/bigfile/bigfile/rpc"
 	"google.golang.org/grpc"
 )
 
-func tokenDelete(conn *grpc.ClientConn) {
-	c := rpc.NewTokenDeleteClient(conn)
-
-	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+func createDir(conn *grpc.ClientConn) {
+	var (
+		ctx          context.Context
+		err          error
+		resp         *rpc.FileCreateResponse
+		cancel       context.CancelFunc
+		client       rpc.FileCreateClient
+		streamClient rpc.FileCreate_FileCreateClient
+	)
+	ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
-	r, err := c.TokenDelete(ctx, &rpc.TokenDeleteRequest{
-		AppUid:    "1a951487fb16798c0c6d838decfbc973",
-		AppSecret: "38c57333fe2e2c17cc663f61212d7b7e",
-		Token:     "bd5216fa7a6b5c5fdc8a250bae52b306",
-	})
-	fmt.Println(r, err)
+	client = rpc.NewFileCreateClient(conn)
+	if streamClient, err = client.FileCreate(ctx); err != nil {
+		fmt.Println(err)
+		return
+	}
+	req := &rpc.FileCreateRequest{
+		Token:     "bf0776c565412060eb93f8f307fae299",
+		Path:      "/create/some/directories",
+		Operation: &rpc.FileCreateRequest_CreateDir{CreateDir: true},
+	}
+	if err = streamClient.Send(req); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if resp, err = streamClient.Recv(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(resp)
 }
 
 func main() {
@@ -35,5 +52,5 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	tokenDelete(conn)
+	createDir(conn)
 }

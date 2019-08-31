@@ -22,6 +22,7 @@ func main() {
 	rpc.RegisterTokenCreateServer(s, server)
 	rpc.RegisterTokenUpdateServer(s, server)
 	rpc.RegisterTokenDeleteServer(s, server)
+	rpc.RegisterFileCreateServer(s, server)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

@@ -5,11 +5,15 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
 	"reflect"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/models"
@@ -24,16 +28,23 @@ import (
 )
 
 var (
-	isTesting  = false
-	testDbConn *gorm.DB
+	isTesting    = false
+	testDbConn   *gorm.DB
+	testRootPath *string
 	// ErrGetIPFailed represent that get ip failed
 	ErrGetIPFailed = errors.New("[getClientIP] invoke FromContext() failed")
 
 	// ErrAppSecret represent appUID and appSecret doesn't match
 	ErrAppSecret = errors.New("appUID and appSecret doesn't match")
 
-	// ErrTokenNotMatchApp represent
-	ErrTokenNotMatchApp = errors.New("")
+	// ErrTokenNotMatchApp represent that the token doesn't belong to this app
+	ErrTokenNotMatchApp = errors.New("the token doesn't belong to this app")
+
+	// ErrTokenSecretWrong the secret of token is wrong
+	ErrTokenSecretWrong = errors.New("the secret of token is wrong")
+
+	// ErrDirShouldNotHasContent represent that create a directory with content
+	ErrDirShouldNotHasContent = errors.New("the directory should not has content")
 )
 
 // Server is used to create a rpc server
@@ -60,7 +71,7 @@ func (s *Server) getClientIP(ctx context.Context) (string, error) {
 		}
 		return ipV4, nil
 	}
-	return "", ErrGetIPFailed
+	return pr.Addr.String(), nil
 }
 
 // fetchAPP is used to generate *models.APP by app?UID and APPSecret
@@ -127,6 +138,24 @@ func (s *Server) tokenResp(token *models.Token) (t *Token) {
 	return
 }
 
+func (s *Server) fileResp(file *models.File, path string) (f *File) {
+	f = &File{
+		Uid:  file.UID,
+		Path: path,
+		Size: uint64(file.Size),
+	}
+	if file.Hidden == 1 {
+		f.Hidden = true
+	}
+	if file.IsDir == 1 {
+		f.IsDir = true
+	} else {
+		f.Hash = &wrappers.StringValue{Value: file.Object.Hash}
+		f.Ext = &wrappers.StringValue{Value: file.Ext}
+	}
+	return f
+}
+
 func (s *Server) updateRequestRecord(ctx context.Context, request *models.Request, resp interface{}, err error, db *gorm.DB) {
 	var responseBody string
 
@@ -168,6 +197,11 @@ func (s *Server) TokenCreate(ctx context.Context, req *TokenCreateRequest) (resp
 		tokenCreateVal interface{}
 		availableTimes = -1
 	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
 	if record, err = s.generateRequestRecord(ctx, "TokenCreate", req, db); err != nil {
 		return resp, err
 	}
@@ -242,7 +276,12 @@ func (s *Server) TokenUpdate(ctx context.Context, req *TokenUpdateRequest) (resp
 		tokenUpdateVal interface{}
 		availableTimes *int
 	)
-	if record, err = s.generateRequestRecord(ctx, "TokenCreate", req, db); err != nil {
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "TokenUpdate", req, db); err != nil {
 		return resp, err
 	}
 	resp = &TokenUpdateResponse{RequestId: record.ID}
@@ -314,7 +353,12 @@ func (s *Server) TokenDelete(ctx context.Context, req *TokenDeleteRequest) (resp
 		token  *models.Token
 		record *models.Request
 	)
-	if record, err = s.generateRequestRecord(ctx, "TokenCreate", req, db); err != nil {
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "TokenDelete", req, db); err != nil {
 		return resp, err
 	}
 	resp = &TokenDeleteResponse{RequestId: record.ID}
@@ -336,4 +380,96 @@ func (s *Server) TokenDelete(ctx context.Context, req *TokenDeleteRequest) (resp
 	db.Unscoped().First(token)
 	resp.Token = s.tokenResp(token)
 	return
+}
+
+// FileCreate is used to upload file in a stream
+func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
+	var (
+		db              = getDbConn()
+		ctx             = stream.Context()
+		req             *FileCreateRequest
+		resp            *FileCreateResponse
+		file            *models.File
+		path            string
+		token           *models.Token
+		record          *models.Request
+		previousToken   string
+		tokenHasChecked bool
+		fileCreateSrv   *service.FileCreate
+		fileCreateVal   interface{}
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	for {
+		handler := func() (err error) {
+			if req, err = stream.Recv(); err != nil {
+				return
+			}
+			content := req.Content
+			req.Content = nil
+			if record, err = s.generateRequestRecord(ctx, "FileCreate", req, db); err != nil {
+				return err
+			}
+			req.Content = content
+			defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
+			resp = &FileCreateResponse{RequestId: record.ID}
+			if !tokenHasChecked || previousToken != req.Token {
+				if token, err = models.FindTokenByUID(req.Token, db); err != nil {
+					return err
+				}
+				if token.Secret != nil {
+					if req.GetSecret() == nil || req.GetSecret().GetValue() != *token.Secret {
+						return ErrTokenSecretWrong
+					}
+				}
+			}
+			fileCreateSrv = &service.FileCreate{
+				BaseService: service.BaseService{DB: db, RootPath: testRootPath},
+				Token:       token,
+				Path:        req.Path,
+				IP:          record.IP,
+			}
+			if req.GetCreateDir() {
+				if req.GetContent() != nil {
+					return ErrDirShouldNotHasContent
+				}
+			} else {
+				var content []byte
+				if req.Content != nil {
+					content = req.Content.GetValue()
+				}
+				fileCreateSrv.Reader = bytes.NewReader(content)
+			}
+			if req.GetOverwrite() {
+				fileCreateSrv.Overwrite = 1
+			}
+			if req.GetAppend() {
+				fileCreateSrv.Append = 1
+			}
+			if req.GetRename() {
+				fileCreateSrv.Rename = 1
+			}
+			if req.Hidden != nil && req.Hidden.GetValue() {
+				fileCreateSrv.Hidden = 1
+			}
+			if err = fileCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+				return err
+			}
+			if fileCreateVal, err = fileCreateSrv.Execute(ctx); err != nil {
+				return err
+			}
+			file = fileCreateVal.(*models.File)
+			if path, err = file.Path(db); err != nil {
+				return err
+			}
+			resp.File = s.fileResp(file, path)
+			return stream.Send(resp)
+		}
+		if err = handler(); err != nil {
+			return err
+		}
+	}
 }

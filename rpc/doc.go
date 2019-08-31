@@ -91,6 +91,149 @@ TokenDelete:
 		})
 		fmt.Println(r, err)
 	}
+
+FileCreate，file upload may be a focus of attention, so let's see a complete example:
+
+	package main
+
+	import (
+		"context"
+		"fmt"
+		"io"
+		"log"
+		"os"
+
+		"github.com/bigfile/bigfile/databases/models"
+		"github.com/bigfile/bigfile/rpc"
+		"github.com/golang/protobuf/ptypes/wrappers"
+		"google.golang.org/grpc"
+	)
+
+	func uploadFile(conn *grpc.ClientConn) {
+		var (
+			ctx            context.Context
+			err            error
+			resp           *rpc.FileCreateResponse
+			cancel         context.CancelFunc
+			client         rpc.FileCreateClient
+			streamClient   rpc.FileCreate_FileCreateClient
+			waitUploadFile *os.File
+		)
+		ctx, cancel = context.WithCancel(context.Background())
+		defer cancel()
+		client = rpc.NewFileCreateClient(conn)
+		if streamClient, err = client.FileCreate(ctx); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if waitUploadFile, err = os.Open("/Users/fudenglong/Downloads/11.mp4"); err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer waitUploadFile.Close()
+		for index := 0; ; index++ {
+			var chunk = make([]byte, models.ChunkSize*2)
+			var size int
+			var quit bool
+			if size, err = waitUploadFile.Read(chunk); err != nil {
+				if err != io.EOF {
+					fmt.Println(err)
+					return
+				}
+				quit = true
+			}
+			req := &rpc.FileCreateRequest{
+				Token:   "bf0776c565412060eb93f8f307fae299",
+				Path:    "/Users/fudenglong/Downloads/shield_agents.mp4",
+				Content: &wrappers.BytesValue{Value: chunk[:size]},
+			}
+			if index == 0 {
+				req.Operation = &rpc.FileCreateRequest_Rename{Rename: true}
+			} else {
+				req.Operation = &rpc.FileCreateRequest_Append{Append: true}
+			}
+			fmt.Println("sending request")
+			if err = streamClient.Send(req); err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println("waiting resp")
+			if resp, err = streamClient.Recv(); err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println(resp)
+			if quit {
+				break
+			}
+		}
+	}
+
+	func main() {
+		// Set up a connection to the server.
+		conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+		if err != nil {
+			log.Fatalf("did not connect: %v", err)
+		}
+		defer conn.Close()
+		uploadFile(conn)
+	}
+
+DirectoryCreate, Actually, in bigfile, file and directory both are regarded as 'file'. So, you
+can create a directory like this:
+
+	package main
+
+	import (
+		"context"
+		"fmt"
+		"log"
+
+		"github.com/bigfile/bigfile/rpc"
+		"google.golang.org/grpc"
+	)
+
+	func createDir(conn *grpc.ClientConn) {
+		var (
+			ctx          context.Context
+			err          error
+			resp         *rpc.FileCreateResponse
+			cancel       context.CancelFunc
+			client       rpc.FileCreateClient
+			streamClient rpc.FileCreate_FileCreateClient
+		)
+		ctx, cancel = context.WithCancel(context.Background())
+		defer cancel()
+		client = rpc.NewFileCreateClient(conn)
+		if streamClient, err = client.FileCreate(ctx); err != nil {
+			fmt.Println(err)
+			return
+		}
+		req := &rpc.FileCreateRequest{
+			Token:     "bf0776c565412060eb93f8f307fae299",
+			Path:      "/create/some/directories",
+			Operation: &rpc.FileCreateRequest_CreateDir{CreateDir: true},
+		}
+		if err = streamClient.Send(req); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if resp, err = streamClient.Recv(); err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(resp)
+	}
+
+	func main() {
+		// Set up a connection to the server.
+		conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+		if err != nil {
+			log.Fatalf("did not connect: %v", err)
+		}
+		defer conn.Close()
+		createDir(conn)
+	}
 */
 
 package rpc
