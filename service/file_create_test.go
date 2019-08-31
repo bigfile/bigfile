@@ -251,3 +251,13 @@ func TestFileCreate_Execute6(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, ErrPathExisted, err)
 }
+
+func TestFileCreate_Execute7(t *testing.T) {
+	fileCreate, file, _, down := newFileCreateForTestWithFile(t)
+	defer down(t)
+	assert.Nil(t, fileCreate.DB.Delete(file).Error)
+	fileCreate.Append = 1
+	_, err := fileCreate.Execute(context.TODO())
+	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), ErrFileHasBeenDeleted.Error())
+}
