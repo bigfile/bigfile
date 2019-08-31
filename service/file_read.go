@@ -6,11 +6,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/bigfile/bigfile/databases/models"
 	"gopkg.in/go-playground/validator.v9"
 )
+
+// ErrReadHiddenFile represent that the hidden file is being read
+var ErrReadHiddenFile = errors.New("try to read the hidden file")
 
 // FileRead is used to provide file read service
 type FileRead struct {
@@ -62,6 +66,10 @@ func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
 
 	if err = fr.CallBefore(ctx, fr); err != nil {
 		return nil, err
+	}
+
+	if fr.File.Hidden == 1 {
+		return nil, ErrReadHiddenFile
 	}
 
 	if fileReader, err = fr.File.Reader(fr.RootPath, fr.DB); err != nil {
