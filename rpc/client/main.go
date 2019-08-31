@@ -8,41 +8,27 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/golang/protobuf/ptypes/wrappers"
 
 	"github.com/bigfile/bigfile/rpc"
+
 	"google.golang.org/grpc"
 )
 
-func createDir(conn *grpc.ClientConn) {
-	var (
-		ctx          context.Context
-		err          error
-		resp         *rpc.FileCreateResponse
-		cancel       context.CancelFunc
-		client       rpc.FileCreateClient
-		streamClient rpc.FileCreate_FileCreateClient
-	)
-	ctx, cancel = context.WithCancel(context.Background())
+func fileUpdate(conn *grpc.ClientConn) {
+	c := rpc.NewFileUpdateClient(conn)
+	// Contact the server and print out its response.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	client = rpc.NewFileCreateClient(conn)
-	if streamClient, err = client.FileCreate(ctx); err != nil {
-		fmt.Println(err)
-		return
-	}
-	req := &rpc.FileCreateRequest{
-		Token:     "bf0776c565412060eb93f8f307fae299",
-		Path:      "/create/some/directories",
-		Operation: &rpc.FileCreateRequest_CreateDir{CreateDir: true},
-	}
-	if err = streamClient.Send(req); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if resp, err = streamClient.Recv(); err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(resp)
+	resp, err := c.FileUpdate(ctx, &rpc.FileUpdateRequest{
+		Token:   "bf0776c565412060eb93f8f307fae299",
+		FileUid: "556e3b9c936202c9dc67b7ad45530790",
+		Path:    "/new/path/to/shield_agents.mp4",
+		Hidden:  &wrappers.BoolValue{Value: true},
+	})
+	fmt.Println(resp, err)
 }
 
 func main() {
@@ -52,5 +38,5 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	createDir(conn)
+	fileUpdate(conn)
 }

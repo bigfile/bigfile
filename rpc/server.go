@@ -159,8 +159,10 @@ func (s *Server) fileResp(file *models.File, path string) (f *File) {
 func (s *Server) updateRequestRecord(ctx context.Context, request *models.Request, resp interface{}, err error, db *gorm.DB) {
 	var responseBody string
 
+	request.ResponseCode = int(codes.OK)
 	if err != nil {
 		responseBody = err.Error()
+		request.ResponseCode = int(codes.InvalidArgument)
 	} else {
 		if responseBody, err = jsoniter.MarshalToString(resp); err != nil {
 			log.MustNewLogger(nil).Error(err)
@@ -414,8 +416,8 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 				return err
 			}
 			req.Content = content
-			defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 			resp = &FileCreateResponse{RequestId: record.ID}
+			defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 			if !tokenHasChecked || previousToken != req.Token {
 				if token, err = models.FindTokenByUID(req.Token, db); err != nil {
 					return err
@@ -426,6 +428,8 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 					}
 				}
 			}
+			record.AppID = &token.App.ID
+			record.Token = &token.UID
 			fileCreateSrv = &service.FileCreate{
 				BaseService: service.BaseService{DB: db, RootPath: testRootPath},
 				Token:       token,
@@ -472,4 +476,67 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 			return err
 		}
 	}
+}
+
+// FileUpdate is used to update a file
+func (s *Server) FileUpdate(ctx context.Context, req *FileUpdateRequest) (resp *FileUpdateResponse, err error) {
+	var (
+		db            = getDbConn()
+		file          *models.File
+		token         *models.Token
+		record        *models.Request
+		fileUpdateSrv *service.FileUpdate
+		fileUpdateVal interface{}
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "FileUpdate", req, db); err != nil {
+		return
+	}
+	resp = &FileUpdateResponse{RequestId: record.ID}
+	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
+	if token, err = models.FindTokenByUID(req.Token, db); err != nil {
+		return
+	}
+	if token.Secret != nil {
+		if req.GetSecret() == nil || req.GetSecret().GetValue() != *token.Secret {
+			return resp, ErrTokenSecretWrong
+		}
+	}
+	record.AppID = &token.App.ID
+	record.Token = &token.UID
+	if file, err = models.FindFileByUID(req.FileUid, false, db); err != nil {
+		return resp, err
+	}
+	var hidden int8
+	if req.GetHidden() != nil && req.GetHidden().GetValue() {
+		hidden = 1
+	}
+	fileUpdateSrv = &service.FileUpdate{
+		BaseService: service.BaseService{DB: db},
+		Token:       token,
+		File:        file,
+		IP:          record.IP,
+		Hidden:      &hidden,
+		Path:        &req.Path,
+	}
+	if err = fileUpdateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		return
+	}
+	if fileUpdateVal, err = fileUpdateSrv.Execute(ctx); err != nil {
+		return
+	}
+	var path string
+	if path, err = file.Path(db); err != nil {
+		return
+	}
+	file = fileUpdateVal.(*models.File)
+	if file.Object.ID == 0 {
+		db.Preload("Object").First(file)
+	}
+	resp.File = s.fileResp(file, path)
+	return
 }

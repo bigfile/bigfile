@@ -5,16 +5,14 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"net"
 	"os"
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
-
-	"google.golang.org/grpc/status"
-
+	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/golang/protobuf/ptypes/timestamp"
@@ -22,12 +20,15 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
 func init() {
 	isTesting = true
+	config.DefaultConfig.Log.File.Enable = false
 }
 func newPeer() *peer.Peer {
 	tcpAddr, _ := net.ResolveTCPAddr("tcp", "192.168.0.1:9998")
@@ -195,4 +196,34 @@ func TestServer_FileCreate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, resp.RequestId > 0)
 	assert.Equal(t, 32, len(resp.File.Uid))
+}
+
+func TestServer_FileUpdate(t *testing.T) {
+	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	testDbConn = trx
+	tempDir := models.NewTempDirForTest()
+	testRootPath = &tempDir
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	randomBytes := models.Random(222)
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
+	assert.Nil(t, err)
+
+	s := Server{}
+	resp, err := s.FileUpdate(newContext(context.Background()), &FileUpdateRequest{
+		Token:   token.UID,
+		FileUid: file.UID,
+		Path:    "/new/random.bytes",
+		Hidden:  &wrappers.BoolValue{Value: true},
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, "/new/random.bytes", resp.File.Path)
+	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
 }

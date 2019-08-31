@@ -234,6 +234,23 @@ can create a directory like this:
 		defer conn.Close()
 		createDir(conn)
 	}
+
+FileUpdate, is used to move file or directory and hide file
+
+	func fileUpdate(conn *grpc.ClientConn) {
+		c := rpc.NewFileUpdateClient(conn)
+		// Contact the server and print out its response.
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		resp, err := c.FileUpdate(ctx, &rpc.FileUpdateRequest{
+			Token:   "bf0776c565412060eb93f8f307fae299",
+			FileUid: "556e3b9c936202c9dc67b7ad45530790",
+			Path:    "/new/path/to/shield_agents.mp4",
+			Hidden:  &wrappers.BoolValue{Value: true},
+		})
+		fmt.Println(resp, err)
+	}
+
 */
 
 package rpc
