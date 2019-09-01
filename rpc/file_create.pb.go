@@ -25,7 +25,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// FileCreateRequest represent a token type
+// FileCreateRequest represent the file create request
 type FileCreateRequest struct {
 	Token  string                `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	Path   string                `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`

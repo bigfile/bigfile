@@ -138,7 +138,11 @@ func (s *Server) tokenResp(token *models.Token) (t *Token) {
 	return
 }
 
-func (s *Server) fileResp(file *models.File, path string) (f *File) {
+func (s *Server) fileResp(file *models.File, db *gorm.DB) (f *File, err error) {
+	var path string
+	if path, err = file.Path(db.Unscoped()); err != nil {
+		return nil, err
+	}
 	f = &File{
 		Uid:  file.UID,
 		Path: path,
@@ -150,10 +154,18 @@ func (s *Server) fileResp(file *models.File, path string) (f *File) {
 	if file.IsDir == 1 {
 		f.IsDir = true
 	} else {
+		if file.Object.ID == 0 {
+			db.Unscoped().Preload("Object").First(file)
+		}
 		f.Hash = &wrappers.StringValue{Value: file.Object.Hash}
 		f.Ext = &wrappers.StringValue{Value: file.Ext}
 	}
-	return f
+	if file.DeletedAt != nil {
+		if f.DeletedAt, err = ptypes.TimestampProto(*file.DeletedAt); err != nil {
+			return f, err
+		}
+	}
+	return f, err
 }
 
 func (s *Server) updateRequestRecord(ctx context.Context, request *models.Request, resp interface{}, err error, db *gorm.DB) {
@@ -384,6 +396,18 @@ func (s *Server) TokenDelete(ctx context.Context, req *TokenDeleteRequest) (resp
 	return
 }
 
+func (s *Server) fetchToken(t string, secret *wrappers.StringValue, db *gorm.DB) (token *models.Token, err error) {
+	if token, err = models.FindTokenByUID(t, db); err != nil {
+		return nil, err
+	}
+	if token.Secret != nil {
+		if secret == nil || secret.GetValue() != *token.Secret {
+			return nil, ErrTokenSecretWrong
+		}
+	}
+	return token, nil
+}
+
 // FileCreate is used to upload file in a stream
 func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 	var (
@@ -391,8 +415,6 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 		ctx             = stream.Context()
 		req             *FileCreateRequest
 		resp            *FileCreateResponse
-		file            *models.File
-		path            string
 		token           *models.Token
 		record          *models.Request
 		previousToken   string
@@ -413,19 +435,14 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 			content := req.Content
 			req.Content = nil
 			if record, err = s.generateRequestRecord(ctx, "FileCreate", req, db); err != nil {
-				return err
+				return
 			}
 			req.Content = content
 			resp = &FileCreateResponse{RequestId: record.ID}
 			defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 			if !tokenHasChecked || previousToken != req.Token {
-				if token, err = models.FindTokenByUID(req.Token, db); err != nil {
-					return err
-				}
-				if token.Secret != nil {
-					if req.GetSecret() == nil || req.GetSecret().GetValue() != *token.Secret {
-						return ErrTokenSecretWrong
-					}
+				if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
+					return
 				}
 			}
 			record.AppID = &token.App.ID
@@ -460,20 +477,18 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 				fileCreateSrv.Hidden = 1
 			}
 			if err = fileCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
-				return err
+				return
 			}
 			if fileCreateVal, err = fileCreateSrv.Execute(ctx); err != nil {
-				return err
+				return
 			}
-			file = fileCreateVal.(*models.File)
-			if path, err = file.Path(db); err != nil {
-				return err
+			if resp.File, err = s.fileResp(fileCreateVal.(*models.File), db); err != nil {
+				return
 			}
-			resp.File = s.fileResp(file, path)
 			return stream.Send(resp)
 		}
 		if err = handler(); err != nil {
-			return err
+			return
 		}
 	}
 }
@@ -498,18 +513,13 @@ func (s *Server) FileUpdate(ctx context.Context, req *FileUpdateRequest) (resp *
 	}
 	resp = &FileUpdateResponse{RequestId: record.ID}
 	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
-	if token, err = models.FindTokenByUID(req.Token, db); err != nil {
+	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
 		return
-	}
-	if token.Secret != nil {
-		if req.GetSecret() == nil || req.GetSecret().GetValue() != *token.Secret {
-			return resp, ErrTokenSecretWrong
-		}
 	}
 	record.AppID = &token.App.ID
 	record.Token = &token.UID
 	if file, err = models.FindFileByUID(req.FileUid, false, db); err != nil {
-		return resp, err
+		return
 	}
 	var hidden int8
 	if req.GetHidden() != nil && req.GetHidden().GetValue() {
@@ -529,14 +539,58 @@ func (s *Server) FileUpdate(ctx context.Context, req *FileUpdateRequest) (resp *
 	if fileUpdateVal, err = fileUpdateSrv.Execute(ctx); err != nil {
 		return
 	}
-	var path string
-	if path, err = file.Path(db); err != nil {
+	if resp.File, err = s.fileResp(fileUpdateVal.(*models.File), db); err != nil {
 		return
 	}
-	file = fileUpdateVal.(*models.File)
-	if file.Object.ID == 0 {
-		db.Preload("Object").First(file)
+	return
+}
+
+// FileDelete is used yo delete a file or a directory
+func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *FileDeleteResponse, err error) {
+	var (
+		db            = getDbConn()
+		file          *models.File
+		token         *models.Token
+		record        *models.Request
+		fileDeleteSrv *service.FileDelete
+		fileDeleteVal interface{}
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "FileDelete", req, db); err != nil {
+		return
 	}
-	resp.File = s.fileResp(file, path)
+	resp = &FileDeleteResponse{RequestId: record.ID}
+	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
+	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
+		return
+	}
+	record.AppID = &token.App.ID
+	record.Token = &token.UID
+	if file, err = models.FindFileByUID(req.FileUid, false, db); err != nil {
+		return
+	}
+
+	fileDeleteSrv = &service.FileDelete{
+		BaseService: service.BaseService{DB: db},
+		Token:       token,
+		File:        file,
+		IP:          record.IP,
+		Force:       &req.ForceDeleteDir,
+	}
+
+	if err = fileDeleteSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		return
+	}
+
+	if fileDeleteVal, err = fileDeleteSrv.Execute(ctx); err != nil {
+		return
+	}
+	if resp.File, err = s.fileResp(fileDeleteVal.(*models.File), db); err != nil {
+		return
+	}
 	return
 }

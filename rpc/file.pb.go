@@ -22,7 +22,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// File represent a token type
+// File represent a file type
 type File struct {
 	Uid                  string                `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
 	Path                 string                `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`

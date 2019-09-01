@@ -227,3 +227,32 @@ func TestServer_FileUpdate(t *testing.T) {
 	assert.Equal(t, "/new/random.bytes", resp.File.Path)
 	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
 }
+
+func TestServer_FileDelete(t *testing.T) {
+	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	testDbConn = trx
+	tempDir := models.NewTempDirForTest()
+	testRootPath = &tempDir
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	randomBytes := models.Random(222)
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
+	assert.Nil(t, err)
+
+	s := Server{}
+	resp, err := s.FileDelete(newContext(context.Background()), &FileDeleteRequest{
+		Token:   token.UID,
+		FileUid: file.UID,
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, "/random/r.bytes", resp.File.Path)
+	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
+	assert.NotNil(t, resp.File.GetDeletedAt())
+}

@@ -17,7 +17,7 @@ option java_outer_classname = "FileCreateProto";
 option java_multiple_files = true;
 option objc_class_prefix = "BPR";
 
-// FileCreateRequest represent a token type
+// FileCreateRequest represent the file create request
 message FileCreateRequest {
     string token = 1;
     string path = 2;
