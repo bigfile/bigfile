@@ -4,34 +4,31 @@
 
 syntax = "proto3";
 
-package bigfile.file_delete;
+package bigfile.file_read;
 
-import "file.proto";
 import "google/protobuf/wrappers.proto";
 
 option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
 option cc_enable_arenas = true;
 option go_package = "github.com/bigfile/bigfile/rpc";
 option java_package = "com.bigfile.protobuf";
-option java_outer_classname = "FileDeleteProto";
+option java_outer_classname = "FileReadProto";
 option java_multiple_files = true;
 option objc_class_prefix = "BPR";
 
-// FileDeleteRequest represent the file delete request
-message FileDeleteRequest {
+// FileReadRequest represent the token delete request
+message FileReadRequest {
     string token = 1;
     string file_uid = 2;
-    bool force_delete_if_dir = 3;
     google.protobuf.StringValue secret = 4;
 }
 
-// FileDeleteResponse represent the file delete response
-message FileDeleteResponse {
-    uint64 request_id = 1;
-    bigfile.file.File file = 2;
+// FileReadResponse represent the token delete response
+message FileReadResponse {
+    bytes content = 1;
 }
 
-// FileDelete is used to delete a token
-service FileDelete {
-    rpc fileDelete (FileDeleteRequest) returns (FileDeleteResponse) {}
+// FileRead is used to delete a token
+service FileRead {
+    rpc fileRead (FileReadRequest) returns (stream FileReadResponse) {}
 }

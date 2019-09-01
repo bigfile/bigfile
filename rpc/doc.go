@@ -2,12 +2,13 @@
 //   Use of this source code is governed by a MIT-style
 //   license that can be found in the LICENSE file.
 
-/* Package rpc provide rpc service, It provides the following service:
+// Package rpc provide rpc service
 
+/*
 Before calling rpc service, you should create a rpc connection, let's
 see a complete example.
 
-TokenCreate, Example:
+TokenCreate
 
 	package main
 
@@ -55,7 +56,7 @@ TokenCreate, Example:
 	}
 
 
-TokenUpdate, Example:
+TokenUpdate
 
 	func tokenUpdate(conn *grpc.ClientConn) {
 		c := rpc.NewTokenUpdateClient(conn)
@@ -76,7 +77,7 @@ TokenUpdate, Example:
 		fmt.Println(r, err)
 	}
 
-TokenDelete:
+TokenDelete
 
 	func tokenDelete(conn *grpc.ClientConn) {
 		c := rpc.NewTokenDeleteClient(conn)
@@ -92,7 +93,9 @@ TokenDelete:
 		fmt.Println(r, err)
 	}
 
-FileCreate，file upload may be a focus of attention, so let's see a complete Example:
+FileCreate
+
+file upload may be a focus of attention, so let's see a complete Example:
 
 	package main
 
@@ -179,8 +182,9 @@ FileCreate，file upload may be a focus of attention, so let's see a complete Ex
 		uploadFile(conn)
 	}
 
-DirectoryCreate, Actually, in bigfile, file and directory both are regarded as 'file'. So, you
-can create a directory, Example:
+DirectoryCreate
+
+Actually, in bigfile, file and directory both are regarded as 'file'. So, you can create a directory, Example:
 
 	package main
 
@@ -235,7 +239,9 @@ can create a directory, Example:
 		createDir(conn)
 	}
 
-FileUpdate, is used to move file or directory and hide file, Example:
+FileUpdate
+
+move file or directory and hide file, Example:
 
 	func fileUpdate(conn *grpc.ClientConn) {
 		c := rpc.NewFileUpdateClient(conn)
@@ -251,7 +257,9 @@ FileUpdate, is used to move file or directory and hide file, Example:
 		fmt.Println(resp, err)
 	}
 
-FileDelete, is used to delete a file or a directory, Example:
+FileDelete
+
+delete a file or a directory, Example:
 
 	func fileDelete(conn *grpc.ClientConn) {
 		c := rpc.NewFileDeleteClient(conn)

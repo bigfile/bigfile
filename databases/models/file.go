@@ -375,11 +375,11 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 
 // CreateOrGetLastDirectory is used to get last level directory, there is no difference
 // between a relative path and an absolute path
-func CreateOrGetLastDirectory(app *App, parentDirs string, db *gorm.DB) (*File, error) {
+func CreateOrGetLastDirectory(app *App, dirPath string, db *gorm.DB) (*File, error) {
 	var (
 		parent = &File{ID: 0}
 		err    error
-		parts  = strings.Split(strings.TrimRight(strings.TrimSpace(parentDirs), "/"), "/")
+		parts  = strings.Split(strings.TrimRight(strings.TrimSpace(dirPath), "/"), "/")
 	)
 
 	if parts[0] != "" {

@@ -7,8 +7,10 @@ package rpc
 import (
 	"bytes"
 	"context"
+	"io"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -255,4 +257,104 @@ func TestServer_FileDelete(t *testing.T) {
 	assert.Equal(t, "/random/r.bytes", resp.File.Path)
 	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
 	assert.NotNil(t, resp.File.GetDeletedAt())
+}
+
+func TestServer_FileRead(t *testing.T) {
+	// create token
+	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	rootPath := models.NewTempDirForTest()
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(rootPath) {
+			os.RemoveAll(rootPath)
+		}
+	}()
+	testDbConn = trx
+	testRootPath = &rootPath
+
+	// create file
+	randomBytesSize := models.ChunkSize + 222
+	randomBytes := models.Random(uint(randomBytesSize))
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, file.Object.Hash)
+
+	// create server
+	const bufSize = 1024 * 1024
+	lis := bufconn.Listen(bufSize)
+	s := grpc.NewServer()
+	RegisterFileReadServer(s, &Server{})
+	go func() { _ = s.Serve(lis) }()
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+	ctx := newContext(context.Background())
+
+	// create client
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	assert.Nil(t, err)
+	client := NewFileReadClient(conn)
+	streamClient, err := client.FileRead(ctx, &FileReadRequest{
+		Token:   token.UID,
+		FileUid: file.UID,
+	})
+	assert.Nil(t, err)
+
+	header, err := streamClient.Header()
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, header.Get("hash")[0])
+	headerSize, err := strconv.Atoi(header.Get("size")[0])
+	assert.Nil(t, err)
+	assert.Equal(t, headerSize, randomBytesSize)
+	dataBuffer := new(bytes.Buffer)
+	for {
+		if resp, err := streamClient.Recv(); err != nil {
+			if err != io.EOF {
+				t.Fatal(err)
+			} else {
+				break
+			}
+		} else {
+			_, err = dataBuffer.Write(resp.Content)
+			assert.Nil(t, err)
+		}
+	}
+
+	dataHash, err := util.Sha256Hash2String(dataBuffer.Bytes())
+	assert.Nil(t, err)
+	assert.Equal(t, dataBuffer.Len(), randomBytesSize)
+	assert.Equal(t, randomBytesHash, dataHash)
+}
+
+func TestServer_DirectoryList(t *testing.T) {
+	// create token
+	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	rootPath := models.NewTempDirForTest()
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(rootPath) {
+			os.RemoveAll(rootPath)
+		}
+	}()
+	testDbConn = trx
+	testRootPath = &rootPath
+
+	// create directories
+	number := 18
+	for i := 0; i < number; i++ {
+		_, err = models.CreateOrGetLastDirectory(&token.App, token.PathWithScope("/test/"+strconv.Itoa(i)), trx)
+		assert.Nil(t, err)
+	}
+
+	s := Server{}
+	resp, err := s.DirectoryList(newContext(context.Background()), &DirectoryListRequest{
+		Token: token.UID, SubDir: &wrappers.StringValue{Value: "/test"},
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, int32(number), resp.Total)
+	assert.Equal(t, int32(2), resp.Pages)
 }

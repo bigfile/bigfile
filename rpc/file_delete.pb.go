@@ -25,7 +25,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// FileDeleteRequest represent the token delete request
+// FileDeleteRequest represent the file delete request
 type FileDeleteRequest struct {
 	Token                string                `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	FileUid              string                `protobuf:"bytes,2,opt,name=file_uid,json=fileUid,proto3" json:"file_uid,omitempty"`
@@ -89,7 +89,7 @@ func (m *FileDeleteRequest) GetSecret() *wrappers.StringValue {
 	return nil
 }
 
-// FileDeleteResponse represent the token delete response
+// FileDeleteResponse represent the file delete response
 type FileDeleteResponse struct {
 	RequestId            uint64   `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	File                 *File    `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`

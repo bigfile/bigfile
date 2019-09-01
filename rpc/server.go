@@ -8,12 +8,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/models"
@@ -23,8 +23,10 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/jinzhu/gorm"
 	jsoniter "github.com/json-iterator/go"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -591,6 +593,146 @@ func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *
 	}
 	if resp.File, err = s.fileResp(fileDeleteVal.(*models.File), db); err != nil {
 		return
+	}
+	return
+}
+
+// FileRead is used to download file
+func (s *Server) FileRead(req *FileReadRequest, resp FileRead_FileReadServer) (err error) {
+	var (
+		db          = getDbConn()
+		ctx         = resp.Context()
+		file        *models.File
+		token       *models.Token
+		record      *models.Request
+		fileReader  io.Reader
+		fileReadSrv *service.FileRead
+		fileReadVal interface{}
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "FileRead", req, db); err != nil {
+		return
+	}
+	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
+		return
+	}
+	record.AppID = &token.App.ID
+	record.Token = &token.UID
+	if file, err = models.FindFileByUID(req.FileUid, false, db); err != nil {
+		return
+	}
+	if err = db.Model(record).Updates(map[string]interface{}{"appId": record.AppID, "token": record.Token}).Error; err != nil {
+		return
+	}
+	fileReadSrv = &service.FileRead{
+		BaseService: service.BaseService{DB: db, RootPath: testRootPath},
+		Token:       token,
+		File:        file,
+		IP:          record.IP,
+	}
+	if err = fileReadSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		return
+	}
+	if fileReadVal, err = fileReadSrv.Execute(ctx); err != nil {
+		return
+	}
+	fileReader = fileReadVal.(io.Reader)
+
+	if err = resp.SendHeader(metadata.New(map[string]string{
+		"name": file.Name,
+		"size": strconv.Itoa(file.Size),
+		"hash": file.Object.Hash,
+	})); err != nil {
+		return
+	}
+
+	for {
+		var chunk = make([]byte, models.ChunkSize)
+		var readCount int
+		readCount, err = fileReader.Read(chunk)
+		if readCount > 0 {
+			if err = resp.Send(&FileReadResponse{Content: chunk[:readCount]}); err != nil {
+				return
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			return
+		}
+	}
+}
+
+// DirectoryList is used to list a directory
+func (s *Server) DirectoryList(ctx context.Context, req *DirectoryListRequest) (resp *DirectoryListResponse, err error) {
+	var (
+		db          = getDbConn()
+		token       *models.Token
+		record      *models.Request
+		dirListSrv  *service.DirectoryList
+		dirListVal  interface{}
+		dirListResp *service.DirectoryListResponse
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "DirectoryList", req, db); err != nil {
+		return
+	}
+	resp = &DirectoryListResponse{RequestId: record.ID}
+	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
+	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
+		return
+	}
+	record.AppID = &token.App.ID
+	record.Token = &token.UID
+
+	dirListSrv = &service.DirectoryList{
+		BaseService: service.BaseService{DB: db},
+		Token:       token,
+		IP:          record.IP,
+		SubDir:      "/",
+		Limit:       10,
+		Offset:      0,
+		Sort:        "-type",
+	}
+
+	if req.GetSubDir() != nil {
+		dirListSrv.SubDir = req.GetSubDir().GetValue()
+	}
+	if req.GetLimit() != nil {
+		dirListSrv.Limit = int(req.GetLimit().GetValue())
+	}
+	if req.GetOffset() != nil {
+		dirListSrv.Offset = int(req.GetOffset().GetValue())
+	}
+
+	sort := strings.ReplaceAll(req.Sort.String(), "Desc", "-")
+	sort = strings.ReplaceAll(sort, "Asc", "")
+	sort = strings.ToLower(sort)
+	dirListSrv.Sort = sort
+
+	if err = dirListSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		return
+	}
+	if dirListVal, err = dirListSrv.Execute(ctx); err != nil {
+		return
+	}
+	dirListResp = dirListVal.(*service.DirectoryListResponse)
+	resp.Total = int32(dirListResp.Total)
+	resp.Pages = int32(dirListResp.Pages)
+	resp.Files = make([]*File, len(dirListResp.Files))
+	for i, f := range dirListResp.Files {
+		if resp.Files[i], err = s.fileResp(&f, db); err != nil {
+			return
+		}
 	}
 	return
 }
