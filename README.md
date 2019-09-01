@@ -14,3 +14,73 @@ We also built a virtual file organization system that is logically divided into 
 
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_large)
+
+
+
+### RPC Protocol
+
+#### generate certificates
+
+>  go run artisan/bigfile.go rpc create-cert
+
+#### start rpc service
+
+> go run artisan/bigfile.go rpc start --server-cert server.pem --server-key server.key --root-cert root.pem --auth-client 4
+
+#### connect to remote server
+
+```go
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
+
+	"github.com/bigfile/bigfile/rpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+)
+
+func main() {
+	var (
+		err           error
+		conn          *grpc.ClientConn
+		cert          tls.Certificate
+		certPool      *x509.CertPool
+		rootCertBytes []byte
+	)
+	if cert, err = tls.LoadX509KeyPair("client.pem", "client.key"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	certPool = x509.NewCertPool()
+	if rootCertBytes, err = ioutil.ReadFile("root.pem"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if !certPool.AppendCertsFromPEM(rootCertBytes) {
+		fmt.Print("Fail to append ca")
+		return
+	}
+
+	if conn, err = grpc.Dial("127.0.0.1:10986", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      certPool,
+	}))); err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer conn.Close()
+
+	grpcClient := rpc.NewTokenCreateClient(conn)
+	fmt.Println(grpcClient.TokenCreate(context.TODO(), &rpc.TokenCreateRequest{
+		AppUid:    "1a951487fb16798c0c6d838decfbc973",
+		AppSecret: "38c57333fe2e2c17cc663f61212d7b7e",
+	}))
+}
+```
