@@ -2,6 +2,8 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
+// Package main is the entry for the whole program,the name, artisan
+// , is from laravel, a awesome php framework.
 package main
 
 import (

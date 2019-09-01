@@ -4,6 +4,7 @@
 
 [![Build Status](https://travis-ci.org/bigfile/bigfile.svg?branch=master)](https://travis-ci.org/bigfile/bigfile)
 [![codecov](https://codecov.io/gh/bigfile/bigfile/branch/master/graph/badge.svg)](https://codecov.io/gh/bigfile/bigfile)
+[![GoDoc](https://godoc.org/github.com/bigfile/bigfile?status.svg)(https://github.com/bigfile/bigfile)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_shield)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bigfile/bigfile)](https://goreportcard.com/report/github.com/bigfile/bigfile)
 [![Open Source Helpers](https://www.codetriage.com/bigfile/bigfile/badges/users.svg)](https://www.codetriage.com/bigfile/bigfile)

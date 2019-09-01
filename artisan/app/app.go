@@ -2,6 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
+// Package app is used to manage app, such as create, delete and list them
 package app
 
 import (

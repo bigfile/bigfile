@@ -158,39 +158,21 @@ func ExampleServer_FileCreate() {
 			break
 		}
 	}
-}
 
-// ExampleServer_FileCreate2 is used to display how to create a directory
-func ExampleServer_FileCreate2() {
-	var (
-		ctx          context.Context
-		err          error
-		resp         *FileCreateResponse
-		cancel       context.CancelFunc
-		client       FileCreateClient
-		streamClient FileCreate_FileCreateClient
-	)
-	ctx, cancel = context.WithCancel(context.Background())
-	defer cancel()
-	client = NewFileCreateClient(getConn())
-	if streamClient, err = client.FileCreate(ctx); err != nil {
-		fmt.Println(err)
-		return
-	}
-	req := &FileCreateRequest{
-		Token:     "bf0776c565412060eb93f8f307fae299",
-		Path:      "/create/some/directories",
-		Operation: &FileCreateRequest_CreateDir{CreateDir: true},
-	}
-	if err = streamClient.Send(req); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if resp, err = streamClient.Recv(); err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(resp)
+	// the follow commented codes are used to crate a directory
+	//req := &FileCreateRequest{
+	//	Token:     "bf0776c565412060eb93f8f307fae299",
+	//	Path:      "/create/some/directories",
+	//	Operation: &FileCreateRequest_CreateDir{CreateDir: true},
+	//}
+	//if err = streamClient.Send(req); err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//if resp, err = streamClient.Recv(); err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
 }
 
 func ExampleServer_FileRead() {

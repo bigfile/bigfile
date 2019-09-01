@@ -2,6 +2,7 @@
 //   Use of this source code is governed by a MIT-style
 //   license that can be found in the LICENSE file.
 
+// Package rpc provide the rpc service entry and other tools
 package rpc
 
 import (
@@ -35,10 +36,15 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"gopkg.in/urfave/cli.v2"
+
+	// 导入migration
+	_ "github.com/bigfile/bigfile/databases/migrate/migrations"
 )
 
 var (
 	category = "rpc"
+
+	// Commands defines the rpc service command line entry
 	Commands = []*cli.Command{
 		{
 			Name:      "rpc",
