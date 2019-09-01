@@ -715,8 +715,8 @@ func (s *Server) DirectoryList(ctx context.Context, req *DirectoryListRequest) (
 		dirListSrv.Offset = int(req.GetOffset().GetValue())
 	}
 
-	sort := strings.ReplaceAll(req.Sort.String(), "Desc", "-")
-	sort = strings.ReplaceAll(sort, "Asc", "")
+	sort := strings.Replace(req.Sort.String(), "Desc", "-", -1)
+	sort = strings.Replace(sort, "Asc", "", -1)
 	sort = strings.ToLower(sort)
 	dirListSrv.Sort = sort
 
