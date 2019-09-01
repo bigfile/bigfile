@@ -5,9 +5,9 @@
 /* Package rpc provide rpc service, It provides the following service:
 
 Before calling rpc service, you should create a rpc connection, let's
-see a complete example:
+see a complete example.
 
-TokenCreate:
+TokenCreate, Example:
 
 	package main
 
@@ -55,7 +55,7 @@ TokenCreate:
 	}
 
 
-TokenUpdate:
+TokenUpdate, Example:
 
 	func tokenUpdate(conn *grpc.ClientConn) {
 		c := rpc.NewTokenUpdateClient(conn)
@@ -92,7 +92,7 @@ TokenDelete:
 		fmt.Println(r, err)
 	}
 
-FileCreate，file upload may be a focus of attention, so let's see a complete example:
+FileCreate，file upload may be a focus of attention, so let's see a complete Example:
 
 	package main
 
@@ -180,7 +180,7 @@ FileCreate，file upload may be a focus of attention, so let's see a complete ex
 	}
 
 DirectoryCreate, Actually, in bigfile, file and directory both are regarded as 'file'. So, you
-can create a directory like this:
+can create a directory, Example:
 
 	package main
 
@@ -235,7 +235,7 @@ can create a directory like this:
 		createDir(conn)
 	}
 
-FileUpdate, is used to move file or directory and hide file
+FileUpdate, is used to move file or directory and hide file, Example:
 
 	func fileUpdate(conn *grpc.ClientConn) {
 		c := rpc.NewFileUpdateClient(conn)
@@ -251,6 +251,20 @@ FileUpdate, is used to move file or directory and hide file
 		fmt.Println(resp, err)
 	}
 
+FileDelete, is used to delete a file or a directory, Example:
+
+	func fileDelete(conn *grpc.ClientConn) {
+		c := rpc.NewFileDeleteClient(conn)
+		// Contact the server and print out its response.
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		resp, err := c.FileDelete(ctx, &rpc.FileDeleteRequest{
+			Token:            "bf0776c565412060eb93f8f307fae299",
+			FileUid:          "556e3b9c936202c9dc67b7ad45530790",
+			ForceDeleteIfDir: false,
+		})
+		fmt.Println(resp, err)
+	}
 */
 
 package rpc

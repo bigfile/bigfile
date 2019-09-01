@@ -10,23 +10,20 @@ import (
 	"log"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/wrappers"
-
 	"github.com/bigfile/bigfile/rpc"
 
 	"google.golang.org/grpc"
 )
 
-func fileUpdate(conn *grpc.ClientConn) {
-	c := rpc.NewFileUpdateClient(conn)
+func fileDelete(conn *grpc.ClientConn) {
+	c := rpc.NewFileDeleteClient(conn)
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	resp, err := c.FileUpdate(ctx, &rpc.FileUpdateRequest{
-		Token:   "bf0776c565412060eb93f8f307fae299",
-		FileUid: "556e3b9c936202c9dc67b7ad45530790",
-		Path:    "/new/path/to/shield_agents.mp4",
-		Hidden:  &wrappers.BoolValue{Value: true},
+	resp, err := c.FileDelete(ctx, &rpc.FileDeleteRequest{
+		Token:            "bf0776c565412060eb93f8f307fae299",
+		FileUid:          "556e3b9c936202c9dc67b7ad45530790",
+		ForceDeleteIfDir: false,
 	})
 	fmt.Println(resp, err)
 }
@@ -38,5 +35,5 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	fileUpdate(conn)
+	fileDelete(conn)
 }

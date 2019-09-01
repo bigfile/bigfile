@@ -579,7 +579,7 @@ func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *
 		Token:       token,
 		File:        file,
 		IP:          record.IP,
-		Force:       &req.ForceDeleteDir,
+		Force:       &req.ForceDeleteIfDir,
 	}
 
 	if err = fileDeleteSrv.Validate(); !reflect.ValueOf(err).IsNil() {

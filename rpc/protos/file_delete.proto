@@ -21,7 +21,7 @@ option objc_class_prefix = "BPR";
 message FileDeleteRequest {
     string token = 1;
     string file_uid = 2;
-    bool force_delete_dir = 3;
+    bool force_delete_if_dir = 3;
     google.protobuf.StringValue secret = 4;
 }
 
