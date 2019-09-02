@@ -102,4 +102,9 @@ func TestFileRead_Execute(t *testing.T) {
 
 	assert.Nil(t, trx.Find(token).Error)
 	assert.Equal(t, 999, token.AvailableTimes)
+
+	assert.Nil(t, trx.Model(file).Update("hidden", 1).Error)
+	_, err = fileReadSrv.Execute(context.TODO())
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrReadHiddenFile.Error(), err.Error())
 }

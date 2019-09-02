@@ -2,6 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
+// Package migrate is used to upgrade, rollback or refresh database
 package migrate
 
 import (

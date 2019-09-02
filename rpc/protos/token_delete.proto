@@ -1,0 +1,38 @@
+//  Copyright 2019 The bigfile Authors. All rights reserved.
+//  Use of this source code is governed by a MIT-style
+//  license that can be found in the LICENSE file.
+
+// bigfile.token_delete is used to describe the message
+// format for token delete
+
+syntax = "proto3";
+
+package bigfile.token_delete;
+
+import "token.proto";
+
+option csharp_namespace = "Bigfile.Protobuf.BigFileTypes";
+option cc_enable_arenas = true;
+option go_package = "github.com/bigfile/bigfile/rpc";
+option java_package = "com.bigfile.protobuf";
+option java_outer_classname = "TokenDeleteProto";
+option java_multiple_files = true;
+option objc_class_prefix = "BPR";
+
+// TokenDeleteRequest describe the input format for deleting token
+message TokenDeleteRequest {
+    string app_uid = 1;
+    string app_secret = 2;
+    string token = 3;
+}
+
+// TokenDeleteResponse represent the response of deleting token
+message TokenDeleteResponse {
+    uint64 request_id = 1;
+    bigfile.token.Token token = 2;
+}
+
+// TokenDelete is used to create a token
+service TokenDelete {
+    rpc tokenDelete (TokenDeleteRequest) returns (TokenDeleteResponse) {}
+}

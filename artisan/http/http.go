@@ -2,6 +2,7 @@
 //   Use of this source code is governed by a MIT-style
 //   license that can be found in the LICENSE file.
 
+// Package http is used to provide http service entry and other tools
 package http
 
 import (
@@ -130,12 +131,12 @@ var (
 
 						go func() {
 							if certFile != "" && certKey != "" {
-								logger.Debugf("bigfile http service listening on: https://%s", addr)
+								logger.Infof("bigfile http service listening on: https://%s", addr)
 								if err := server.ListenAndServeTLS(certFile, certKey); err != nil && err != libHTTP.ErrServerClosed {
 									logger.Errorf("https server error: %s", err)
 								}
 							} else {
-								logger.Debugf("bigfile http service listening on: http://%s", addr)
+								logger.Infof("bigfile http service listening on: http://%s", addr)
 								if err := server.ListenAndServe(); err != nil && err != libHTTP.ErrServerClosed {
 									logger.Errorf("https server error: %s", err)
 								}
@@ -161,9 +162,13 @@ var (
 					},
 				},
 			},
-			Before: func(context *cli.Context) error {
+			Before: func(context *cli.Context) (err error) {
 				gin.SetMode(gin.ReleaseMode)
-				migrate.DefaultMC.SetConnection(databases.MustNewConnection(&config.DefaultConfig.Database))
+				db := databases.MustNewConnection(&config.DefaultConfig.Database)
+				if err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DefaultConfig.Database.DBName)).Error; err != nil {
+					return
+				}
+				migrate.DefaultMC.SetConnection(db)
 				migrate.DefaultMC.Upgrade()
 				return nil
 			},

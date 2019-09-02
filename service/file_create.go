@@ -21,6 +21,9 @@ var (
 	ErrPathExisted = errors.New("the path has already existed")
 	// ErrOnlyOneRenameAppendOverWrite represent uncertain operation
 	ErrOnlyOneRenameAppendOverWrite = errors.New("only one of rename, append and overwrite is allowed")
+
+	// ErrFileHasBeenDeleted represent that the file has been deleted
+	ErrFileHasBeenDeleted = errors.New("the file has been deleted")
 )
 
 // FileCreate is used to upload file or create directory
@@ -115,6 +118,10 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	if file == nil || file.ID == 0 {
 		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
+	}
+
+	if file.DeletedAt != nil && (fc.Append == 1 || fc.Overwrite == 1) {
+		return nil, ErrFileHasBeenDeleted
 	}
 
 	if fc.Overwrite == 1 {

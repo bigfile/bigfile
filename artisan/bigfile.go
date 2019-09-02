@@ -2,18 +2,20 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
+// Package main is the entry for the whole program,the name, artisan
+// , is from laravel, a awesome php framework.
 package main
 
 import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
 	"time"
 
 	cmdApp "github.com/bigfile/bigfile/artisan/app"
 	"github.com/bigfile/bigfile/artisan/http"
 	"github.com/bigfile/bigfile/artisan/migrate"
+	"github.com/bigfile/bigfile/artisan/rpc"
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
 	"github.com/gookit/color"
@@ -81,13 +83,10 @@ var (
 func main() {
 	var commands []*cli.Command
 
-	// just for develop environment
-	if mode, ok := os.LookupEnv("BIGFILE_MODE"); ok && strings.HasPrefix(strings.ToLower(mode), "dev") {
-		commands = append(commands, migrate.Commands...)
-	}
-
+	commands = append(commands, migrate.Commands...)
 	commands = append(commands, cmdApp.Commands...)
 	commands = append(commands, http.Commands...)
+	commands = append(commands, rpc.Commands...)
 	app.Commands = commands
 
 	sort.Sort(cli.FlagsByName(app.Flags))

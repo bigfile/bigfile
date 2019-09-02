@@ -1,0 +1,38 @@
+//  Copyright 2019 The bigfile Authors. All rights reserved.
+//  Use of this source code is governed by a MIT-style
+//  license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package bigfile.file_update;
+
+import "file.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
+option cc_enable_arenas = true;
+option go_package = "github.com/bigfile/bigfile/rpc";
+option java_package = "com.bigfile.protobuf";
+option java_outer_classname = "FileUpdateProto";
+option java_multiple_files = true;
+option objc_class_prefix = "BPR";
+
+// FileUpdateRequest represent the file update request
+message FileUpdateRequest {
+    string token = 1;
+    string file_uid = 2;
+    string path = 3;
+    google.protobuf.StringValue secret = 4;
+    google.protobuf.BoolValue hidden = 5;
+}
+
+// FileUpdateResponse represent the response from creating file
+message FileUpdateResponse {
+    uint64 request_id = 1;
+    bigfile.file.File file = 2;
+}
+
+// FileUpdate is used to create a token
+service FileUpdate {
+    rpc fileUpdate (FileUpdateRequest) returns (FileUpdateResponse) {}
+}

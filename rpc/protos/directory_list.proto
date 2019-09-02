@@ -1,0 +1,49 @@
+//  Copyright 2019 The bigfile Authors. All rights reserved.
+//  Use of this source code is governed by a MIT-style
+//  license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package bigfile.directory_list;
+
+import "file.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
+option cc_enable_arenas = true;
+option go_package = "github.com/bigfile/bigfile/rpc";
+option java_package = "com.bigfile.protobuf";
+option java_outer_classname = "DirectoryListProto";
+option java_multiple_files = true;
+option objc_class_prefix = "BPR";
+
+// DirectoryListRequest represent the list directory request
+message DirectoryListRequest {
+    string token = 1;
+    google.protobuf.StringValue secret = 2;
+    google.protobuf.StringValue sub_dir = 3;
+    enum Sort {
+        DescType = 0;
+        AscType = 1;
+        DescName = 2;
+        AscName = 3;
+        DescTime = 4;
+        AscDesc = 5;
+    }
+    Sort sort = 4;
+    google.protobuf.UInt32Value limit = 5;
+    google.protobuf.UInt32Value offset = 6;
+}
+
+// DirectoryListResponse represent the token delete response
+message DirectoryListResponse {
+    uint64 request_id = 1;
+    int32 total = 2;
+    int32 pages = 3;
+    repeated bigfile.file.File files = 4;
+}
+
+// DirectoryList is used to delete a token
+service DirectoryList {
+    rpc directoryList (DirectoryListRequest) returns (DirectoryListResponse) {}
+}

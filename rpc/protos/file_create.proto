@@ -1,0 +1,45 @@
+//  Copyright 2019 The bigfile Authors. All rights reserved.
+//  Use of this source code is governed by a MIT-style
+//  license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package bigfile.file_create;
+
+import "file.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Bigfile.Protobuf.WellKnownTypes";
+option cc_enable_arenas = true;
+option go_package = "github.com/bigfile/bigfile/rpc";
+option java_package = "com.bigfile.protobuf";
+option java_outer_classname = "FileCreateProto";
+option java_multiple_files = true;
+option objc_class_prefix = "BPR";
+
+// FileCreateRequest represent the file create request
+message FileCreateRequest {
+    string token = 1;
+    string path = 2;
+    google.protobuf.StringValue secret = 4;
+    google.protobuf.BoolValue hidden = 6;
+    oneof operation {
+        bool overwrite = 7;
+        bool rename = 8;
+        bool append = 9;
+        bool create_dir = 10;
+        bool none = 11;
+    }
+    google.protobuf.BytesValue content = 12;
+}
+
+// FileCreateResponse represent the response from creating file
+message FileCreateResponse {
+    uint64 request_id = 1;
+    bigfile.file.File file = 2;
+}
+
+// TokenCreate is used to create a token
+service FileCreate {
+    rpc fileCreate (stream FileCreateRequest) returns (stream FileCreateResponse) {}
+}

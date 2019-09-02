@@ -107,6 +107,9 @@ func TestParseConfigFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertConfigurator(t, configurator)
+
+	err = ParseConfigFile("", configurator)
+	assert.NotNil(t, err)
 }
 
 func TestParseConfig(t *testing.T) {
@@ -115,6 +118,11 @@ func TestParseConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertConfigurator(t, configurator)
+
+	if err := ParseConfig([]byte(config), nil); err != nil {
+		t.Fatal(err)
+	}
+	assertConfigurator(t, DefaultConfig)
 }
 
 func TestDatabase_DSN(t *testing.T) {
@@ -125,8 +133,17 @@ func TestDatabase_DSN(t *testing.T) {
 	if _, err := configurator.DSN(); err != nil {
 		t.Fatal(err)
 	}
-	configurator.Driver = "unknown driver"
+
+	configurator.Driver = "sqlite3"
 	_, err := configurator.DSN()
-	assert.NotEqual(t, err, nil)
+	assert.Nil(t, err)
+
+	configurator.Driver = "postgres"
+	_, err = configurator.DSN()
+	assert.Nil(t, err)
+
+	configurator.Driver = "unknown driver"
+	_, err = configurator.DSN()
+	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "unsupported database driver")
 }
