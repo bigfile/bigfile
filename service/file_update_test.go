@@ -10,6 +10,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bigfile/bigfile/databases"
+
 	"github.com/bigfile/bigfile/internal/util"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -117,4 +119,35 @@ func TestFileUpdate_Execute(t *testing.T) {
 	anotherDir, err := models.FindFileByPathWithTrashed(&token.App, "/another", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 556, anotherDir.Size)
+}
+
+func TestFileUpdate_Execute2(t *testing.T) {
+	db := databases.MustNewConnection(nil)
+	app, err := models.NewApp("TestFileCreate_Execute8", nil, db)
+	assert.Nil(t, err)
+	token, err := models.NewToken(app, "/", nil, nil, nil, 1000, 0, db)
+	assert.Nil(t, err)
+	tempDir := models.NewTempDirForTest()
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	file, err := models.CreateFileFromReader(app, "/create/a/file.bytes", bytes.NewReader(models.Random(333)), models.Hidden, &tempDir, db)
+	assert.Nil(t, err)
+	assert.NotEqual(t, file.IsDir, models.IsDir)
+
+	fileUpdateSrv := &FileUpdate{
+		BaseService: BaseService{
+			DB:       db,
+			RootPath: &tempDir,
+		},
+		Token: token,
+		File:  file,
+	}
+	fileUpdateVal, err := fileUpdateSrv.Execute(context.TODO())
+	assert.Nil(t, err)
+	fileUpdated, ok := fileUpdateVal.(*models.File)
+	assert.True(t, ok)
+	assert.Equal(t, file.ID, fileUpdated.ID)
 }

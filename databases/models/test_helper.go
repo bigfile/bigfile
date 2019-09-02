@@ -13,6 +13,7 @@ import (
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases"
 	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
 )
 
 // Down represent rollback function type
@@ -36,35 +37,21 @@ var (
 )
 
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {
-	defer func() {
-		if err := recover(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	defer func() { assert.Nil(t, recover()) }()
 	db := databases.MustNewConnection(dbConfig)
 	trx := db.Begin()
 	return trx, func(t *testing.T) {
-		defer func() {
-			if err := recover(); err != nil {
-				t.Fatal(err)
-			}
-		}()
+		defer func() { assert.Nil(t, recover()) }()
 		trx.Rollback()
 	}
 }
 
 func newAppForTest(dbConfig *config.Database, t *testing.T) (*App, *gorm.DB, func(*testing.T), error) {
-	defer func() {
-		if err := recover(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	defer func() { assert.Nil(t, recover()) }()
 	trx, down := setUpTestCaseWithTrx(dbConfig, t)
 	note := "test"
 	app, err := NewApp("test", &note, trx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	return app, trx, down, err
 }
 
@@ -85,13 +72,9 @@ func newTokenForTest(
 		token *Token
 	)
 	app, trx, down, err = newAppForTest(cfg, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	token, err = NewToken(app, path, expiredAt, ip, secret, availableTimes, readOnly, trx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	return token, trx, down, err
 }
 
@@ -104,13 +87,9 @@ func newArbitrarilyTokenForTest(cfg *config.Database, t *testing.T) (*Token, *go
 		token *Token
 	)
 	app, trx, down, err = newAppForTest(cfg, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	token, err = NewToken(app, "/", nil, nil, nil, -1, int8(0), trx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	return token, trx, down, err
 }
 

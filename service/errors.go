@@ -15,15 +15,6 @@ var (
 	ErrInvalidPath = errors.New("path is not a legal unix path")
 )
 
-// commitError is used to wrap an commit error
-type commitError struct {
-	err error
-}
-
-func (c *commitError) Error() string {
-	return c.err.Error()
-}
-
 // ValidateError is defined validate error information
 type ValidateError struct {
 	Msg       string `json:"msg"`
@@ -58,9 +49,7 @@ func (v ValidateErrors) Error() string {
 // MapFieldErrors is used to represent error in other way. It's mainly
 // used to represent http response errors
 func (v ValidateErrors) MapFieldErrors() map[string][]string {
-	var (
-		m = make(map[string][]string, len(v))
-	)
+	var m = make(map[string][]string, len(v))
 	for i := 0; i < len(v); i++ {
 		m[v[i].Field] = []string{v[i].Error()}
 	}

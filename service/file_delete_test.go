@@ -10,6 +10,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/bigfile/bigfile/databases"
+
 	"github.com/bigfile/bigfile/internal/util"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -82,11 +84,9 @@ func TestFileDelete_Execute(t *testing.T) {
 	assert.Equal(t, 556, rootDir.Size)
 
 	fileDeleteSrv := &FileDelete{
-		BaseService: BaseService{
-			DB: trx,
-		},
-		Token: token,
-		File:  file,
+		BaseService: BaseService{DB: trx},
+		Token:       token,
+		File:        file,
 	}
 	assert.Nil(t, fileDeleteSrv.Validate())
 
@@ -128,11 +128,9 @@ func TestFileDelete_Execute2(t *testing.T) {
 	assert.Equal(t, 556, rootDir.Size)
 
 	fileDeleteSrv := &FileDelete{
-		BaseService: BaseService{
-			DB: trx,
-		},
-		Token: token,
-		File:  file.Parent,
+		BaseService: BaseService{DB: trx},
+		Token:       token,
+		File:        file.Parent,
 	}
 	assert.Nil(t, fileDeleteSrv.Validate())
 
@@ -152,4 +150,32 @@ func TestFileDelete_Execute2(t *testing.T) {
 	rootDir, err = models.CreateOrGetRootPath(&token.App, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, rootDir.Size)
+}
+
+func TestFileDelete_Execute3(t *testing.T) {
+	db := databases.MustNewConnection(nil)
+	app, err := models.NewApp("TestFileCreate_Execute8", nil, db)
+	assert.Nil(t, err)
+	token, err := models.NewToken(app, "/", nil, nil, nil, 1000, 0, db)
+	assert.Nil(t, err)
+	tempDir := models.NewTempDirForTest()
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	file, err := models.CreateFileFromReader(app, "/create/a/file.bytes", bytes.NewReader(models.Random(333)), models.Hidden, &tempDir, db)
+	assert.Nil(t, err)
+	assert.NotEqual(t, file.IsDir, models.IsDir)
+
+	fileDelete := &FileDelete{
+		BaseService: BaseService{DB: db, RootPath: &tempDir},
+		Token:       token,
+		File:        file,
+	}
+	fileDeleteVal, err := fileDelete.Execute(context.TODO())
+	assert.Nil(t, err)
+	fileDeleted, ok := fileDeleteVal.(*models.File)
+	assert.True(t, ok)
+	assert.NotNil(t, fileDeleted.DeletedAt)
 }

@@ -55,7 +55,7 @@ func TestTokenCreate_Validate(t *testing.T) {
 	ip = strings.Repeat("1", 1501)
 	tokenCreate = &TokenCreate{
 		AvailableTimes: -2,
-		Path:           "",
+		Path:           "/$%@#",
 		IP:             &ip,
 		ReadOnly:       2,
 	}
@@ -66,6 +66,7 @@ func TestTokenCreate_Validate(t *testing.T) {
 	confirm.True(err.ContainsErrCode(10006))
 	confirm.True(err.ContainsErrCode(10004))
 	confirm.True(err.ContainsErrCode(10007))
+	confirm.Contains(err.Error(), ErrInvalidPath.Error())
 }
 
 func TestTokenCreate_Validate2(t *testing.T) {
@@ -80,8 +81,6 @@ func TestTokenCreate_Execute2(t *testing.T) {
 		tokenCreate *TokenCreate
 		down        func(*testing.T)
 		err         error
-		//app         *models.App
-		//token       *models.Token
 	)
 	tokenCreate, _, down = newTokenCreateForTest(t)
 	defer down(t)

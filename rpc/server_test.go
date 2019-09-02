@@ -17,6 +17,7 @@ import (
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
+	"github.com/bigfile/bigfile/service"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/jinzhu/gorm"
@@ -38,6 +39,14 @@ func newPeer() *peer.Peer {
 		Addr:     tcpAddr,
 		AuthInfo: nil,
 	}
+}
+
+func newToken(t *testing.T, db *gorm.DB) *models.Token {
+	app, err := models.NewApp("test", nil, db)
+	assert.Nil(t, err)
+	token, err := models.NewToken(app, "/", nil, nil, nil, 1, models.TokenNonReadOnly, db)
+	assert.Nil(t, err)
+	return token
 }
 
 func newContext(ctx context.Context) context.Context {
@@ -125,7 +134,7 @@ func TestServer_TokenUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	defer down(t)
 	testDbConn = trx
-	resp, err := s.TokenUpdate(newContext(context.Background()), &TokenUpdateRequest{
+	req := &TokenUpdateRequest{
 		AppUid:         token.App.UID,
 		AppSecret:      token.App.Secret,
 		Token:          token.UID,
@@ -135,7 +144,8 @@ func TestServer_TokenUpdate(t *testing.T) {
 		AvailableTimes: &wrappers.UInt32Value{Value: 223},
 		ReadOnly:       &wrappers.BoolValue{Value: true},
 		ExpiredAt:      &timestamp.Timestamp{Seconds: time.Now().Add(1000 * time.Minute).Unix()},
-	})
+	}
+	resp, err := s.TokenUpdate(newContext(context.Background()), req)
 	assert.Nil(t, err)
 	assert.True(t, resp.RequestId > 0)
 	assert.Equal(t, "/new/path", resp.Token.Path)
@@ -146,6 +156,34 @@ func TestServer_TokenUpdate(t *testing.T) {
 	assert.True(t, resp.Token.ReadOnly)
 	assert.NotNil(t, resp.Token.ExpiredAt)
 	assert.Nil(t, resp.Token.DeletedAt)
+
+	req.AppUid = ""
+	_, err = s.TokenUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), ErrAppSecret.Error())
+	req.AppUid = token.App.UID
+
+	req.Token = ""
+	_, err = s.TokenUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+	req.Token = token.UID
+
+	req.Path = &wrappers.StringValue{Value: "/%$#@"}
+	_, err = s.TokenUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), service.ErrInvalidPath.Error())
+
+	token = newToken(t, trx)
+	req.Token = token.UID
+	_, err = s.TokenUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	statusError, ok = status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), ErrTokenNotMatchApp.Error())
+
 }
 
 func TestServer_TokenDelete(t *testing.T) {
@@ -154,15 +192,24 @@ func TestServer_TokenDelete(t *testing.T) {
 	assert.Nil(t, err)
 	defer down(t)
 	testDbConn = trx
-	resp, err := s.TokenDelete(newContext(context.Background()), &TokenDeleteRequest{
+	req := &TokenDeleteRequest{
 		AppUid:    token.App.UID,
 		AppSecret: token.App.Secret,
 		Token:     token.UID,
-	})
+	}
+	resp, err := s.TokenDelete(newContext(context.Background()), req)
 	assert.Nil(t, err)
 	assert.True(t, resp.RequestId > 0)
 	assert.Equal(t, token.UID, resp.Token.Token)
 	assert.NotNil(t, resp.Token.DeletedAt)
+
+	token = newToken(t, trx)
+	req.Token = token.UID
+	_, err = s.TokenDelete(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), ErrTokenNotMatchApp.Error())
 }
 
 func TestServer_FileCreate(t *testing.T) {
@@ -245,6 +292,38 @@ func TestServer_FileCreate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, resp.RequestId > 0)
 	assert.Equal(t, 32, len(resp.File.Uid))
+
+	// overwrite a file
+	req.Operation = &FileCreateRequest_Overwrite{Overwrite: true}
+	streamClient, _ = client.FileCreate(ctx)
+	assert.Nil(t, streamClient.Send(req))
+	_, err = streamClient.Recv()
+	assert.Nil(t, err)
+
+	// append a file
+	req.Operation = &FileCreateRequest_Append{Append: true}
+	streamClient, _ = client.FileCreate(ctx)
+	assert.Nil(t, streamClient.Send(req))
+	_, err = streamClient.Recv()
+	assert.Nil(t, err)
+
+	// rename if exists and hide
+	req.Operation = &FileCreateRequest_Rename{Rename: true}
+	req.Hidden = &wrappers.BoolValue{Value: true}
+	streamClient, _ = client.FileCreate(ctx)
+	assert.Nil(t, streamClient.Send(req))
+	_, err = streamClient.Recv()
+	assert.Nil(t, err)
+
+	// path name error
+	req.Path = "/$%#$&@"
+	streamClient, _ = client.FileCreate(ctx)
+	assert.Nil(t, streamClient.Send(req))
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), service.ErrInvalidPath.Error())
 }
 
 func TestServer_FileUpdate(t *testing.T) {
@@ -266,15 +345,33 @@ func TestServer_FileUpdate(t *testing.T) {
 	assert.Nil(t, err)
 
 	s := Server{}
-	resp, err := s.FileUpdate(newContext(context.Background()), &FileUpdateRequest{
+	req := &FileUpdateRequest{
 		Token:   token.UID,
 		FileUid: file.UID,
 		Path:    "/new/random.bytes",
 		Hidden:  &wrappers.BoolValue{Value: true},
-	})
+	}
+	resp, err := s.FileUpdate(newContext(context.Background()), req)
 	assert.Nil(t, err)
 	assert.Equal(t, "/new/random.bytes", resp.File.Path)
 	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
+
+	req.Token = ""
+	_, err = s.FileUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+
+	req.Token = token.UID
+	req.FileUid = ""
+	_, err = s.FileUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+
+	req.FileUid = file.UID
+	req.Path = "/&^%$##@"
+	_, err = s.FileUpdate(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), service.ErrInvalidPath.Error())
 }
 
 func TestServer_FileDelete(t *testing.T) {
@@ -295,15 +392,35 @@ func TestServer_FileDelete(t *testing.T) {
 	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
 	assert.Nil(t, err)
 
-	s := Server{}
-	resp, err := s.FileDelete(newContext(context.Background()), &FileDeleteRequest{
+	req := &FileDeleteRequest{
 		Token:   token.UID,
 		FileUid: file.UID,
-	})
+	}
+
+	s := Server{}
+	resp, err := s.FileDelete(newContext(context.Background()), req)
 	assert.Nil(t, err)
 	assert.Equal(t, "/random/r.bytes", resp.File.Path)
 	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
 	assert.NotNil(t, resp.File.GetDeletedAt())
+
+	req.Token = ""
+	_, err = s.FileDelete(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+
+	req.Token = token.UID
+	req.FileUid = ""
+	_, err = s.FileDelete(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+
+	req.FileUid = file.UID
+	assert.Nil(t, trx.Unscoped().Model(file).Update("deletedAt", nil).Error)
+	assert.Nil(t, trx.Model(token).Update("path", "/hello").Error)
+	_, err = s.FileDelete(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), models.ErrAccessDenied.Error())
 }
 
 func TestServer_FileRead(t *testing.T) {
@@ -344,10 +461,8 @@ func TestServer_FileRead(t *testing.T) {
 	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(dialer), grpc.WithInsecure())
 	assert.Nil(t, err)
 	client := NewFileReadClient(conn)
-	streamClient, err := client.FileRead(ctx, &FileReadRequest{
-		Token:   token.UID,
-		FileUid: file.UID,
-	})
+	req := &FileReadRequest{Token: token.UID, FileUid: file.UID}
+	streamClient, err := client.FileRead(ctx, req)
 	assert.Nil(t, err)
 
 	header, err := streamClient.Header()
@@ -374,6 +489,31 @@ func TestServer_FileRead(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, dataBuffer.Len(), randomBytesSize)
 	assert.Equal(t, randomBytesHash, dataHash)
+
+	req.Token = ""
+	streamClient, err = client.FileRead(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	req.Token = token.UID
+	req.FileUid = ""
+	streamClient, err = client.FileRead(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	req.FileUid = file.UID
+	assert.Nil(t, trx.Model(token).Update("path", "/hello").Error)
+	streamClient, err = client.FileRead(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), models.ErrAccessDenied.Error())
 }
 
 func TestServer_DirectoryList(t *testing.T) {
@@ -398,10 +538,21 @@ func TestServer_DirectoryList(t *testing.T) {
 	}
 
 	s := Server{}
-	resp, err := s.DirectoryList(newContext(context.Background()), &DirectoryListRequest{
-		Token: token.UID, SubDir: &wrappers.StringValue{Value: "/test"},
-	})
+	req := &DirectoryListRequest{Token: token.UID, SubDir: &wrappers.StringValue{Value: "/test"}}
+	resp, err := s.DirectoryList(newContext(context.Background()), req)
 	assert.Nil(t, err)
 	assert.Equal(t, int32(number), resp.Total)
 	assert.Equal(t, int32(2), resp.Pages)
+
+	req.Token = ""
+	_, err = s.DirectoryList(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	req.Token = token.UID
+	req.Limit = &wrappers.UInt32Value{Value: 100}
+	req.Offset = &wrappers.UInt32Value{Value: 0}
+	_, err = s.DirectoryList(newContext(context.Background()), req)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "the min value of limit is 10, and max of limit 20")
 }
