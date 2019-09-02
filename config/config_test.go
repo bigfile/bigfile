@@ -136,11 +136,11 @@ func TestDatabase_DSN(t *testing.T) {
 
 	configurator.Driver = "sqlite3"
 	_, err := configurator.DSN()
-	assert.Nil(t, nil)
+	assert.Nil(t, err)
 
 	configurator.Driver = "postgres"
 	_, err = configurator.DSN()
-	assert.Nil(t, nil)
+	assert.Nil(t, err)
 
 	configurator.Driver = "unknown driver"
 	_, err = configurator.DSN()

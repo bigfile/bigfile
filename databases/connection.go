@@ -6,8 +6,6 @@
 package databases
 
 import (
-	"sync"
-
 	"github.com/bigfile/bigfile/config"
 	"github.com/jinzhu/gorm"
 
@@ -17,10 +15,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-var (
-	connection *gorm.DB
-	once       sync.Once
-)
+var connection *gorm.DB
 
 // NewConnection will initialize a connection to database. But, if connection
 // has already existed, it will be used.

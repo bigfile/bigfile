@@ -51,10 +51,13 @@ func TestServer_getClientIP(t *testing.T) {
 
 	tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:8080")
 	ipAddress, err := s.getClientIP(peer.NewContext(context.Background(), &peer.Peer{Addr: tcpAddr}))
+	assert.Nil(t, err)
 	assert.Equal(t, ipAddress, "127.0.0.1")
 
-	tcpAddr, _ = net.ResolveTCPAddr("tcp", "[2000:0:0:0:0:0:0:1]:8080")
+	tcpAddr, err = net.ResolveTCPAddr("tcp", "[2000:0:0:0:0:0:0:1]:8080")
+	assert.Nil(t, err)
 	ipAddress, err = s.getClientIP(peer.NewContext(context.Background(), &peer.Peer{Addr: tcpAddr}))
+	assert.Nil(t, err)
 	assert.Equal(t, "2000::1", ipAddress)
 }
 
