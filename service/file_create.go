@@ -81,31 +81,18 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 		inTrx = util.InTransaction(fc.DB)
 	)
 
-	fc.BaseService.Before = append(fc.BaseService.Before, func(ctx context.Context, service Service) error {
-		fc := service.(*FileCreate)
-		return fc.Token.UpdateAvailableTimes(-1, fc.DB)
-	})
-
-	if err = fc.CallBefore(ctx, fc); err != nil {
-		return nil, err
-	}
-
 	if !inTrx {
 		fc.DB = fc.DB.Begin()
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fc.DB.Rollback()
-			} else if err != nil {
-				if _, ok := err.(*commitError); !ok {
-					fc.DB.Rollback()
-				}
 			}
 		}()
-		defer func() {
-			if err = fc.DB.Commit().Error; err != nil {
-				err = &commitError{err: err}
-			}
-		}()
+		defer func() { err = fc.DB.Commit().Error }()
+	}
+
+	if err = fc.Token.UpdateAvailableTimes(-1, fc.DB); err != nil {
+		return nil, err
 	}
 
 	if fc.Reader == nil {
@@ -139,10 +126,6 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 		)
 		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMd5(256), basename)
 		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
-	}
-
-	if err = fc.CallAfter(ctx, fc); err != nil {
-		return nil, err
 	}
 
 	return nil, ErrPathExisted

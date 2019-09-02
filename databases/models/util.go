@@ -8,12 +8,8 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
-	mrand "math/rand"
 	"strconv"
 	"time"
-
-	"github.com/bigfile/bigfile/config"
-	"github.com/bigfile/bigfile/log"
 )
 
 // NewSecret is used generate secret for app and token
@@ -23,16 +19,8 @@ func NewSecret() string {
 
 // Random is used to generate random bytes
 func Random(length uint) []byte {
-	var (
-		r           = make([]byte, length)
-		letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	)
-	if _, err := rand.Reader.Read(r); err != nil {
-		log.MustNewLogger(&config.DefaultConfig.Log).Warning(err)
-		for i := range r {
-			r[i] = letterBytes[mrand.Intn(len(letterBytes))]
-		}
-	}
+	var r = make([]byte, length)
+	_, _ = rand.Reader.Read(r)
 	return r
 }
 

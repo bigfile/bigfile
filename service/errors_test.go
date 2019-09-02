@@ -57,3 +57,12 @@ func TestValidateError_Error(t *testing.T) {
 	_, ok := interface{}(err1).(error)
 	assert.True(t, ok)
 }
+
+func TestValidateErrors_MapFieldErrors(t *testing.T) {
+	var err = ValidateErrors{&ValidateError{
+		Msg:   "1111",
+		Field: "field",
+		Code:  111,
+	}}
+	assert.Equal(t, "code: 111, field: field, validate error: 1111", err.MapFieldErrors()["field"][0])
+}

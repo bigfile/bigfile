@@ -12,6 +12,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// TokenReadOnly represent read only token
+const TokenReadOnly = int8(1)
+
+// TokenNonReadOnly represent common token
+const TokenNonReadOnly = int8(0)
+
 // Token acts as a key, it limits the user that own this token
 // which directories can be accessed. Or only when it's used with
 // specify ip, it will be accepted. Or some tokens only can be used

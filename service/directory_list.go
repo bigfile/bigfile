@@ -71,12 +71,7 @@ func (dl *DirectoryList) Execute(ctx context.Context) (interface{}, error) {
 		dirPath = dl.Token.PathWithScope(dl.SubDir)
 	)
 
-	dl.BaseService.Before = append(dl.BaseService.Before, func(ctx context.Context, service Service) error {
-		dl := service.(*DirectoryList)
-		return dl.Token.UpdateAvailableTimes(-1, dl.DB)
-	})
-
-	if err = dl.CallBefore(ctx, dl); err != nil {
+	if err = dl.Token.UpdateAvailableTimes(-1, dl.DB); err != nil {
 		return nil, err
 	}
 
@@ -109,10 +104,6 @@ func (dl *DirectoryList) Execute(ctx context.Context) (interface{}, error) {
 		}
 		return db.Order(key + " " + order).Offset(dl.Offset).Limit(dl.Limit)
 	}).First(dir).Error; err != nil {
-		return nil, err
-	}
-
-	if err = dl.CallAfter(ctx, dl); err != nil {
 		return nil, err
 	}
 

@@ -64,31 +64,18 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 		inTrx = util.InTransaction(fu.DB)
 	)
 
-	fu.BaseService.Before = append(fu.BaseService.After, func(ctx context.Context, service Service) error {
-		fu := service.(*FileUpdate)
-		return fu.Token.UpdateAvailableTimes(-1, fu.DB)
-	})
-
-	if err = fu.CallBefore(ctx, fu); err != nil {
-		return nil, err
-	}
-
 	if !inTrx {
 		fu.DB = fu.DB.Begin()
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fu.DB.Rollback()
-			} else if err != nil {
-				if _, ok := err.(*commitError); !ok {
-					fu.DB.Rollback()
-				}
 			}
 		}()
-		defer func() {
-			if err = fu.DB.Commit().Error; err != nil {
-				err = &commitError{err: err}
-			}
-		}()
+		defer func() { err = fu.DB.Commit().Error }()
+	}
+
+	if err = fu.Token.UpdateAvailableTimes(-1, fu.DB); err != nil {
+		return nil, err
 	}
 
 	if fu.Path != nil {
@@ -101,13 +88,5 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 		fu.File.Hidden = *fu.Hidden
 	}
 
-	if err := fu.DB.Save(fu.File).Error; err != nil {
-		return nil, err
-	}
-
-	if err = fu.CallAfter(ctx, fu); err != nil {
-		return fu.File, err
-	}
-
-	return fu.File, nil
+	return fu.File, fu.DB.Save(fu.File).Error
 }

@@ -33,7 +33,7 @@ func TestNewToken(t *testing.T) {
 	app, trx, down, err = newAppForTest(nil, t)
 	assert.Equal(t, err, nil)
 	defer down(t)
-	token, err = NewToken(app, "/test", nil, nil, nil, -1, 0, trx)
+	token, err = NewToken(app, "/test", nil, nil, nil, -1, TokenNonReadOnly, trx)
 	confirm.Equal(err, nil)
 	confirm.True(token.ID > 0)
 	confirm.Equal(token.Scope(), "/test")
@@ -77,18 +77,20 @@ func TestNewToken2(t *testing.T) {
 
 func TestToken_AllowIPAccess(t *testing.T) {
 	var (
-		token *Token
-		down  func(t *testing.T)
-		err   error
 		ip    = "192.168.0.1,192.168.0.2"
+		err   error
+		down  func(t *testing.T)
+		token *Token
 	)
 	confirm := assert.New(t)
 	token, _, down, err = newTokenForTest(nil, t, "/test", nil, &ip, nil, -1, int8(0))
-	defer down(t)
 	confirm.Nil(err)
+	defer down(t)
 	confirm.NotNil(token)
 	confirm.True(token.AllowIPAccess("192.168.0.2"))
 	confirm.False(token.AllowIPAccess("192.168.0.5"))
+	token.IP = nil
+	confirm.True(token.AllowIPAccess("192.168.0.5"))
 }
 
 func TestFindTokenByUID(t *testing.T) {

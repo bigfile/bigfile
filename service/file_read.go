@@ -7,7 +7,6 @@ package service
 import (
 	"context"
 	"errors"
-	"io"
 
 	"github.com/bigfile/bigfile/databases/models"
 	"gopkg.in/go-playground/validator.v9"
@@ -54,17 +53,9 @@ func (fr *FileRead) Validate() ValidateErrors {
 
 // Execute is used to read file
 func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
-	var (
-		err        error
-		fileReader io.Reader
-	)
+	var err error
 
-	fr.BaseService.Before = append(fr.BaseService.Before, func(ctx context.Context, service Service) error {
-		fr := service.(*FileRead)
-		return fr.Token.UpdateAvailableTimes(-1, fr.DB)
-	})
-
-	if err = fr.CallBefore(ctx, fr); err != nil {
+	if err = fr.Token.UpdateAvailableTimes(-1, fr.DB); err != nil {
 		return nil, err
 	}
 
@@ -72,13 +63,5 @@ func (fr *FileRead) Execute(ctx context.Context) (interface{}, error) {
 		return nil, ErrReadHiddenFile
 	}
 
-	if fileReader, err = fr.File.Reader(fr.RootPath, fr.DB); err != nil {
-		return nil, err
-	}
-
-	if err = fr.CallAfter(ctx, fr); err != nil {
-		return fr.File, err
-	}
-
-	return fileReader, nil
+	return fr.File.Reader(fr.RootPath, fr.DB)
 }

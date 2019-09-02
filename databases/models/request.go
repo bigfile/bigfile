@@ -7,7 +7,6 @@ package models
 import (
 	"time"
 
-	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 )
 
@@ -48,12 +47,8 @@ func NewRequestWithProtocol(protocol string, db *gorm.DB) (*Request, error) {
 // MustNewRequestWithProtocol is used to generate new request record. But, if
 // some errors happened, it will panic
 func MustNewRequestWithProtocol(protocol string, db *gorm.DB) *Request {
-	if req, err := NewRequestWithProtocol(protocol, db); err != nil {
-		log.MustNewLogger(nil).Error(err)
-		panic(err)
-	} else {
-		return req
-	}
+	req, _ := NewRequestWithProtocol(protocol, db)
+	return req
 }
 
 // MustNewHTTPRequest is used to generate http protocol request record.
@@ -65,13 +60,8 @@ func MustNewHTTPRequest(ip, method, url string, db *gorm.DB) *Request {
 			Method:   &method,
 			Service:  &url,
 		}
-		err error
 	)
-	err = db.Create(req).Error
-	if err != nil {
-		log.MustNewLogger(nil).Error(err)
-		panic(err)
-	}
+	db.Create(req)
 	return req
 }
 

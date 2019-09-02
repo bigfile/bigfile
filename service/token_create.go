@@ -55,19 +55,6 @@ func (t *TokenCreate) Validate() ValidateErrors {
 // Execute is used to implement token create
 func (t *TokenCreate) Execute(ctx context.Context) (interface{}, error) {
 	var err error
-
-	if err = t.CallBefore(ctx, t); err != nil {
-		return nil, err
-	}
-
-	if t.token, err = models.NewToken(
-		t.App, t.Path, t.ExpiredAt, t.IP, t.Secret, t.AvailableTimes, t.ReadOnly, t.DB,
-	); err != nil {
-		return nil, err
-	}
-
-	if t.CallAfter(ctx, t) != nil {
-		return t.token, err
-	}
-	return t.token, nil
+	t.token, err = models.NewToken(t.App, t.Path, t.ExpiredAt, t.IP, t.Secret, t.AvailableTimes, t.ReadOnly, t.DB)
+	return t.token, err
 }

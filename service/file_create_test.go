@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bigfile/bigfile/databases"
+
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
@@ -24,15 +26,13 @@ func TestFileCreate_Validate(t *testing.T) {
 	trx, down := models.SetUpTestCaseWithTrx(nil, t)
 	defer down(t)
 	fileCreate := &FileCreate{
-		BaseService: BaseService{
-			DB: trx,
-		},
-		Token:     nil,
-		Path:      strings.Repeat("1", 1001),
-		Hidden:    2,
-		Overwrite: 2,
-		Rename:    2,
-		Append:    2,
+		BaseService: BaseService{DB: trx},
+		Token:       nil,
+		Path:        strings.Repeat("1", 1001),
+		Hidden:      2,
+		Overwrite:   2,
+		Rename:      2,
+		Append:      2,
 	}
 	err := fileCreate.Validate()
 	confirm := assert.New(t)
@@ -55,15 +55,13 @@ func TestFileCreate_Validate2(t *testing.T) {
 	confirm.Nil(err)
 	defer down(t)
 	fileCreate := &FileCreate{
-		BaseService: BaseService{
-			DB: trx,
-		},
-		Token:     token,
-		Path:      "/test/to",
-		Hidden:    0,
-		Overwrite: 0,
-		Rename:    0,
-		Append:    0,
+		BaseService: BaseService{DB: trx},
+		Token:       token,
+		Path:        "/test/to",
+		Hidden:      0,
+		Overwrite:   0,
+		Rename:      0,
+		Append:      0,
 	}
 	err = fileCreate.Validate()
 	confirm.Nil(err)
@@ -74,11 +72,8 @@ func newFileCreateForTest(t *testing.T, path string) (*FileCreate, func(*testing
 	tempDir := models.NewTempDirForTest()
 	assert.Nil(t, err)
 	fileCreate := &FileCreate{
-		BaseService: BaseService{
-			DB:       trx,
-			RootPath: &tempDir,
-		},
-		Token: token,
+		BaseService: BaseService{DB: trx, RootPath: &tempDir},
+		Token:       token,
 	}
 	return fileCreate, func(t *testing.T) {
 		down(t)
@@ -260,4 +255,55 @@ func TestFileCreate_Execute7(t *testing.T) {
 	_, err := fileCreate.Execute(context.TODO())
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), ErrFileHasBeenDeleted.Error())
+}
+
+func TestFileCreate_Execute8(t *testing.T) {
+	db := databases.MustNewConnection(nil)
+	app, err := models.NewApp("TestFileCreate_Execute8", nil, db)
+	assert.Nil(t, err)
+	token, err := models.NewToken(app, "/", nil, nil, nil, 1000, 0, db)
+	assert.Nil(t, err)
+	tempDir := models.NewTempDirForTest()
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	fileCreate := &FileCreate{
+		BaseService: BaseService{DB: db, RootPath: &tempDir},
+		Token:       token,
+		Path:        "/create/a/directory",
+	}
+	assert.Nil(t, fileCreate.Validate())
+	fileCreateVal, err := fileCreate.Execute(context.TODO())
+	assert.Nil(t, err)
+	dir, ok := fileCreateVal.(*models.File)
+	assert.True(t, ok)
+	assert.Equal(t, models.IsDir, dir.IsDir)
+}
+
+func TestFileCreate_Execute9(t *testing.T) {
+	db := databases.MustNewConnection(nil)
+	app, err := models.NewApp("TestFileCreate_Execute8", nil, db)
+	assert.Nil(t, err)
+	token, err := models.NewToken(app, "/", nil, nil, nil, 1000, 0, db)
+	assert.Nil(t, err)
+	tempDir := models.NewTempDirForTest()
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	file, err := models.CreateFileFromReader(app, "/create/a/file.bytes", bytes.NewReader(models.Random(333)), models.Hidden, &tempDir, db)
+	assert.Nil(t, err)
+	assert.NotEqual(t, file.IsDir, models.IsDir)
+	fileCreate := &FileCreate{
+		BaseService: BaseService{DB: db, RootPath: &tempDir},
+		Token:       token,
+		Path:        "/create/a/file.bytes",
+		Reader:      bytes.NewReader(models.Random(333)),
+	}
+	assert.Nil(t, fileCreate.Validate())
+	_, err = fileCreate.Execute(context.TODO())
+	assert.Equal(t, err, ErrPathExisted)
 }

@@ -50,14 +50,7 @@ func (t *TokenUpdate) Validate() ValidateErrors {
 
 // Execute is used to update token
 func (t *TokenUpdate) Execute(ctx context.Context) (result interface{}, err error) {
-
-	var (
-		token *models.Token
-	)
-
-	if err = t.CallBefore(ctx, t); err != nil {
-		return nil, err
-	}
+	var token *models.Token
 
 	if token, err = models.FindTokenByUID(t.Token, t.DB); err != nil {
 		return nil, err
@@ -83,10 +76,6 @@ func (t *TokenUpdate) Execute(ctx context.Context) (result interface{}, err erro
 	}
 
 	if t.DB.Save(token).Error != nil {
-		return nil, err
-	}
-
-	if t.CallAfter(ctx, t) != nil {
 		return nil, err
 	}
 

@@ -89,7 +89,7 @@ func TestValidateToken(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "token can't be used by this ip")
 
-	token.ReadOnly = int8(1)
+	token.ReadOnly = models.TokenReadOnly
 	assert.Nil(t, trx.Save(token).Error)
 	err = ValidateToken(trx, nil, false, token)
 	assert.NotNil(t, err)

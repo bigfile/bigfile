@@ -17,6 +17,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// IsDir represent a file model is a directory actually
+const IsDir = int8(1)
+
+// Hidden represent some file is hidden
+const Hidden = int8(1)
+
 var (
 	// ErrFileExisted represent that the path has been occupied
 	ErrFileExisted = errors.New("file has already existed")

@@ -64,15 +64,13 @@ func TestDirectoryList_Execute(t *testing.T) {
 	assert.Nil(t, trx.Model(token).Update("path", token.Path).Error)
 
 	directoryListSrv := &DirectoryList{
-		BaseService: BaseService{
-			DB: trx,
-		},
-		Token:  token,
-		IP:     nil,
-		SubDir: "",
-		Sort:   "-type",
-		Offset: 0,
-		Limit:  10,
+		BaseService: BaseService{DB: trx},
+		Token:       token,
+		IP:          nil,
+		SubDir:      "",
+		Sort:        "-type",
+		Offset:      0,
+		Limit:       10,
 	}
 	assert.Nil(t, directoryListSrv.Validate())
 
@@ -115,6 +113,18 @@ func TestDirectoryList_Execute(t *testing.T) {
 	assert.Equal(t, 15, directoryListSrvResponse.Total)
 	assert.Equal(t, 2, directoryListSrvResponse.Pages)
 	assert.Equal(t, 5, len(directoryListSrvResponse.Files))
+
+	// sort: name asc
+	directoryListSrv.Sort = "name"
+	assert.Nil(t, directoryListSrv.Validate())
+	_, err = directoryListSrv.Execute(context.TODO())
+	assert.Nil(t, err)
+
+	// sort: time asc
+	directoryListSrv.Sort = "time"
+	assert.Nil(t, directoryListSrv.Validate())
+	_, err = directoryListSrv.Execute(context.TODO())
+	assert.Nil(t, err)
 
 	// list the content of a file, raise an error
 	_, err = models.CreateFileFromReader(&token.App, "/save/1/random.bytes", strings.NewReader(""), int8(0), &tempDir, trx)

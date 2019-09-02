@@ -57,31 +57,18 @@ func (fd *FileDelete) Execute(ctx context.Context) (interface{}, error) {
 		inTrx      = util.InTransaction(fd.DB)
 	)
 
-	fd.BaseService.Before = append(fd.BaseService.Before, func(ctx context.Context, service Service) error {
-		fd := service.(*FileDelete)
-		return fd.Token.UpdateAvailableTimes(-1, fd.DB)
-	})
-
-	if err = fd.CallBefore(ctx, fd); err != nil {
-		return nil, err
-	}
-
 	if !inTrx {
 		fd.DB = fd.DB.Begin()
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fd.DB.Rollback()
-			} else if err != nil {
-				if _, ok := err.(*commitError); !ok {
-					fd.DB.Rollback()
-				}
 			}
 		}()
-		defer func() {
-			if err = fd.DB.Commit().Error; err != nil {
-				err = &commitError{err: err}
-			}
-		}()
+		defer func() { err = fd.DB.Commit().Error }()
+	}
+
+	if err = fd.Token.UpdateAvailableTimes(-1, fd.DB); err != nil {
+		return nil, err
 	}
 
 	if fd.Force == nil {
@@ -89,10 +76,6 @@ func (fd *FileDelete) Execute(ctx context.Context) (interface{}, error) {
 	}
 
 	if err = fd.File.Delete(*fd.Force, fd.DB); err != nil {
-		return fd.File, err
-	}
-
-	if err = fd.CallAfter(ctx, fd); err != nil {
 		return fd.File, err
 	}
 
