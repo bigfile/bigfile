@@ -44,6 +44,28 @@ func newContext(ctx context.Context) context.Context {
 	return peer.NewContext(ctx, newPeer())
 }
 
+func TestServer_getClientIP(t *testing.T) {
+	s := &Server{}
+	_, err := s.getClientIP(context.TODO())
+	assert.Equal(t, err, ErrGetIPFailed)
+
+	tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:8080")
+	ipAddress, err := s.getClientIP(peer.NewContext(context.Background(), &peer.Peer{Addr: tcpAddr}))
+	assert.Equal(t, ipAddress, "127.0.0.1")
+
+	tcpAddr, _ = net.ResolveTCPAddr("tcp", "[2000:0:0:0:0:0:0:1]:8080")
+	ipAddress, err = s.getClientIP(peer.NewContext(context.Background(), &peer.Peer{Addr: tcpAddr}))
+	assert.Equal(t, "2000::1", ipAddress)
+}
+
+func TestServer_fetchApp(t *testing.T) {
+	app, trx, down, err := models.NewAppForTest(nil, t)
+	assert.Nil(t, err)
+	defer down(t)
+	_, err = fetchAPP(app.UID, "", trx)
+	assert.Equal(t, err, ErrAppSecret)
+}
+
 func TestServer_TokenCreate(t *testing.T) {
 	s := &Server{}
 	app, trx, down, err := models.NewAppForTest(nil, t)
@@ -70,6 +92,28 @@ func TestServer_TokenCreate(t *testing.T) {
 	assert.True(t, resp.Token.ReadOnly)
 	assert.NotNil(t, resp.Token.ExpiredAt)
 	assert.Nil(t, resp.Token.DeletedAt)
+
+	_, err = s.TokenCreate(context.TODO(), &TokenCreateRequest{})
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, statusError.Message(), ErrGetIPFailed.Error())
+
+	_, err = s.TokenCreate(newContext(context.Background()), &TokenCreateRequest{AppUid: app.UID})
+	assert.NotNil(t, err)
+	statusError, ok = status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, statusError.Message(), ErrAppSecret.Error())
+
+	_, err = s.TokenCreate(newContext(context.Background()), &TokenCreateRequest{
+		AppUid:    app.UID,
+		AppSecret: app.Secret,
+		Path:      &wrappers.StringValue{Value: "/@@##$$"},
+	})
+	assert.NotNil(t, err)
+	statusError, ok = status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), "path is not a legal unix path")
 }
 
 func TestServer_TokenUpdate(t *testing.T) {

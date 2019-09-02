@@ -34,14 +34,14 @@ func NewConnection(dbConfig *config.Database) (*gorm.DB, error) {
 		dbConfig = &config.DefaultConfig.Database
 	}
 
-	once.Do(func() {
+	if connection == nil {
 		if dsn, err = dbConfig.DSN(); err != nil {
-			return
+			return nil, err
 		}
 		if connection, err = gorm.Open(dbConfig.Driver, dsn); err != nil {
-			return
+			return nil, err
 		}
-	})
+	}
 
 	return connection, err
 }

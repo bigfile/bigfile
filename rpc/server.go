@@ -35,7 +35,7 @@ var (
 	testDbConn   *gorm.DB
 	testRootPath *string
 	// ErrGetIPFailed represent that get ip failed
-	ErrGetIPFailed = errors.New("[getClientIP] invoke FromContext() failed")
+	ErrGetIPFailed = errors.New("getClientIP failed")
 
 	// ErrAppSecret represent appUID and appSecret doesn't match
 	ErrAppSecret = errors.New("appUID and appSecret doesn't match")
@@ -58,21 +58,21 @@ func (s *Server) getClientIP(ctx context.Context) (string, error) {
 	var (
 		pr      *peer.Peer
 		ok      bool
-		ipV4    string
+		ipV4    net.IP
 		tcpAddr *net.TCPAddr
 	)
 	if pr, ok = peer.FromContext(ctx); !ok {
 		return "", ErrGetIPFailed
 	}
-	if tcpAddr, ok = pr.Addr.(*net.TCPAddr); ok {
+	if tcpAddr, ok = pr.Addr.(*net.TCPAddr); ok && tcpAddr != nil {
 		if tcpAddr.IP.IsLoopback() {
 			return "127.0.0.1", nil
 		}
-		ipV4 = tcpAddr.IP.To4().String()
-		if len(ipV4) == 0 {
+		ipV4 = tcpAddr.IP.To4()
+		if ipV4 == nil {
 			return tcpAddr.IP.To16().String(), nil
 		}
-		return ipV4, nil
+		return ipV4.String(), nil
 	}
 	return pr.Addr.String(), nil
 }
