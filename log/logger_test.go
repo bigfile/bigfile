@@ -24,7 +24,8 @@ func TestNewLogger(t *testing.T) {
 		wg          sync.WaitGroup
 	)
 
-	logConfig.Console.Enable = false
+	logConfig.Console.Enable = true
+	logConfig.Console.Level = config.LevelToName[logging.CRITICAL]
 	tempLogFile, err = ioutil.TempFile(os.TempDir(), "*.log")
 	assert.Equal(t, err, nil)
 
@@ -56,7 +57,7 @@ func TestMustNewLogger(t *testing.T) {
 		tempLogFile *os.File
 	)
 
-	logConfig.Console.Enable = false
+	logConfig.Console.Enable = true
 	tempLogFile, err = ioutil.TempFile(os.TempDir(), "*.log")
 	assert.Equal(t, err, nil)
 
