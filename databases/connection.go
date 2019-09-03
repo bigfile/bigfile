@@ -6,6 +6,8 @@
 package databases
 
 import (
+	"time"
+
 	"github.com/bigfile/bigfile/config"
 	"github.com/jinzhu/gorm"
 
@@ -36,6 +38,9 @@ func NewConnection(dbConfig *config.Database) (*gorm.DB, error) {
 		if connection, err = gorm.Open(dbConfig.Driver, dsn); err != nil {
 			return nil, err
 		}
+		connection.DB().SetConnMaxLifetime(time.Hour)
+		connection.DB().SetMaxOpenConns(200)
+		connection.DB().SetMaxIdleConns(20)
 	}
 
 	return connection, err
