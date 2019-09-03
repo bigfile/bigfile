@@ -15,6 +15,7 @@ import (
 
 	"github.com/bigfile/bigfile/internal/sha256"
 	"github.com/bigfile/bigfile/internal/util"
+	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -386,6 +387,10 @@ func TestObject_AppendFromReader(t *testing.T) {
 	stateHash, err = sha256.NewHashWithStateText(*oc.HashState)
 	assert.Nil(t, err)
 	assert.Equal(t, object.Hash, hex.EncodeToString(stateHash.Sum(nil)))
+
+	_, size, err = object.AppendFromReader(strings.NewReader(""), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, size)
 }
 
 // TestObject_AppendFromReader2 is used to test that an object will be appended
@@ -493,6 +498,100 @@ func TestObject_AppendFromReader3(t *testing.T) {
 	oc2, err := object2.LastObjectChunk(trx)
 	assert.Nil(t, err)
 	assert.Equal(t, oc.ChunkID, oc2.ChunkID)
+}
+
+// TestObject_AppendFromReader4 is used to test the object will generate after appending
+// that have already exists
+func TestObject_AppendFromReader4(t *testing.T) {
+	var (
+		trx     *gorm.DB
+		err     error
+		down    func(*testing.T)
+		tempDir = NewTempDirForTest()
+
+		part1       = "hello world"
+		part1Object *Object
+		part2       = "hello"
+		part2Object *Object
+		part3       = " world"
+		part3Object *Object
+	)
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+		down(t)
+	}()
+
+	part1Object, err = CreateObjectFromReader(strings.NewReader(part1), &tempDir, trx)
+	assert.Nil(t, err)
+	part1Hash, err := util.Sha256Hash2String([]byte(part1))
+	assert.Nil(t, err)
+	assert.Equal(t, part1Hash, part1Object.Hash)
+
+	part2Object, err = CreateObjectFromReader(strings.NewReader(part2), &tempDir, trx)
+	assert.Nil(t, err)
+	part2Hash, err := util.Sha256Hash2String([]byte(part2))
+	assert.Nil(t, err)
+	assert.Equal(t, part2Hash, part2Object.Hash)
+
+	part3Object, size, err := part2Object.AppendFromReader(strings.NewReader(part3), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, size, len(part3))
+	assert.Equal(t, part3Object.ID, part1Object.ID)
+}
+
+// TestObject_AppendFromReader5 is used to test this case, a new chunk should
+// created, because of some chunk be referenced many times
+func TestObject_AppendFromReader5(t *testing.T) {
+	var (
+		trx     *gorm.DB
+		err     error
+		down    func(*testing.T)
+		tempDir = NewTempDirForTest()
+
+		object1     *Object
+		object2     *Object
+		contentSize = 122
+		content     = Random(uint(contentSize))
+	)
+	trx, down = setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+		down(t)
+	}()
+
+	object1, err = CreateObjectFromReader(bytes.NewReader(Random(ChunkSize)), &tempDir, trx)
+	assert.Nil(t, err)
+
+	object2, err = CreateObjectFromReader(bytes.NewReader(Random(ChunkSize)), &tempDir, trx)
+	assert.Nil(t, err)
+
+	assert.NotEqual(t, object1.ID, object2.ID)
+
+	object1, size, err := object1.AppendFromReader(bytes.NewReader(content), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, contentSize, size)
+	object2, size, err = object2.AppendFromReader(bytes.NewReader(content), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, contentSize, size)
+
+	object1LC, err := object1.LastChunk(trx)
+	assert.Nil(t, err)
+	object2LC, err := object2.LastChunk(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, object1LC.ID, object2LC.ID)
+
+	object2, size, err = object2.AppendFromReader(bytes.NewReader(Random(23)), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 23, size)
+	object2LC, err = object2.LastChunk(trx)
+	assert.Nil(t, err)
+	assert.NotEqual(t, object1LC.ID, object2LC.ID)
+
 }
 
 func TestObject_Reader(t *testing.T) {

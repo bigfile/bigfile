@@ -269,6 +269,9 @@ func TestFile_AppendFromReader(t *testing.T) {
 	root, err := CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, ChunkSize*2+145+256, root.Size)
+
+	err = root.AppendFromReader(strings.NewReader(""), Hidden, nil, nil)
+	assert.Equal(t, err, ErrAppendToDir)
 }
 
 func TestFile_Path(t *testing.T) {
@@ -350,6 +353,9 @@ func TestFile_OverWriteFromReader(t *testing.T) {
 	root, err = CreateOrGetRootPath(app, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 120, root.Size)
+
+	err = root.OverWriteFromReader(strings.NewReader(""), Hidden, nil, nil)
+	assert.Equal(t, err, ErrOverwriteDir)
 }
 
 func TestFile_Reader(t *testing.T) {
@@ -461,6 +467,8 @@ func TestFile_MoveTo(t *testing.T) {
 	assert.Equal(t, 255, rootDir.Size)
 
 	// only rename
+	// test whether automatically load file.App
+	file.App.ID = 0
 	err = file.MoveTo("/save/to/a/2.bytes", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, "/save/to/a/2.bytes", file.mustPath(trx))
@@ -470,6 +478,8 @@ func TestFile_MoveTo(t *testing.T) {
 	assert.Equal(t, 255, rootDir.Size)
 
 	// move to another dir
+	// test whether automatically load file.Parent
+	file.Parent.ID = 0
 	err = file.MoveTo("/save/to/b/2.bytes", trx)
 	assert.Nil(t, err)
 	assert.Equal(t, "/save/to/b/2.bytes", file.mustPath(trx))

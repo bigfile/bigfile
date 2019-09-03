@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"hash"
 	"io"
 	"io/ioutil"
@@ -69,13 +68,11 @@ func (o *Object) LastChunkNumber(db *gorm.DB) (int, error) {
 		err    error
 		number int
 	)
-	if oc, err = o.LastObjectChunk(db); err != nil {
-		return 0, err
-	}
+	oc, err = o.LastObjectChunk(db)
 	if oc != nil {
 		return oc.Number, nil
 	}
-	return number, nil
+	return number, err
 }
 
 // LastObjectChunk return the middle value between chunk and object
@@ -111,8 +108,6 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 
 	if lastOc, err = o.LastObjectChunk(db); err != nil {
 		return o, 0, err
-	} else if lastOc == nil {
-		return o, 0, errors.New("unexpected error happened, object must have some chunks")
 	}
 
 	if stateHash, err = sha2562.NewHashWithStateText(*lastOc.HashState); err != nil {
@@ -121,7 +116,9 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	if _, err = stateHash.Write(readerContent); err != nil {
 		return o, 0, err
 	}
+
 	completeHashStr = hex.EncodeToString(stateHash.Sum(nil))
+
 	if object, err = FindObjectByHash(completeHashStr, db); err == nil && object != nil {
 		return object, len(readerContent), nil
 	}

@@ -11,8 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bigfile/bigfile/config"
-
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
@@ -23,29 +21,31 @@ func TestChunk_TableName(t *testing.T) {
 }
 
 func TestChunk_Path(t *testing.T) {
-	defer func() {
-		err := recover()
-		assert.NotNil(t, err)
-		assert.Contains(t, err.(error).Error(), "invalid chunk id")
-	}()
-	config.DefaultConfig.Log.File.Enable = false
 	chunk := &Chunk{}
-	chunk.Path(nil)
+	_, err := chunk.Path(nil)
+	assert.Equal(t, ErrInvalidChunkID, err)
 }
 
 func TestChunk_Path2(t *testing.T) {
-
-	tempDir := NewTempDirForTest()
-	defer func() {
-		os.RemoveAll(tempDir)
-	}()
+	var (
+		err     error
+		path    string
+		tempDir = NewTempDirForTest()
+	)
+	defer func() { os.RemoveAll(tempDir) }()
 
 	chunk := &Chunk{ID: 100044}
-	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/100/100044")
+	path, err = chunk.Path(&tempDir)
+	assert.Nil(t, err)
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/100/100044")
 	chunk = &Chunk{ID: 10001}
-	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/10/10001")
+	path, err = chunk.Path(&tempDir)
+	assert.Nil(t, err)
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/10/10001")
 	chunk = &Chunk{ID: 100001}
-	assert.Equal(t, strings.TrimPrefix(chunk.Path(&tempDir), tempDir), "/100/100001")
+	path, err = chunk.Path(&tempDir)
+	assert.Nil(t, err)
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/100/100001")
 }
 
 func TestFindChunkByHash(t *testing.T) {
@@ -98,7 +98,8 @@ func TestCreateChunkFromBytes(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, chunk.ID > 0)
 
-	path := chunk.Path(&tempDir)
+	path, err := chunk.Path(&tempDir)
+	assert.Nil(t, err)
 	assert.True(t, util.IsFile(path))
 
 	fileInfo, err := os.Stat(path)
@@ -135,6 +136,10 @@ func TestChunk_AppendBytes(t *testing.T) {
 	assert.Equal(t, 6, writeCount)
 	assert.Equal(t, 11, chunk.Size)
 	assert.Equal(t, "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", chunk.Hash)
+
+	_, _, err = chunk.AppendBytes(Random(ChunkSize), &tempDir, trx)
+	assert.NotNil(t, err)
+	assert.Equal(t, err, ErrChunkExceedLimit)
 }
 
 func TestChunk_AppendBytes2(t *testing.T) {
@@ -242,12 +247,13 @@ func TestCreateEmptyContentChunk(t *testing.T) {
 
 func TestChunk_Reader(t *testing.T) {
 	var (
-		randomBytes = Random(ChunkSize)
-		tempDir     = NewTempDirForTest()
 		trx         *gorm.DB
 		err         error
 		down        func(*testing.T)
 		chunk       *Chunk
+		tempDir     = NewTempDirForTest()
+		tempDir2    = NewTempDirForTest()
+		randomBytes = Random(ChunkSize)
 	)
 
 	trx, down = setUpTestCaseWithTrx(nil, t)
@@ -255,6 +261,9 @@ func TestChunk_Reader(t *testing.T) {
 		down(t)
 		if util.IsDir(tempDir) {
 			os.RemoveAll(tempDir)
+		}
+		if util.IsDir(tempDir2) {
+			os.RemoveAll(tempDir2)
 		}
 	}()
 
@@ -271,4 +280,7 @@ func TestChunk_Reader(t *testing.T) {
 	allContentHash, err := util.Sha256Hash2String(allContent)
 	assert.Nil(t, err)
 	assert.Equal(t, allContentHash, randomBytesHash)
+
+	_, err = chunk.Reader(&tempDir2)
+	assert.NotNil(t, err)
 }

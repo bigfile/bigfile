@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/bigfile/bigfile/internal/util"
-	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 )
 
@@ -145,14 +144,9 @@ func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
 	if f.IsDir == 1 {
 		return nil, ErrReadDir
 	}
-	var err error
 	if len(f.Object.Chunks) == 0 {
-		if err = db.Preload("Object").Find(&f).Error; err != nil {
-			return nil, err
-		}
-		if err = db.Preload("Chunks").Find(&f.Object).Error; err != nil {
-			return nil, err
-		}
+		db.Preload("Object").Find(&f)
+		db.Preload("Chunks").Find(&f.Object)
 	}
 	return (&f.Object).Reader(rootPath)
 }
@@ -160,7 +154,6 @@ func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
 // Path is used to get the complete path of file
 func (f *File) Path(db *gorm.DB) (string, error) {
 	var (
-		err     error
 		parts   []string
 		current = *f
 	)
@@ -170,9 +163,7 @@ func (f *File) Path(db *gorm.DB) (string, error) {
 			break
 		}
 		temp := &File{}
-		if err = db.Where("id = ?", current.PID).Find(temp).Error; err != nil {
-			return "", err
-		}
+		db.Where("id = ?", current.PID).Find(temp)
 		current = *temp
 	}
 
@@ -206,7 +197,7 @@ func (f *File) createHistory(objectID uint64, path string, db *gorm.DB) error {
 // OverWriteFromReader is used to overwrite the object
 func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) (err error) {
 
-	if f.IsDir == 1 {
+	if f.IsDir == IsDir {
 		return ErrOverwriteDir
 	}
 
@@ -241,27 +232,12 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 	}).Error; err != nil {
 		return err
 	}
-
-	if err = db.Preload("Parent").Preload("App").Find(f).Error; err != nil {
-		return err
-	}
-
-	if err = f.Parent.UpdateParentSize(sizeDiff, db); err != nil {
-		return err
-	}
-
-	return err
+	db.Preload("Parent").Preload("App").Find(f)
+	return f.Parent.UpdateParentSize(sizeDiff, db)
 }
 
 func (f *File) mustPath(db *gorm.DB) string {
-	var (
-		err  error
-		path string
-	)
-	if path, err = f.Path(db); err != nil {
-		log.MustNewLogger(nil).Error(err)
-		panic(err)
-	}
+	path, _ := f.Path(db)
 	return path
 }
 
@@ -336,17 +312,13 @@ func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 	f.Name = newPathFileName
 	f.Ext = newPathExt
 
-	if err = db.Model(f).Updates(map[string]interface{}{"pid": f.PID, "name": f.Name, "ext": f.Ext}).Error; err != nil {
-		return err
-	}
-
-	return err
+	return db.Model(f).Updates(map[string]interface{}{"pid": f.PID, "name": f.Name, "ext": f.Ext}).Error
 }
 
 // AppendFromReader is used to append content from reader to file
 func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) (err error) {
 
-	if f.IsDir == 1 {
+	if f.IsDir == IsDir {
 		return ErrAppendToDir
 	}
 
@@ -372,11 +344,7 @@ func (f *File) AppendFromReader(reader io.Reader, hidden int8, rootPath *string,
 		return err
 	}
 
-	if err = f.Parent.UpdateParentSize(size, db); err != nil {
-		return err
-	}
-
-	return err
+	return f.Parent.UpdateParentSize(size, db)
 }
 
 // CreateOrGetLastDirectory is used to get last level directory, there is no difference
@@ -465,11 +433,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 		return nil, err
 	}
 
-	if err = parentDir.UpdateParentSize(object.Size, db); err != nil {
-		return file, err
-	}
-
-	return file, err
+	return file, parentDir.UpdateParentSize(object.Size, db)
 }
 
 // FindFileByUID is used to find a file by uid
@@ -499,7 +463,7 @@ func FindFileByPath(app *App, path string, db *gorm.DB, useCache bool) (*File, e
 	if useCache {
 		if fileValue, ok := pathToFileCache.Get(cacheKey); ok {
 			file := fileValue.(*File)
-			if err := db.Where("id = ?", file.ID).Find(file).Error; err != nil {
+			if err := db.Where("id = ?", file.ID).Find(file).Error; err == nil {
 				file.App = *app
 				return file, nil
 			}

@@ -17,7 +17,6 @@ import (
 
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/internal/util"
-	"github.com/bigfile/bigfile/log"
 	"github.com/jinzhu/gorm"
 )
 
@@ -48,30 +47,31 @@ func (c Chunk) TableName() string {
 }
 
 // Reader return a reader with buffer
-func (c *Chunk) Reader(rootPath *string) (*os.File, error) {
-	var (
-		err  error
-		file *os.File
-	)
-	if file, err = os.Open(c.Path(rootPath)); err != nil {
-		return nil, err
+func (c *Chunk) Reader(rootPath *string) (file *os.File, err error) {
+	var path string
+	if path, err = c.Path(rootPath); err != nil {
+		return
 	}
-	return file, nil
+	return os.Open(path)
 }
 
 // Path represent the actual storage path
-func (c Chunk) Path(rootPath *string) string {
+func (c Chunk) Path(rootPath *string) (path string, err error) {
+	var (
+		idStr string
+		parts []string
+		index int
+		dir   string
+	)
 
 	if rootPath == nil {
 		rootPath = &config.DefaultConfig.Chunk.RootPath
 	}
 	if c.ID < 10000 {
-		log.MustNewLogger(nil).Error(ErrInvalidChunkID)
-		panic(ErrInvalidChunkID)
+		return "", ErrInvalidChunkID
 	}
-	idStr := strconv.FormatUint(c.ID, 10)
-	parts := make([]string, (len(idStr)/3)+1)
-	index := 0
+	idStr = strconv.FormatUint(c.ID, 10)
+	parts = make([]string, (len(idStr)/3)+1)
 	for ; len(idStr) > 3; index++ {
 		parts[index] = util.SubStrFromToEnd(idStr, -3)
 		idStr = util.SubStrFromTo(idStr, 0, -3)
@@ -79,14 +79,12 @@ func (c Chunk) Path(rootPath *string) string {
 	parts[index] = idStr
 	parts = parts[1:]
 	util.ReverseSlice(parts)
-	dir := filepath.Join(strings.TrimSuffix(*rootPath, string(os.PathSeparator)), filepath.Join(parts...))
+	dir = filepath.Join(strings.TrimSuffix(*rootPath, string(os.PathSeparator)), filepath.Join(parts...))
+	path = filepath.Join(dir, strconv.FormatUint(c.ID, 10))
 	if !util.IsDir(dir) {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			log.MustNewLogger(nil).Error(err)
-			panic(err)
-		}
+		err = os.MkdirAll(dir, os.ModePerm)
 	}
-	return filepath.Join(dir, strconv.FormatUint(c.ID, 10))
+	return path, err
 }
 
 // AppendBytes is used to append bytes to chunk. Firstly, this function will check whether
@@ -98,27 +96,31 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chu
 		buf        bytes.Buffer
 		oldContent []byte
 		hash       string
+		path       string
 	)
 
 	if len(p) > ChunkSize-c.Size {
-		log.MustNewLogger(nil).Error(ErrChunkExceedLimit)
-		panic(ErrChunkExceedLimit)
+		return nil, 0, ErrChunkExceedLimit
 	}
 
-	if oldContent, err = ioutil.ReadFile(c.Path(rootPath)); err != nil {
-		return nil, 0, err
+	if path, err = c.Path(rootPath); err != nil {
+		return
+	}
+
+	if oldContent, err = ioutil.ReadFile(path); err != nil {
+		return
 	}
 	buf.Write(oldContent)
 	buf.Write(p)
 
 	// calculate the hash value of complete content
 	if hash, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
-		return nil, 0, err
+		return
 	}
 
 	// find chunk by the hash value of complete content
-	if chunk, err = FindChunkByHash(hash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
-		return chunk, len(p), err
+	if chunk, err = FindChunkByHash(hash, db); err == nil {
+		return chunk, len(p), nil
 	}
 
 	// if the current chunk is referenced by other objects, it should be copied and appended
@@ -135,27 +137,24 @@ func (c *Chunk) AppendBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chu
 	c.Size = buf.Len()
 	c.Hash = hash
 
-	if file, err = os.OpenFile(c.Path(rootPath), os.O_APPEND|os.O_WRONLY, 0644); err != nil {
+	if file, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644); err != nil {
 		return nil, 0, err
 	}
 	defer file.Close()
 
 	if writeCount, err = file.Write(p); err != nil {
-		return nil, 0, err
+		return c, 0, err
 	}
 
-	if err = db.Save(c).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return c, writeCount, err
+	return c, writeCount, db.Model(c).Updates(map[string]interface{}{"size": c.Size, "hash": c.Hash}).Error
 }
 
 // CreateChunkFromBytes will crate a chunk from the specify byte content
 func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk, err error) {
 	var (
-		hashStr string
 		size    int
+		path    string
+		hashStr string
 	)
 
 	if size = len(p); int64(size) > ChunkSize {
@@ -166,8 +165,8 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk
 		return nil, err
 	}
 
-	if chunk, err = FindChunkByHash(hashStr, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
-		return chunk, err
+	if chunk, err = FindChunkByHash(hashStr, db); err == nil {
+		return chunk, nil
 	}
 
 	chunk = &Chunk{
@@ -179,7 +178,11 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk
 		return nil, err
 	}
 
-	if err = ioutil.WriteFile(chunk.Path(rootPath), p, 0644); err != nil {
+	if path, err = chunk.Path(rootPath); err != nil {
+		return chunk, err
+	}
+
+	if err = ioutil.WriteFile(path, p, 0644); err != nil {
 		return nil, err
 	}
 
@@ -189,33 +192,32 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk
 // FindChunkByHash will find chunk by the specify hash
 func FindChunkByHash(h string, db *gorm.DB) (*Chunk, error) {
 	var chunk Chunk
-	var err = db.Where("hash = ?", h).First(&chunk).Error
-	return &chunk, err
+	return &chunk, db.Where("hash = ?", h).First(&chunk).Error
 }
 
 // CreateEmptyContentChunk is used to create a chunk with empty content
 func CreateEmptyContentChunk(rootPath *string, db *gorm.DB) (chunk *Chunk, err error) {
-	var emptyContentHash string
+	var (
+		path             string
+		emptyContentHash string
+	)
 	if emptyContentHash, err = util.Sha256Hash2String(nil); err != nil {
 		return nil, err
 	}
 
-	if chunk, err = FindChunkByHash(emptyContentHash, db); err == nil && chunk.ID > 0 && util.IsFile(chunk.Path(rootPath)) {
-		return chunk, err
+	if chunk, err = FindChunkByHash(emptyContentHash, db); err == nil {
+		return chunk, nil
 	}
 
-	chunk = &Chunk{
-		Size: 0,
-		Hash: emptyContentHash,
-	}
+	chunk = &Chunk{Size: 0, Hash: emptyContentHash}
 
 	if err = db.Create(chunk).Error; err != nil {
 		return nil, err
 	}
 
-	if err = ioutil.WriteFile(chunk.Path(rootPath), nil, 0644); err != nil {
-		return nil, err
+	if path, err = chunk.Path(rootPath); err != nil {
+		return chunk, err
 	}
 
-	return chunk, err
+	return chunk, ioutil.WriteFile(path, nil, 0644)
 }
