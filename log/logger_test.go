@@ -49,11 +49,7 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestMustNewLogger(t *testing.T) {
-	defer func() {
-		if err := recover(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	defer func() { assert.Nil(t, recover()) }()
 	var (
 		logConfig   = *config.DefaultConfig
 		err         error
