@@ -17,6 +17,7 @@ type FileInfo struct {
 	modeTime time.Time
 }
 
+// Sys always return nil
 func (f *FileInfo) Sys() interface{} {
 	return nil
 }
@@ -54,7 +55,7 @@ func (f *FileInfo) Owner() string {
 	return "bigfile"
 }
 
-// Owner return the group of file
+// Group return the group of file
 func (f *FileInfo) Group() string {
 	return "bigfile"
 }

@@ -26,6 +26,7 @@ type Driver struct {
 	rootChunkPath *string
 }
 
+// Init is a hook, when new connection coming, it will be called
 func (d *Driver) Init(conn *server.Conn) {
 	d.conn = conn
 }
@@ -35,8 +36,8 @@ func (d *Driver) buildPath(path string) string {
 	if d.app == nil && d.rootPath == nil {
 		loginUserName := d.conn.LoginUser()
 		if strings.HasPrefix(loginUserName, tokenPrefix) {
-			tokenUid := strings.TrimPrefix(loginUserName, tokenPrefix)
-			token, _ := models.FindTokenByUID(tokenUid, d.db)
+			tokenUID := strings.TrimPrefix(loginUserName, tokenPrefix)
+			token, _ := models.FindTokenByUID(tokenUID, d.db)
 			d.app = &token.App
 			d.rootPath = &token.Path
 			d.rootDir, _ = models.CreateOrGetLastDirectory(d.app, token.Path, d.db)
@@ -107,7 +108,7 @@ func (d *Driver) DeleteDir(path string) (err error) {
 	return dir.Delete(true, d.db)
 }
 
-// DeleteFile
+// DeleteFile is used to delete file by the path
 func (d *Driver) DeleteFile(path string) (err error) {
 	var file *models.File
 	if file, err = models.FindFileByPath(d.app, d.buildPath(path), d.db, true); err != nil {
@@ -133,7 +134,10 @@ func (d *Driver) MakeDir(path string) (err error) {
 
 // PutFile is used to upload file
 func (d *Driver) PutFile(path string, dataConn io.Reader, append bool) (bytes int64, err error) {
-	var file *models.File
+	var (
+		file       *models.File
+		writeBytes int64
+	)
 	if append {
 		if file, err = models.FindFileByPath(d.app, d.buildPath(path), d.db, true); err != nil {
 			return
@@ -142,12 +146,13 @@ func (d *Driver) PutFile(path string, dataConn io.Reader, append bool) (bytes in
 		if err = file.AppendFromReader(dataConn, 0, d.rootChunkPath, d.db); err != nil {
 			return
 		}
-		return int64(file.Size - originSize), nil
+		writeBytes = int64(file.Size - originSize)
 	} else {
 		if file, err = models.CreateFileFromReader(
 			d.app, d.buildPath(path), dataConn, 0, d.rootChunkPath, d.db); err != nil {
 			return
 		}
-		return int64(file.Size), nil
+		writeBytes = int64(file.Size)
 	}
+	return writeBytes, nil
 }

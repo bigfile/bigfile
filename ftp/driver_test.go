@@ -116,9 +116,9 @@ func TestDriver_ListDir(t *testing.T) {
 
 	assert.Nil(t, driver.ListDir("/create/dir", func(info server.FileInfo) error {
 		if info.IsDir() {
-			dirNum += 1
+			dirNum++
 		} else {
-			fileNum += 1
+			fileNum++
 		}
 		return nil
 	}))

@@ -46,8 +46,8 @@ func (a *Auth) CheckPasswd(name, password string) (correct bool, err error) {
 	}
 
 	if strings.HasPrefix(name, tokenPrefix) {
-		tokenUid := strings.TrimPrefix(name, tokenPrefix)
-		if token, err = models.FindTokenByUID(tokenUid, db); err != nil {
+		tokenUID := strings.TrimPrefix(name, tokenPrefix)
+		if token, err = models.FindTokenByUID(tokenUID, db); err != nil {
 			return false, ErrTokenNotFound
 		}
 		if token.Secret != nil && password != *token.Secret {
