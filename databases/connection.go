@@ -39,8 +39,8 @@ func NewConnection(dbConfig *config.Database) (*gorm.DB, error) {
 			return nil, err
 		}
 		connection.DB().SetConnMaxLifetime(time.Hour)
-		connection.DB().SetMaxOpenConns(200)
-		connection.DB().SetMaxIdleConns(20)
+		connection.DB().SetMaxOpenConns(500)
+		connection.DB().SetMaxIdleConns(0)
 	}
 
 	return connection, err

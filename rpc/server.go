@@ -379,7 +379,6 @@ func (s *Server) TokenDelete(ctx context.Context, req *TokenDeleteRequest) (resp
 		return resp, err
 	}
 	resp = &TokenDeleteResponse{RequestId: record.ID}
-	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 	if app, err = fetchAPP(req.AppUid, req.AppSecret, db); err != nil {
 		return
 	}
@@ -442,7 +441,6 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 			}
 			req.Content = content
 			resp = &FileCreateResponse{RequestId: record.ID}
-			defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 			if !tokenHasChecked || previousToken != req.Token {
 				if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
 					return
@@ -515,7 +513,6 @@ func (s *Server) FileUpdate(ctx context.Context, req *FileUpdateRequest) (resp *
 		return
 	}
 	resp = &FileUpdateResponse{RequestId: record.ID}
-	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
 		return
 	}
@@ -567,7 +564,6 @@ func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *
 		return
 	}
 	resp = &FileDeleteResponse{RequestId: record.ID}
-	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
 		return
 	}
@@ -688,7 +684,6 @@ func (s *Server) DirectoryList(ctx context.Context, req *DirectoryListRequest) (
 		return
 	}
 	resp = &DirectoryListResponse{RequestId: record.ID}
-	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
 	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
 		return
 	}

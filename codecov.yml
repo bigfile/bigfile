@@ -1,2 +1,4 @@
 ignore:
   - "rpc/*.pb.go"
+  - "databases/migrate"
+  - "artisan"

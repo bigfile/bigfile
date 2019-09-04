@@ -114,8 +114,7 @@ func findTokenByUID(uid string, trashed bool, db *gorm.DB) (*Token, error) {
 	if trashed {
 		db = db.Unscoped()
 	}
-	err = db.Preload("App").Where("uid = ?", uid).Find(token).Error
-	if err != nil {
+	if err = db.Preload("App").Where("uid = ?", uid).Find(token).Error; err != nil {
 		return token, err
 	}
 	return token, nil

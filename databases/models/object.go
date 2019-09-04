@@ -49,6 +49,14 @@ func (o *Object) ChunkCount(db *gorm.DB) int {
 	return db.Model(o).Association("Chunks").Count()
 }
 
+// ChunkWithNumber is used to load some chunk with number
+func (o *Object) ChunkWithNumber(number int, db *gorm.DB) (chunk *Chunk, err error) {
+	var joinObjectChunk = "join object_chunk on object_chunk.chunkId = chunks.id and object_chunk.objectId = ? and number = ?"
+	chunk = &Chunk{}
+	err = db.Joins(joinObjectChunk, o.ID, number).First(chunk).Error
+	return chunk, err
+}
+
 // LastChunk return the last chunk of object
 func (o *Object) LastChunk(db *gorm.DB) (*Chunk, error) {
 	var (
@@ -183,8 +191,8 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 }
 
 // Reader is used to implement io.Reader
-func (o *Object) Reader(rootPath *string) (io.Reader, error) {
-	return NewObjectReader(o, rootPath)
+func (o *Object) Reader(rootPath *string, db *gorm.DB) (io.ReadSeeker, error) {
+	return NewObjectReader(o, rootPath, db)
 }
 
 // FindObjectByHash will find object by the specify hash

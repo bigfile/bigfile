@@ -50,17 +50,9 @@ func TestObject_ChunkCount2(t *testing.T) {
 	h, err := util.Sha256Hash2String([]byte(content))
 	assert.Nil(t, err)
 	object := &Object{
-		Size: size,
-		Hash: h,
-		ObjectChunks: []ObjectChunk{
-			{
-				Chunk: Chunk{
-					Size: size,
-					Hash: h,
-				},
-				Number: 1,
-			},
-		},
+		Size:         size,
+		Hash:         h,
+		ObjectChunks: []ObjectChunk{{Chunk: Chunk{Size: size, Hash: h}, Number: 1}},
 	}
 	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
 	assert.True(t, object.ID > 0)
@@ -104,20 +96,8 @@ func TestObject_LastChunk2(t *testing.T) {
 		Size: size,
 		Hash: h,
 		ObjectChunks: []ObjectChunk{
-			{
-				Chunk: Chunk{
-					Size: size,
-					Hash: h,
-				},
-				Number: 1,
-			},
-			{
-				Chunk: Chunk{
-					Size: size2,
-					Hash: hash2,
-				},
-				Number: 2,
-			},
+			{Chunk: Chunk{Size: size, Hash: h}, Number: 1},
+			{Chunk: Chunk{Size: size2, Hash: hash2}, Number: 2},
 		},
 	}
 	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
@@ -152,8 +132,8 @@ func TestObject_LastChunkNumber(t *testing.T) {
 
 func TestObject_LastChunkNumber2(t *testing.T) {
 	var (
-		content  = "hello world"
-		content2 = "make money"
+		content  = Random(223)
+		content2 = Random(333)
 		size     = len(content)
 		size2    = len(content2)
 		err      error
@@ -165,24 +145,10 @@ func TestObject_LastChunkNumber2(t *testing.T) {
 	assert.Nil(t, err)
 	hash2, err := util.Sha256Hash2String([]byte(content2))
 	assert.Nil(t, err)
-	object := &Object{
-		Size: size,
-		Hash: h,
+	object := &Object{Size: size, Hash: h,
 		ObjectChunks: []ObjectChunk{
-			{
-				Chunk: Chunk{
-					Size: size,
-					Hash: h,
-				},
-				Number: 1,
-			},
-			{
-				Chunk: Chunk{
-					Size: size2,
-					Hash: hash2,
-				},
-				Number: 2,
-			},
+			{Chunk: Chunk{Size: size, Hash: h}, Number: 1},
+			{Chunk: Chunk{Size: size2, Hash: hash2}, Number: 2},
 		},
 	}
 	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
@@ -192,6 +158,43 @@ func TestObject_LastChunkNumber2(t *testing.T) {
 	number, err = object.LastChunkNumber(trx)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, number)
+}
+
+func TestObject_ChunkWithNumber(t *testing.T) {
+	var (
+		err      error
+		content  = Random(223)
+		content2 = Random(333)
+		size     = len(content)
+		size2    = len(content2)
+		number   int
+	)
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+	hash1, err := util.Sha256Hash2String([]byte(content))
+	assert.Nil(t, err)
+	hash2, err := util.Sha256Hash2String([]byte(content2))
+	assert.Nil(t, err)
+	object := &Object{Size: size, Hash: hash1,
+		ObjectChunks: []ObjectChunk{
+			{Chunk: Chunk{Size: size, Hash: hash1}, Number: 1},
+			{Chunk: Chunk{Size: size2, Hash: hash2}, Number: 2},
+		},
+	}
+	assert.Nil(t, trx.Set("gorm:association_autocreate", true).Save(object).Error)
+	assert.True(t, object.ID > 0)
+
+	number, err = object.LastChunkNumber(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, number)
+
+	chunk, err := object.ChunkWithNumber(1, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, hash1, chunk.Hash)
+
+	chunk, err = object.ChunkWithNumber(2, trx)
+	assert.Nil(t, err)
+	assert.Equal(t, hash2, chunk.Hash)
 }
 
 func TestObject_LastObjectChunk(t *testing.T) {
@@ -595,8 +598,8 @@ func TestObject_AppendFromReader5(t *testing.T) {
 }
 
 func TestObject_Reader(t *testing.T) {
-	object, rootPath, down := newObjectForObjectReaderTest(t)
+	object, rootPath, down, trx := newObjectForObjectReaderTest(t)
 	defer down(t)
-	_, err := object.Reader(rootPath)
+	_, err := object.Reader(rootPath, trx)
 	assert.Nil(t, err)
 }
