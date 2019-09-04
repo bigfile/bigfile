@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/bigfile/bigfile/databases/models"
-
 	"github.com/stretchr/testify/assert"
 )
 
