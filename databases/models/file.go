@@ -144,11 +144,10 @@ func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
 	if f.IsDir == 1 {
 		return nil, ErrReadDir
 	}
-	if len(f.Object.Chunks) == 0 {
+	if f.Object.ID == 0 {
 		db.Preload("Object").Find(&f)
-		db.Preload("Chunks").Find(&f.Object)
 	}
-	return (&f.Object).Reader(rootPath)
+	return (&f.Object).Reader(rootPath, db)
 }
 
 // Path is used to get the complete path of file

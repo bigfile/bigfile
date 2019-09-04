@@ -10,22 +10,30 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jinzhu/gorm"
+
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewObjectReader(t *testing.T) {
 
-	_, err := NewObjectReader(nil, nil)
+	_, err := NewObjectReader(nil, nil, nil)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "invalid object")
+	assert.Equal(t, err, ErrInvalidObject)
 
-	_, err = NewObjectReader(&Object{}, nil)
+	db, down := setUpTestCaseWithTrx(nil, t)
+	defer down(t)
+
+	object := &Object{}
+	assert.Nil(t, db.Save(object).Error)
+
+	_, err = NewObjectReader(object, nil, db)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "object has no any chunks")
+	assert.Equal(t, err, ErrObjectNoChunks)
 }
 
-func newObjectForObjectReaderTest(t *testing.T) (*Object, *string, func(*testing.T)) {
+func newObjectForObjectReaderTest(t *testing.T) (*Object, *string, func(*testing.T), *gorm.DB) {
 	var (
 		err               error
 		object            *Object
@@ -46,20 +54,20 @@ func newObjectForObjectReaderTest(t *testing.T) (*Object, *string, func(*testing
 		if util.IsDir(tempDir) {
 			os.RemoveAll(tempDir)
 		}
-	}
+	}, trx
 }
 
 func TestNewObjectReader2(t *testing.T) {
-	object, rootPath, down := newObjectForObjectReaderTest(t)
+	object, rootPath, down, trx := newObjectForObjectReaderTest(t)
 	defer down(t)
-	_, err := NewObjectReader(object, rootPath)
+	_, err := NewObjectReader(object, rootPath, trx)
 	assert.Nil(t, err)
 }
 
 func TestObjectReader_Read(t *testing.T) {
-	object, rootPath, down := newObjectForObjectReaderTest(t)
+	object, rootPath, down, trx := newObjectForObjectReaderTest(t)
 	defer down(t)
-	or, err := NewObjectReader(object, rootPath)
+	or, err := NewObjectReader(object, rootPath, trx)
 	assert.Nil(t, err)
 
 	allContent, err := ioutil.ReadAll(or)
