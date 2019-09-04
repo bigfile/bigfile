@@ -394,6 +394,15 @@ func TestFile_Reader2(t *testing.T) {
 	allContentHash, err := util.Sha256Hash2String(allContent)
 	assert.Nil(t, err)
 	assert.Equal(t, allContentHash, file.Object.Hash)
+
+	file.Object.ID = 0
+	reader, err = file.Reader(&tempDir, trx)
+	assert.Nil(t, err)
+	allContent, err = ioutil.ReadAll(reader)
+	assert.Nil(t, err)
+	allContentHash, err = util.Sha256Hash2String(allContent)
+	assert.Nil(t, err)
+	assert.Equal(t, allContentHash, file.Object.Hash)
 }
 
 func TestFindFileByUID(t *testing.T) {
