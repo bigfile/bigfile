@@ -6,6 +6,7 @@ package ftp
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -218,4 +219,33 @@ func TestDriver_PutFile(t *testing.T) {
 	writeBytes, err = driver.PutFile("/create/dir/random.bytes", bytes.NewReader(models.Random(22)), false)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(22), writeBytes)
+}
+
+func TestDriver_GetFile(t *testing.T) {
+	driver, down, err := newDriverForTest(t)
+	assert.Nil(t, err)
+	tempDir := models.NewTempDirForTest()
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	driver.rootChunkPath = &tempDir
+
+	randomBytes := models.Random(256)
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	_, err = models.CreateFileFromReader(
+		driver.app, "/create/dir/file.bytes", bytes.NewReader(randomBytes), models.Hidden, &tempDir, driver.db)
+	assert.Nil(t, err)
+
+	size, rc, err := driver.GetFile("/create/dir/file.bytes", 0)
+	assert.Nil(t, err)
+	assert.Equal(t, 256, int(size))
+	allContent, err := ioutil.ReadAll(rc)
+	assert.Nil(t, err)
+	allContentHash, err := util.Sha256Hash2String(allContent)
+	assert.Nil(t, err)
+	assert.Equal(t, randomBytesHash, allContentHash)
 }

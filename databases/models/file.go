@@ -140,7 +140,7 @@ func (f *File) CanBeAccessedByToken(token *Token, db *gorm.DB) error {
 
 // Reader is used to get reader that continues to read data from underlying
 // chunk until io.EOF
-func (f *File) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
+func (f *File) Reader(rootPath *string, db *gorm.DB) (io.ReadSeeker, error) {
 	if f.IsDir == 1 {
 		return nil, ErrReadDir
 	}

@@ -191,7 +191,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 }
 
 // Reader is used to implement io.Reader
-func (o *Object) Reader(rootPath *string, db *gorm.DB) (io.Reader, error) {
+func (o *Object) Reader(rootPath *string, db *gorm.DB) (io.ReadSeeker, error) {
 	return NewObjectReader(o, rootPath, db)
 }
 

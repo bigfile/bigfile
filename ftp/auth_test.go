@@ -39,3 +39,9 @@ func TestAuth_CheckPasswd(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, pass)
 }
+
+func TestAuth_CheckPasswd2(t *testing.T) {
+	testDbConn = nil
+	_, err := (&Auth{}).CheckPasswd(tokenPrefix, "")
+	assert.Equal(t, ErrTokenNotFound, err)
+}

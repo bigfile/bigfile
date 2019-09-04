@@ -7,6 +7,7 @@ package ftp
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -155,4 +156,20 @@ func (d *Driver) PutFile(path string, dataConn io.Reader, append bool) (bytes in
 		writeBytes = int64(file.Size)
 	}
 	return writeBytes, nil
+}
+
+// GetFile is used to download a file
+func (d *Driver) GetFile(path string, offset int64) (size int64, rc io.ReadCloser, err error) {
+	var (
+		rs   io.ReadSeeker
+		file *models.File
+	)
+	if file, err = models.FindFileByPath(d.app, path, d.db, true); err != nil {
+		return
+	}
+	if rs, err = file.Reader(d.rootChunkPath, d.db); err != nil {
+		return
+	}
+	_, err = rs.Seek(offset, io.SeekStart)
+	return int64(file.Size), ioutil.NopCloser(rs), err
 }
