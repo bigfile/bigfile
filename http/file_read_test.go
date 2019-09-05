@@ -325,7 +325,7 @@ func TestFileReadHandler7(t *testing.T) {
 	FileReadHandler(ctx)
 	assert.Equal(t, http.StatusBadRequest, bw.Status())
 	response, _ = parseResponse(bw.body.String())
-	assert.Equal(t, ErrWrongHttpRange.Error(), response.Errors["system"][0])
+	assert.Equal(t, ErrWrongHTTPRange.Error(), response.Errors["system"][0])
 	bw.body.Reset()
 
 	var buf strings.Builder

@@ -27,8 +27,8 @@ import (
 // ErrWrongRangeHeader represent the http range header format error
 var ErrWrongRangeHeader = errors.New("http range header format error")
 
-// ErrWrongHttpRange represent wrong http range header
-var ErrWrongHttpRange = errors.New("wrong http range header, start must be less than end")
+// ErrWrongHTTPRange represent wrong http range header
+var ErrWrongHTTPRange = errors.New("wrong http range header, start must be less than end")
 
 const binaryContentType = "application/octet-stream"
 
@@ -126,7 +126,7 @@ func FileReadHandler(ctx *gin.Context) {
 		ctx.JSON(400, &Response{
 			RequestID: requestID,
 			Success:   false,
-			Errors:    generateErrors(ErrWrongHttpRange, ""),
+			Errors:    generateErrors(ErrWrongHTTPRange, ""),
 		})
 		return
 	}
