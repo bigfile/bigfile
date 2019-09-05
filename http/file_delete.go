@@ -78,6 +78,5 @@ func FileDeleteHandler(ctx *gin.Context) {
 		reErrors = generateErrors(err, "system")
 		return
 	}
-
 	code = 200
 }

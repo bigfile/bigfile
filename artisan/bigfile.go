@@ -2,8 +2,7 @@
 //  Use of this source code is governed by a MIT-style
 //  license that can be found in the LICENSE file.
 
-// Package main is the entry for the whole program,the name, artisan
-// , is from laravel, a awesome php framework.
+// Package main is the entry for the whole program
 package main
 
 import (
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	cmdApp "github.com/bigfile/bigfile/artisan/app"
+	"github.com/bigfile/bigfile/artisan/ftp"
 	"github.com/bigfile/bigfile/artisan/http"
 	"github.com/bigfile/bigfile/artisan/migrate"
 	"github.com/bigfile/bigfile/artisan/rpc"
@@ -87,6 +87,7 @@ func main() {
 	commands = append(commands, cmdApp.Commands...)
 	commands = append(commands, http.Commands...)
 	commands = append(commands, rpc.Commands...)
+	commands = append(commands, ftp.Commands...)
 	app.Commands = commands
 
 	sort.Sort(cli.FlagsByName(app.Flags))

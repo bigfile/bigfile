@@ -14,10 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bigfile/bigfile/databases"
-
 	"github.com/bigfile/bigfile/config"
-
+	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
 	"github.com/gin-gonic/gin"
@@ -124,6 +122,38 @@ func TestDirectoryListHandler3(t *testing.T) {
 	assert.Equal(t, 18, int(responseData["total"].(float64)))
 	assert.Equal(t, 2, int(responseData["pages"].(float64)))
 	assert.Equal(t, 10, len(responseData["items"].([]interface{})))
+}
+
+func TestDirectoryListHandler5(t *testing.T) {
+	ctx, down := newDirectoryListForTest(t)
+	defer down(t)
+	writer := ctx.Writer.(*bodyWriter)
+
+	input := ctx.MustGet("inputParam").(*directoryListInput)
+	invalidSort := "invalidSort"
+	input.Sort = &invalidSort
+
+	DirectoryListHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, ErrInvalidSortTypes.Error(), response.Errors["sort"][0])
+}
+
+func TestDirectoryListHandler6(t *testing.T) {
+	ctx, down := newDirectoryListForTest(t)
+	defer down(t)
+	writer := ctx.Writer.(*bodyWriter)
+
+	input := ctx.MustGet("inputParam").(*directoryListInput)
+	offset := -1
+	input.Offset = &offset
+
+	DirectoryListHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Contains(t, writer.body.String(), "DirectoryList.Offset, validate error")
 }
 
 func TestDirectoryListHandler4(t *testing.T) {

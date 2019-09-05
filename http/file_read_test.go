@@ -7,9 +7,11 @@ package http
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -49,12 +51,13 @@ func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
 	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, "/random.png", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
 	ctx.Set("randomBytesHash", randomBytesHash)
 	ctx.Set("inputParam", &fileReadInput{
-		FileUID: file.UID,
+		FileUID:       file.UID,
+		OpenInBrowser: true,
 	})
 
 	return ctx, func(t *testing.T) {
@@ -240,4 +243,128 @@ func BenchmarkFileReadHandler(b *testing.B) {
 			b.Fatal("response code should be 200")
 		}
 	}
+}
+
+func TestFileReadHandler6(t *testing.T) {
+	ctx, down := newFileReadForTest(t)
+	defer down(t)
+
+	writer := ctx.Writer.(*bodyWriter)
+	input := ctx.MustGet("inputParam").(*fileReadInput)
+	db := ctx.MustGet("db").(*gorm.DB)
+
+	file, err := models.FindFileByUID(input.FileUID, false, db)
+	assert.Nil(t, err)
+	assert.Nil(t, db.Preload("Parent").First(file).Error)
+	assert.NotNil(t, file.Parent)
+	input.FileUID = file.Parent.UID
+
+	FileReadHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, models.ErrReadDir.Error(), response.Errors["system"][0])
+}
+
+// TestFileReadHandler7 is used to test whether implement http range protocol
+func TestFileReadHandler7(t *testing.T) {
+	var (
+		ctx     *gin.Context
+		trx     *gorm.DB
+		err     error
+		token   *models.Token
+		down    func(*testing.T)
+		tempDir = models.NewTempDirForTest()
+	)
+
+	testingChunkRootPath = &tempDir
+	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}()
+	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
+	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Writer = bw
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	ctx.Request.Header.Set("X-Forwarded-For", "192.168.0.1")
+	ctx.Set("db", trx)
+	ctx.Set("token", token)
+	ctx.Set("requestId", rand.Int63())
+
+	randomBytes := []byte("hello world, this is a fantastic world")
+	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	assert.Nil(t, err)
+	randomBytesReader := bytes.NewReader(randomBytes)
+	file, err := models.CreateFileFromReader(&token.App, "/random.txt", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	assert.Nil(t, err)
+	ctx.Set("inputParam", &fileReadInput{FileUID: file.UID})
+
+	// set range is empty, is equal to download all content
+	ctx.Request.Header.Set("Range", "")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusOK, bw.Status())
+	assert.Equal(t, "bytes", bw.Header().Get("Accept-Ranges"))
+	assert.Equal(t, strconv.Itoa(len(randomBytes)), bw.Header().Get("Content-Length"))
+	assert.Equal(t, randomBytesHash, bw.Header().Get("Etag"))
+	bw.body.Reset()
+
+	// range header format error
+	ctx.Request.Header.Set("Range", "bytes=start-end")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusBadRequest, bw.Status())
+	response, _ := parseResponse(bw.body.String())
+	assert.Equal(t, ErrWrongRangeHeader.Error(), response.Errors["system"][0])
+	bw.body.Reset()
+
+	// range start is greater than end
+	ctx.Request.Header.Set("Range", "bytes=10-9")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusBadRequest, bw.Status())
+	response, _ = parseResponse(bw.body.String())
+	assert.Equal(t, ErrWrongHTTPRange.Error(), response.Errors["system"][0])
+	bw.body.Reset()
+
+	var buf strings.Builder
+
+	// top ten bytes
+	ctx.Request.Header.Set("Range", "bytes=-10")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusPartialContent, bw.Status())
+	assert.Equal(t, 10, len(bw.body.String()))
+	_, _ = buf.WriteString(bw.body.String())
+	assert.Equal(t, "0-10/38", bw.Header().Get("Content-Range"))
+	bw.body.Reset()
+
+	// the middle 20 bytes
+	bw.Header().Del("Content-Range")
+	ctx.Request.Header.Set("Range", "bytes=10-20")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusPartialContent, bw.Status())
+	assert.Equal(t, 10, len(bw.body.String()))
+	_, _ = buf.WriteString(bw.body.String())
+	assert.Equal(t, "10-20/38", bw.Header().Get("Content-Range"))
+	bw.body.Reset()
+
+	// last 18 bytes
+	bw.Header().Del("Content-Range")
+	ctx.Request.Header.Set("Range", "bytes=20-")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusPartialContent, bw.Status())
+	assert.Equal(t, 18, len(bw.body.String()))
+	_, _ = buf.WriteString(bw.body.String())
+	assert.Equal(t, "20-38/38", bw.Header().Get("Content-Range"))
+	bw.body.Reset()
+
+	assert.Equal(t, buf.String(), string(randomBytes))
+
+	// special range header, -
+	ctx.Request.Header.Set("Range", "bytes=-")
+	FileReadHandler(ctx)
+	assert.Equal(t, http.StatusOK, bw.Status())
+	assert.Equal(t, 38, len(bw.body.String()))
+	bw.body.Reset()
 }

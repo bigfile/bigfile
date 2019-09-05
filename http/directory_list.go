@@ -57,7 +57,7 @@ func DirectoryListHandler(ctx *gin.Context) {
 	}()
 
 	if err = validateSort(*input.Sort); err != nil {
-		generateErrors(err, "sort")
+		reErrors = generateErrors(err, "sort")
 		return
 	}
 

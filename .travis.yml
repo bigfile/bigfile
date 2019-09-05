@@ -13,14 +13,11 @@ matrix:
   include:
     - go: 1.11.x
     - go: 1.12.x
-#    - go: master
-#  allow_failures:
-#    - go: master
+    - go: 1.13.x
 
 env:
   global:
     - GO111MODULE=on
-#    - GOPROXY=https://goproxy.io
     - BIGFILE_DEFAULT_DB_USER=root
     - BIGFILE_DEFAULT_DB_PWD=
     - BIGFILE_MODE=dev
@@ -28,7 +25,7 @@ env:
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
   - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
-  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+#  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
   - go get -u github.com/mgechev/revive
   - go get -u github.com/client9/misspell/cmd/misspell
   - go get -u golang.org/x/tools/cmd/goimports
@@ -46,7 +43,7 @@ script:
   - misspell -error ./
   - diff <(goimports -l .) <(printf "")
   - diff <(revive ./...) <(printf "")
-  - golangci-lint run
+#  - golangci-lint run
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:
