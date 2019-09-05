@@ -41,7 +41,7 @@ func FileReadHandler(ctx *gin.Context) {
 		requestID              = ctx.GetInt64("requestId")
 		fileReadSrv            *service.FileRead
 		fileReadSrvValue       interface{}
-		fileReadSrvValueReader io.Reader
+		fileReadSrvValueReader io.ReadSeeker
 	)
 
 	if file, err = models.FindFileByUID(input.FileUID, false, db); err != nil {
@@ -83,26 +83,26 @@ func FileReadHandler(ctx *gin.Context) {
 		})
 		return
 	}
-
 	fileReadSrvValueReader = fileReadSrvValue.(io.ReadSeeker)
 
-	extraHeaders := map[string]string{
+	readAllContents(ctx, fileReadSrvValueReader, file, input)
+}
+
+func readAllContents(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *fileReadInput) {
+	headers := map[string]string{
 		"ETag":                file.Object.Hash,
 		"Accept-Ranges":       "bytes",
 		"Content-Type":        "application/octet-stream",
-		"Content-Length":      strconv.Itoa(file.Size),
 		"Last-Modified":       file.UpdatedAt.Format(time.RFC1123),
 		"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`, file.Name),
 	}
-
+	headers["Content-Length"] = strconv.Itoa(file.Size)
 	if contentType := mime.TypeByExtension(path.Ext(file.Name)); contentType != "" {
-		extraHeaders["Content-Type"] = contentType
+		headers["Content-Type"] = contentType
 	}
-
 	if input.OpenInBrowser {
-		extraHeaders["Content-Disposition"] = fmt.Sprintf(`inline; filename="%s"`, file.Name)
+		headers["Content-Disposition"] = fmt.Sprintf(`inline; filename="%s"`, file.Name)
 	}
-
 	ctx.Set("ignoreRespBody", true)
-	ctx.DataFromReader(http.StatusOK, int64(file.Size), extraHeaders["Content-Type"], fileReadSrvValueReader, extraHeaders)
+	ctx.DataFromReader(http.StatusOK, int64(file.Size), headers["Content-Type"], readerSeeker, headers)
 }

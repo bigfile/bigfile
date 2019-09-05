@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -262,4 +263,13 @@ func TestFileReadHandler6(t *testing.T) {
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
 	assert.Equal(t, models.ErrReadDir.Error(), response.Errors["system"][0])
+}
+
+func TestFileReadHandler7(t *testing.T) {
+	pattern := regexp.MustCompile(`^bytes=(?P<start>\d*)-(?P<end>\d*)$`)
+	fmt.Println(pattern)
+	fmt.Println(pattern.Match([]byte("bytes=0-")))
+	fmt.Println(pattern.Match([]byte("bytes=-1000")))
+	fmt.Println(pattern.Match([]byte("bytes=-")))
+	fmt.Println(pattern.Match([]byte("bytes=23-34")))
 }
