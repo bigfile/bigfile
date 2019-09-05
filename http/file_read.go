@@ -84,7 +84,6 @@ func FileReadHandler(ctx *gin.Context) {
 		return
 	}
 	fileReadSrvValueReader = fileReadSrvValue.(io.ReadSeeker)
-
 	readAllContents(ctx, fileReadSrvValueReader, file, input)
 }
 

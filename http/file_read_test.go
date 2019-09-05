@@ -272,4 +272,5 @@ func TestFileReadHandler7(t *testing.T) {
 	fmt.Println(pattern.Match([]byte("bytes=-1000")))
 	fmt.Println(pattern.Match([]byte("bytes=-")))
 	fmt.Println(pattern.Match([]byte("bytes=23-34")))
+	fmt.Println(pattern.FindAllStringSubmatch("bytes=23-34", -1))
 }
