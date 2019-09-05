@@ -74,10 +74,7 @@ func FileDeleteHandler(ctx *gin.Context) {
 		return
 	}
 
-	if data, err = fileResp(fileDeleteSrvValue.(*models.File), db); err != nil {
-		reErrors = generateErrors(err, "system")
-		return
-	}
-
+	data, err = fileResp(fileDeleteSrvValue.(*models.File), db)
 	code = 200
+	reErrors = generateErrors(err, "system")
 }

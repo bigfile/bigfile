@@ -52,12 +52,10 @@ func FileCreateHandler(ctx *gin.Context) {
 		ip            = ctx.ClientIP()
 		input         = ctx.MustGet("inputParam").(*fileCreateInput)
 		fileCreateSrv = &service.FileCreate{
-			BaseService: service.BaseService{
-				DB: db,
-			},
-			IP:    &ip,
-			Path:  input.Path,
-			Token: ctx.MustGet("token").(*models.Token),
+			BaseService: service.BaseService{DB: db},
+			IP:          &ip,
+			Path:        input.Path,
+			Token:       ctx.MustGet("token").(*models.Token),
 		}
 
 		fileCreateValue interface{}

@@ -49,12 +49,13 @@ func newFileReadForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
 	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, "/random.png", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
 	ctx.Set("randomBytesHash", randomBytesHash)
 	ctx.Set("inputParam", &fileReadInput{
-		FileUID: file.UID,
+		FileUID:       file.UID,
+		OpenInBrowser: true,
 	})
 
 	return ctx, func(t *testing.T) {
@@ -240,4 +241,25 @@ func BenchmarkFileReadHandler(b *testing.B) {
 			b.Fatal("response code should be 200")
 		}
 	}
+}
+
+func TestFileReadHandler6(t *testing.T) {
+	ctx, down := newFileReadForTest(t)
+	defer down(t)
+
+	writer := ctx.Writer.(*bodyWriter)
+	input := ctx.MustGet("inputParam").(*fileReadInput)
+	db := ctx.MustGet("db").(*gorm.DB)
+
+	file, err := models.FindFileByUID(input.FileUID, false, db)
+	assert.Nil(t, err)
+	assert.Nil(t, db.Preload("Parent").First(file).Error)
+	assert.NotNil(t, file.Parent)
+	input.FileUID = file.Parent.UID
+
+	FileReadHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, models.ErrReadDir.Error(), response.Errors["system"][0])
 }

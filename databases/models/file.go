@@ -152,6 +152,11 @@ func (f *File) Reader(rootPath *string, db *gorm.DB) (io.ReadSeeker, error) {
 
 // Path is used to get the complete path of file
 func (f *File) Path(db *gorm.DB) (string, error) {
+
+	if f.PID == 0 && f.IsDir == IsDir {
+		return "/", nil
+	}
+
 	var (
 		parts   []string
 		current = *f

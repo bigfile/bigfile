@@ -303,6 +303,12 @@ func TestFile_Path(t *testing.T) {
 	randomFile, err := CreateFileFromReader(app, "/random.bytes", strings.NewReader(""), int8(0), &tempDir, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, "/random.bytes", randomFile.mustPath(trx))
+
+	root, err := CreateOrGetRootPath(app, trx)
+	assert.Nil(t, err)
+	rootPath, err := root.Path(trx)
+	assert.Nil(t, err)
+	assert.Equal(t, "/", rootPath)
 }
 
 func TestFile_OverWriteFromReader(t *testing.T) {

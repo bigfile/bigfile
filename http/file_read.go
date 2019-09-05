@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"path"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/bigfile/bigfile/databases/models"
@@ -83,12 +84,15 @@ func FileReadHandler(ctx *gin.Context) {
 		return
 	}
 
-	fileReadSrvValueReader = fileReadSrvValue.(io.Reader)
+	fileReadSrvValueReader = fileReadSrvValue.(io.ReadSeeker)
 
 	extraHeaders := map[string]string{
-		"Content-Type":  "application/octet-stream",
-		"ETag":          file.Object.Hash,
-		"Last-Modified": file.UpdatedAt.Format(time.RFC1123),
+		"ETag":                file.Object.Hash,
+		"Accept-Ranges":       "bytes",
+		"Content-Type":        "application/octet-stream",
+		"Content-Length":      strconv.Itoa(file.Size),
+		"Last-Modified":       file.UpdatedAt.Format(time.RFC1123),
+		"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`, file.Name),
 	}
 
 	if contentType := mime.TypeByExtension(path.Ext(file.Name)); contentType != "" {
@@ -97,8 +101,6 @@ func FileReadHandler(ctx *gin.Context) {
 
 	if input.OpenInBrowser {
 		extraHeaders["Content-Disposition"] = fmt.Sprintf(`inline; filename="%s"`, file.Name)
-	} else {
-		extraHeaders["Content-Disposition"] = fmt.Sprintf(`attachment; filename="%s"`, file.Name)
 	}
 
 	ctx.Set("ignoreRespBody", true)

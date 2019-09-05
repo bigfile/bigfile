@@ -80,6 +80,21 @@ func TestFileCreateHandler(t *testing.T) {
 	assert.Equal(t, "/create/a/directory", responseData["path"].(string))
 }
 
+func TestFileCreateHandler4(t *testing.T) {
+	ctx, down := newFileCreateForTest(t)
+	defer down(t)
+	writer := ctx.Writer.(*bodyWriter)
+	input := ctx.MustGet("inputParam").(*fileCreateInput)
+	hidden := true
+	input.Hidden = &hidden
+	ctx.Set("token", (*models.Token)(nil))
+	FileCreateHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Contains(t, writer.body.String(), "invalid token")
+}
+
 // TestFileCreateHandler2 is used to test upload file
 func TestFileCreateHandler2(t *testing.T) {
 	var (
@@ -121,6 +136,15 @@ func TestFileCreateHandler2(t *testing.T) {
 		ctx.Request.Header.Set("Content-Type", formBodyWriter.FormDataContentType())
 		return randomBytesHash
 	}
+
+	// chunk size exceed limit
+	randomBytesHash = setRequestForCtx(ctx, models.ChunkSize+1)
+	FileCreateHandler(ctx)
+	response, err = parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, models.ErrChunkExceedLimit.Error(), response.Errors["file"][0])
+	writer.body.Reset()
 
 	// everything is ok
 	randomBytesHash = setRequestForCtx(ctx, 256)
