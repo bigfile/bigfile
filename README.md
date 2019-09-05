@@ -59,7 +59,7 @@ func main() {
 	}
 
 	certPool = x509.NewCertPool()
-	if rootCertBytes, err = ioutil.ReadFile("root.pem"); err != nil {
+	if rootCertBytes, err = ioutil.ReadFile("ca.pem"); err != nil {
 		fmt.Println(err)
 		return
 	}
