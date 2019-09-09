@@ -1,4 +1,4 @@
-### Bigfile —— It’s not big， It has `逼格`.
+### Bigfile
 
 <img align="right" width="159px" src="https://avatars3.githubusercontent.com/u/52916753">
 
