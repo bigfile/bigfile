@@ -22,3 +22,5 @@
 /storage
 /dist
 /coverage.txt
+/go.sum
+/go.mod
