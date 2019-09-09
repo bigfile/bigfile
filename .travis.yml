@@ -63,3 +63,4 @@ deploy:
     on:
       tags: true
       condition: $TRAVIS_OS_NAME = linux
+      all_branches: true
