@@ -8,7 +8,7 @@ addons:
 branches:
   only:
     - master
-#    - dev
+    - /v\d+\.\d+\.\d+[-\.0-9a-zA-Z]*/
 
 services:
   - mysql
