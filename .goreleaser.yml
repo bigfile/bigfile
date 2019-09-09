@@ -8,4 +8,5 @@ before:
     - go mod tidy
 
 builds:
-  main: ./artisan/bigfile.go
+  -
+    main: ./artisan/bigfile.go
