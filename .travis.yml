@@ -59,7 +59,7 @@ after_success:
 deploy:
   - provider: script
     skip_cleanup: true
-    script: curl -sL https://git.io/goreleaser | bash
+    script:  bash .scritps/goreleaser.sh
     on:
       tags: true
       condition: $TRAVIS_OS_NAME = linux
