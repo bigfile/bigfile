@@ -18,7 +18,7 @@ const SecretLength = 12
 
 // NewSecret is used generate secret for app and token
 func NewSecret() string {
-	r := "1234567890abcdefghijklmnopqrstuvwxyzQWERTYUIOPASDFGHJKLZXCVBNM@#$%"
+	r := "1234567890abcdefghijklmnopqrstuvwxyzQWERTYUIOPASDFGHJKLZXCVBNM"
 	randomBytes := make([]byte, SecretLength)
 	rLength := len(r)
 	mrand.Seed(time.Now().Unix())
