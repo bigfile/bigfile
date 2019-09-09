@@ -43,7 +43,7 @@ go_import_path: github.com/bigfile/bigfile
 
 before_script:
   - mysql -e 'CREATE DATABASE IF NOT EXISTS bigfile;'
-  - go run artisan/bigfile.go migrate:refresh
+  - go run artisan/bigfile.go --db-pass=  migrate:refresh
 
 script:
   - misspell -error ./

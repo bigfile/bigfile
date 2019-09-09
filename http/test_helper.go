@@ -16,7 +16,7 @@ import (
 // params and get the http post body
 var GetParamsSignBody = getParamsSignBody
 
-// GetParamsSignBody is used to get the signature of the params.
+// GetParamsSignature is used to get the signature of the params.
 var GetParamsSignature = getParamsSignature
 
 func assertTokenRespStructure(data interface{}) bool {
