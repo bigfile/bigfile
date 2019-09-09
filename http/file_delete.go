@@ -79,4 +79,5 @@ func FileDeleteHandler(ctx *gin.Context) {
 		return
 	}
 	code = 200
+	success = true
 }

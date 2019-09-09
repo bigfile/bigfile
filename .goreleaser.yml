@@ -1,0 +1,11 @@
+project_name: bigfile
+
+env:
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  main: ./artisan/bigfile.go

@@ -125,7 +125,7 @@ func TestFileDeleteHandler4(t *testing.T) {
 	FileDeleteHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
-	assert.False(t, response.Success)
+	assert.True(t, response.Success)
 	responseData, ok := response.Data.(map[string]interface{})
 	assert.True(t, ok)
 	assert.NotNil(t, responseData["deletedAt"])
@@ -148,7 +148,7 @@ func TestFileDeleteHandler5(t *testing.T) {
 	FileDeleteHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
-	assert.False(t, response.Success)
+	assert.True(t, response.Success)
 
 	rootDir, err := models.CreateOrGetRootPath(&token.App, db)
 	assert.Nil(t, err)
@@ -195,7 +195,7 @@ func TestFileDeleteHandler6(t *testing.T) {
 
 	response, err := parseResponse(w.Body.String())
 	assert.Nil(t, err)
-	assert.False(t, response.Success)
+	assert.True(t, response.Success)
 	responseData, ok := response.Data.(map[string]interface{})
 	assert.True(t, ok)
 	assert.NotNil(t, responseData["deletedAt"])

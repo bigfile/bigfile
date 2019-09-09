@@ -8,13 +8,24 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	mrand "math/rand"
 	"strconv"
 	"time"
 )
 
+// SecretLength set the secret length
+const SecretLength = 12
+
 // NewSecret is used generate secret for app and token
 func NewSecret() string {
-	return RandomWithMd5(32)
+	r := "1234567890abcdefghijklmnopqrstuvwxyzQWERTYUIOPASDFGHJKLZXCVBNM@#$%"
+	randomBytes := make([]byte, SecretLength)
+	rLength := len(r)
+	mrand.Seed(time.Now().Unix())
+	for i := 0; i < SecretLength; i++ {
+		randomBytes[i] = r[mrand.Intn(rLength)]
+	}
+	return string(randomBytes)
 }
 
 // Random is used to generate random bytes

@@ -68,6 +68,11 @@ var (
 					Usage: "server certificate cert save path",
 					Value: "server.pem",
 				},
+				&cli.StringSliceFlag{
+					Name:  "server-cert-ips",
+					Usage: "server certificate cert save path",
+					Value: cli.NewStringSlice("127.0.0.1", "0.0.0.0", "::1"),
+				},
 				&cli.StringFlag{
 					Name:  "server-key-out",
 					Usage: "server certificate key save path",
@@ -100,7 +105,7 @@ var (
 					Usage: "the path to server certificate key",
 				},
 				&cli.StringFlag{
-					Name:  "root-cert",
+					Name:  "ca-cert",
 					Usage: "the path to root certificate",
 				},
 				&cli.IntFlag{
@@ -132,7 +137,7 @@ var (
 				if serverCert, err = tls.LoadX509KeyPair(ctx.String("server-cert"), ctx.String("server-key")); err != nil {
 					return
 				}
-				if rootCaContentBytes, err = ioutil.ReadFile(ctx.String("root-cert")); err != nil {
+				if rootCaContentBytes, err = ioutil.ReadFile(ctx.String("ca-cert")); err != nil {
 					return
 				}
 				if !certPool.AppendCertsFromPEM(rootCaContentBytes) {
@@ -192,9 +197,6 @@ var (
 			},
 			Before: func(context *cli.Context) (err error) {
 				db := databases.MustNewConnection(&config.DefaultConfig.Database)
-				if err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DefaultConfig.Database.DBName)).Error; err != nil {
-					return
-				}
 				migrate.DefaultMC.SetConnection(db)
 				migrate.DefaultMC.Upgrade()
 				return nil
@@ -263,15 +265,14 @@ func generateCertificates(ctx *cli.Context) (err error) {
 		Subject: pkix.Name{
 			Organization: []string{"Bigfile, INC"},
 		},
-		IPAddresses: []net.IP{
-			net.IPv4(127, 0, 0, 1),
-			net.IPv6loopback,
-			net.IPv4(0, 0, 0, 0),
-		},
+		IPAddresses: []net.IP{},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().AddDate(1, 0, 0),
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+	}
+	for _, ips := range ctx.StringSlice("server-cert-ips") {
+		serverCert.IPAddresses = append(serverCert.IPAddresses, net.ParseIP(ips))
 	}
 	if _, err = generateCertAndKey(serverCert, rootCa, "server", ctx.String("server-cert-out"), ctx.String("server-key-out"), rootPrivateKey); err != nil {
 		return

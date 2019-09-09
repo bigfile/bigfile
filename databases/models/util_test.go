@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewSecret(t *testing.T) {
-	assert.Equal(t, len(NewSecret()), 32)
+	assert.Equal(t, len(NewSecret()), SecretLength)
 }
 
 func BenchmarkNewSecret(b *testing.B) {

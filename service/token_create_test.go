@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -73,6 +74,7 @@ func TestTokenCreate_Validate2(t *testing.T) {
 	tokenCreate, _, down := newTokenCreateForTest(t)
 	defer down(t)
 	err := tokenCreate.Validate()
+	fmt.Println(err)
 	assert.Nil(t, err)
 }
 
