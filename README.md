@@ -17,6 +17,6 @@ In fact, we built a file organization system based on the database. Here you can
 
 Since the rpc and http protocols are supported, those languages supported by [grpc](https://grpc.io/) and other languages can be quickly accessed. If you are not a programmer, you can use the ftp client to manage your files, the only thing you need to do is start Bigfile.
 
-You can find more detailed [Documentation](https://bigfile.site) here. **Windows platform is currently unavailable**.
+You can find more detailed [Documentation](https://bigfile.site) here. **Windows platform is currently unavailable, But you can use it by docker**.
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_large)

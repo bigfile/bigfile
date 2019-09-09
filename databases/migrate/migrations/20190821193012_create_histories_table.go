@@ -32,7 +32,7 @@ func (c *CreateHistoriesTable20190821193012) Up(db *gorm.DB) error {
 	  path VARCHAR(1000) NOT NULL,
 	  createdAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 	  PRIMARY KEY (id))
-	ENGINE = InnoDB`).Error
+	ENGINE = InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci`).Error
 }
 
 // Down is executed in downgrading

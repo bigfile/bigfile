@@ -8,7 +8,7 @@ addons:
 branches:
   only:
     - master
-    - dev
+#    - dev
 
 services:
   - mysql

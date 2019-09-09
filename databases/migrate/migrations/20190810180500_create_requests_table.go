@@ -37,7 +37,7 @@ func (c *CreateRequestsTable20190810180500) Up(db *gorm.DB) error {
 		  responseBody text NULL,
 		  createdAt timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 		  PRIMARY KEY (id)
-      )ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4`).Error
+      )ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci`).Error
 }
 
 // Down is executed in downgrading

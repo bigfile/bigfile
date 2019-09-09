@@ -40,7 +40,7 @@ func (c *CreateTokensTable20190803171834) Up(db *gorm.DB) error {
 		  PRIMARY KEY (id),
 		  UNIQUE INDEX uid_uq_index (uid ASC),
 		  KEY deleted_at_idx (deletedAt)
-      )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).Error
+      )ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci`).Error
 }
 
 // Down is executed in downgrading

@@ -46,7 +46,7 @@ func (c *CreateFilesTable20190820111006) Up(db *gorm.DB) error {
 		  KEY deleted_at_idx (deletedAt),
           UNIQUE appId_pid_name_unique (appId, pid, name),
 		  UNIQUE INDEX uid_UNIQUE (uid ASC))
-		ENGINE = InnoDB
+		ENGINE = InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci
 	`).Error
 }
 

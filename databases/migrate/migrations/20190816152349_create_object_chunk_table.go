@@ -37,7 +37,7 @@ func (c *CreateObjectChunkTable20190816152349) Up(db *gorm.DB) error {
 		  UNIQUE INDEX object_chunk_no_uq (objectId, chunkId, number),
           KEY objectId_idx (objectId),
           KEY chunkId_idx (chunkId)
-		)ENGINE = InnoDB
+		)ENGINE = InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci
 	`).Error
 }
 
