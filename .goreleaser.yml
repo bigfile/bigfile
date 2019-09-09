@@ -47,6 +47,5 @@ dockers:
       image_templates:
         - "bigfile/bigfile:latest"
         - "bigfile/bigfile:{{ .Tag }}"
-        - "bigfile/bigfile:{{ .Tag }}-{{ .Env.GO_VERSION }}"
         - "bigfile/bigfile:v{{ .Major }}"
       skip_push: false
