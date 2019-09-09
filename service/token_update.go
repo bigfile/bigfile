@@ -19,7 +19,7 @@ type TokenUpdate struct {
 	Token          string     `validate:"required"`
 	IP             *string    `validate:"omitempty,max=1500"`
 	Path           *string    `validate:"omitempty,max=1000"`
-	Secret         *string    `validate:"omitempty,len=32"`
+	Secret         *string    `validate:"omitempty,min=12,max=32"`
 	ReadOnly       *int8      `validate:"omitempty,oneof=0 1"`
 	ExpiredAt      *time.Time `validate:"omitempty,gt"`
 	AvailableTimes *int       `validate:"omitempty,gte=-1,max=2147483647"`

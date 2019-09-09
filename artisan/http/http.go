@@ -39,6 +39,7 @@ var (
 			Usage:     "list http routes",
 			UsageText: "http:routes",
 			Action: func(context *cli.Context) error {
+				gin.SetMode(gin.ReleaseMode)
 				table := tablewriter.NewWriter(os.Stdout)
 				table.SetHeader([]string{"method", "path", "handler"})
 				for _, route := range http.Routers().Routes() {
@@ -159,9 +160,6 @@ var (
 			Before: func(context *cli.Context) (err error) {
 				gin.SetMode(gin.ReleaseMode)
 				db := databases.MustNewConnection(&config.DefaultConfig.Database)
-				if err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DefaultConfig.Database.DBName)).Error; err != nil {
-					return
-				}
 				migrate.DefaultMC.SetConnection(db)
 				migrate.DefaultMC.Upgrade()
 				return nil

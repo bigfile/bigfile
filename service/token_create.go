@@ -19,7 +19,7 @@ type TokenCreate struct {
 	IP             *string     `validate:"omitempty,max=1500"`
 	App            *models.App `validate:"required"`
 	Path           string      `validate:"required,max=1000"`
-	Secret         *string     `validate:"omitempty,len=32"`
+	Secret         *string     `validate:"omitempty,min=12,max=32"`
 	ReadOnly       int8        `validate:"oneof=0 1"`
 	ExpiredAt      *time.Time  `validate:"omitempty,gt"`
 	AvailableTimes int         `validate:"omitempty,gte=-1,max=2147483647"`

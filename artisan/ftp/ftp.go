@@ -133,7 +133,6 @@ var (
 					ExplicitFTPS:   ctx.Bool("tls-enable"),
 					WelcomeMessage: ctx.String("welcome-message"),
 				}
-				logger.log.Debugf("ftp server is listening on %s:%d", host, port)
 				return server.NewServer(options).ListenAndServe()
 			},
 			Before: func(context *cli.Context) (err error) {

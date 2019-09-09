@@ -5,6 +5,8 @@
 package http
 
 import (
+	"testing"
+
 	"github.com/bigfile/bigfile/config"
 	"github.com/gin-gonic/gin"
 )
@@ -13,4 +15,9 @@ func init() {
 	config.DefaultConfig.HTTP.AccessLogFile = ""
 	isTesting = true
 	gin.SetMode(gin.ReleaseMode)
+}
+
+func TestSignatureCalculate(t *testing.T) {
+	_ = GetParamsSignature(map[string]interface{}{}, "")
+	_ = GetParamsSignBody(map[string]interface{}{}, "")
 }

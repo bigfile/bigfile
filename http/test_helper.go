@@ -12,6 +12,13 @@ import (
 	janitor "github.com/json-iterator/go"
 )
 
+// GetParamsSignBody is used to export getParamsSignBody, sign the
+// params and get the http post body
+var GetParamsSignBody = getParamsSignBody
+
+// GetParamsSignBody is used to get the signature of the params.
+var GetParamsSignature = getParamsSignature
+
 func assertTokenRespStructure(data interface{}) bool {
 	keys := []string{"availableTimes", "token", "ip", "readOnly", "expiredAt", "path", "secret"}
 	mData := data.(map[string]interface{})

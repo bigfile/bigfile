@@ -23,6 +23,7 @@ var ErrInvalidSortTypes = errors.New("invalid sort types, only one of type, -typ
 type directoryListInput struct {
 	Token  string  `form:"token" binding:"required"`
 	Nonce  string  `form:"nonce" header:"X-Request-Nonce" binding:"required,min=32,max=48"`
+	Sign   *string `form:"sign" binding:"omitempty"`
 	SubDir *string `form:"subDir,default=/" binding:"omitempty"`
 	Sort   *string `form:"sort,default=-type" binding:"omitempty"`
 	Limit  *int    `form:"limit,default=10" binding:"omitempty,min=10,max=20"`
@@ -99,6 +100,7 @@ func DirectoryListHandler(ctx *gin.Context) {
 	result["items"] = items
 	data = result
 	code = 200
+	success = true
 }
 
 var preDefinedSortTypes = []string{"type", "-type", "name", "-name", "time", "-time"}

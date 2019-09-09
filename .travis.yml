@@ -1,5 +1,10 @@
 language: go
 
+addons:
+  apt:
+    packages:
+      - rpm
+
 branches:
   only:
     - master
@@ -7,6 +12,7 @@ branches:
 
 services:
   - mysql
+  - docker
 
 matrix:
   fast_finish: true
@@ -48,3 +54,12 @@ script:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - test -n "$TRAVIS_TAG" && docker login -u=bigfile -p="$DOCKER_PASSWORD"
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash
+    on:
+      tags: true
+      condition: $TRAVIS_OS_NAME = linux

@@ -22,7 +22,7 @@ type tokenCreateInput struct {
 	Path           *string    `form:"path,default=/" binding:"max=1000"`
 	IP             *string    `form:"ip" binding:"omitempty,max=1500"`
 	ExpiredAt      *time.Time `form:"expiredAt" time_format:"unix" binding:"omitempty,gt"`
-	Secret         *string    `form:"secret" binding:"omitempty,len=32"`
+	Secret         *string    `form:"secret" binding:"omitempty,min=12,max=32"`
 	AvailableTimes *int       `form:"availableTimes,default=-1" binding:"omitempty,max=2147483647"`
 	ReadOnly       *bool      `form:"readOnly,default=0"`
 }

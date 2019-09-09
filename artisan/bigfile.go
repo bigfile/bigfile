@@ -45,6 +45,31 @@ var (
 				Aliases: []string{"c"},
 				EnvVars: []string{"BIGFILE_CONFIG"},
 			},
+			&cli.StringFlag{
+				Name:  "db-host",
+				Usage: "set the database host",
+				Value: "127.0.0.1",
+			},
+			&cli.UintFlag{
+				Name:  "db-port",
+				Usage: "set the database port",
+				Value: 3306,
+			},
+			&cli.StringFlag{
+				Name:  "db-user",
+				Usage: "set the database user",
+				Value: "root",
+			},
+			&cli.StringFlag{
+				Name:  "db-pass",
+				Usage: "set the database password for user",
+				Value: "root",
+			},
+			&cli.StringFlag{
+				Name:  "db-name",
+				Usage: "set the database name for bigfile",
+				Value: "bigfile",
+			},
 		},
 		Before: func(ctx *cli.Context) error {
 			var (
@@ -73,6 +98,11 @@ var (
 				}
 			} else {
 				color.Warn.Println(err.Error())
+				config.DefaultConfig.Database.Host = ctx.String("db-host")
+				config.DefaultConfig.Database.Port = uint32(ctx.Uint("db-port"))
+				config.DefaultConfig.Database.User = ctx.String("db-user")
+				config.DefaultConfig.Database.Password = ctx.String("db-pass")
+				config.DefaultConfig.Database.DBName = ctx.String("db-name")
 			}
 
 			return nil
