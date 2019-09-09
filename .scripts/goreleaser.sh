@@ -25,4 +25,4 @@ download() {
 
 download
 tar -xf "$TAR_FILE" -C "$TMPDIR"
-"${TMPDIR}/goreleaser release --skip-validate"
+"${TMPDIR}/goreleaser" release --skip-validate
