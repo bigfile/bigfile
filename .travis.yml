@@ -1,9 +1,13 @@
+dist: trusty
+sudo: required
+
 language: go
 
 addons:
   apt:
     packages:
       - rpm
+      - snapd
 
 branches:
   only:
@@ -17,9 +21,7 @@ services:
 matrix:
   fast_finish: true
   include:
-#    - go: 1.11.x
     - go: 1.12.x
-#    - go: 1.13.x
 
 env:
   global:
@@ -27,6 +29,7 @@ env:
     - BIGFILE_DEFAULT_DB_USER=root
     - BIGFILE_DEFAULT_DB_PWD=
     - BIGFILE_MODE=dev
+    - PATH=/snap/bin:$PATH
 
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
@@ -38,6 +41,7 @@ before_install:
 
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
+  - sudo snap install snapcraft --classic
 
 go_import_path: github.com/bigfile/bigfile
 
@@ -55,6 +59,8 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - test -n "$TRAVIS_TAG" && docker login -u=bigfile -p="$DOCKER_PASSWORD"
+  - test -n "$TRAVIS_TAG" && openssl aes-256-cbc -K $encrypted_2f22f80e969e_key -iv $encrypted_2f22f80e969e_iv -in snap.login.enc -out snap.login -d
+  - test -n "$TRAVIS_TAG" && snapcraft login --with snap.login
 
 deploy:
   - provider: script

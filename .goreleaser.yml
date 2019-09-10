@@ -16,6 +16,7 @@ builds:
       - darwin
       - freebsd
       - linux
+      - windows
     goarch:
       - 386
       - amd64
@@ -24,8 +25,6 @@ builds:
     goarm:
       - 6
       - 7
-    ignore:
-      - goos: windows
 
 archives:
   -
@@ -40,6 +39,15 @@ checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
   algorithm: sha256
 
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
+
 dockers:
     -
       goos: linux
@@ -49,3 +57,73 @@ dockers:
         - "bigfile/bigfile:{{ .Tag }}"
         - "bigfile/bigfile:v{{ .Major }}"
       skip_push: false
+      dockerfile: Dockerfile
+      binaries:
+        - bigfile
+      build_flag_templates:
+        - "--label=org.label-schema.schema-version=1.0"
+        - "--label=org.label-schema.version={{.Version}}"
+        - "--label=org.label-schema.name={{.ProjectName}}"
+        - "--label=com.github.actions.name={{.ProjectName}}"
+        - "--label=com.github.actions.description=a file transfer system that supports http, rpc and ftp protocols"
+        - "--label=com.github.actions.icon=terminal"
+        - "--label=com.github.actions.color=blue"
+        - "--label=repository=https://github.com/bigfile/bigfile"
+        - "--label=homepage=http://bigfile.site"
+        - "--label=maintainer=bigfilefu <bigfilefu@gmail.com>"
+brews:
+  -
+    github:
+      owner: bigfile
+      name: homebrew-tap
+    folder: Formula
+    homepage:  https://bigfile.site
+    caveats: start mysql before starting bigfile
+    description: A file transfer system that supports http, rpc and ftp protocols
+    test: |
+      system "#{bin}/bigfile -v"
+
+scoop:
+  bucket:
+    owner: bigfile
+    name: scoop-bucket
+  homepage:  https://bigfile.site
+  description: A file transfer system that supports http, rpc and ftp protocols
+  license: MIT
+
+nfpms:
+  -
+    name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage:  https://bigfile.site
+    description: A file transfer system that supports http, rpc and ftp protocols
+    maintainer: bigfilefu <bigfilefu@gmail.com>
+    license: MIT
+    vendor: Bigfile
+    formats:
+      - deb
+      - rpm
+    dependencies:
+      - git
+    recommends:
+      - rpm
+
+snapcrafts:
+  -
+    name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    summary: A file transfer system that supports http, rpc and ftp protocols
+    description: |
+      Bigfile can be used to transfer files by multiple protolcs, eg: http, rpc
+      and ftp.
+#    grade: stable
+    grade: devel
+    confinement: classic
+    publish: true
+    name: bigfile
+    license: MIT
+    replacements:
+      amd64: 64-bit
+      386: 32-bit
+      darwin: MacOS
+
+release:
+  prerelease: auto
