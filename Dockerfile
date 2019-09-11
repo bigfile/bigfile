@@ -1,5 +1,5 @@
-FROM scratch
+FROM ubuntu
 
-COPY bigfile /
+COPY bigfile /bigfile/
 
-ENTRYPOINT ["/bigfile"]
+ENTRYPOINT ["/bigfile/bigfile"]
