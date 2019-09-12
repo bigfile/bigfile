@@ -1,4 +1,4 @@
-### Bigfile
+### Bigfile ———— A Powerful File Transfer System with "逼格"
 ----
 
 <p align="center">
@@ -21,7 +21,6 @@
 In fact, we built a file organization system based on the database. Here you can find familiar files and folders.
 
 Since the rpc and http protocols are supported, those languages supported by [grpc](https://grpc.io/) and other languages can be quickly accessed.
-----
 
 ### Features
 
@@ -157,5 +156,3 @@ func main() {
 ### FTP Example
 
 ![ftp-example](https://bigfile.site/ftp-connect-succesfully.png)
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_large)
