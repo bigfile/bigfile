@@ -16,7 +16,7 @@ var DefaultConfig *Configurator
 
 func init() {
 	var (
-		dbPassword = ""
+		dbPassword = "root"
 		dbUser     = "root"
 	)
 

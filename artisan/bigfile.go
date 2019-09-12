@@ -27,12 +27,12 @@ import (
 var (
 	app = cli.App{
 		Name:     "bigfile",
-		Version:  "1.0.0-alpha-1",
+		Version:  "1.0.0",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
 				Name:  "bigfile team",
-				Email: "bigfile@gmail.com",
+				Email: "bigfilefu@gmail.com",
 			},
 		},
 		Copyright: "copyright 2019 The bigfile authors",
@@ -62,12 +62,12 @@ var (
 			},
 			&cli.StringFlag{
 				Name:  "db-pass",
-				Usage: "set the database password for user",
+				Usage: "set the database password",
 				Value: "root",
 			},
 			&cli.StringFlag{
 				Name:  "db-name",
-				Usage: "set the database name for bigfile",
+				Usage: "set the database name",
 				Value: "bigfile",
 			},
 		},

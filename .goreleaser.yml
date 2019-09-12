@@ -114,8 +114,8 @@ snapcrafts:
     description: |
       Bigfile can be used to transfer files by multiple protolcs, eg: http, rpc
       and ftp.
-#    grade: stable
-    grade: devel
+    grade: stable
+#    grade: devel
     confinement: classic
     publish: true
     name: bigfile
