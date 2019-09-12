@@ -15,10 +15,10 @@
 # vendor/
 
 /.idea
-/.bigfile.yaml
+.bigfile.yaml
 *.log
-/bigfile.key
-/bigfile.pem
+*.key
+*.pem
 /storage
 /dist
-/coverage.txt
+coverage.txt

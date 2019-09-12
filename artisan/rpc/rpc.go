@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,39 +55,14 @@ var (
 			Action:    generateCertificates,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:  "ca-cert-out",
-					Usage: "ca certificate cert save path",
-					Value: "ca.pem",
-				},
-				&cli.StringFlag{
-					Name:  "ca-key-out",
-					Usage: "ca certificate key save path",
-					Value: "ca.key",
-				},
-				&cli.StringFlag{
-					Name:  "server-cert-out",
-					Usage: "server certificate cert save path",
-					Value: "server.pem",
+					Name:  "save-to",
+					Usage: "the directory for saving certificates",
+					Value: ".",
 				},
 				&cli.StringSliceFlag{
 					Name:  "server-cert-ips",
 					Usage: "server certificate cert save path",
 					Value: cli.NewStringSlice("127.0.0.1", "0.0.0.0", "::1"),
-				},
-				&cli.StringFlag{
-					Name:  "server-key-out",
-					Usage: "server certificate key save path",
-					Value: "server.key",
-				},
-				&cli.StringFlag{
-					Name:  "client-cert-out",
-					Usage: "client certificate cert save path",
-					Value: "client.pem",
-				},
-				&cli.StringFlag{
-					Name:  "client-key-out",
-					Usage: "client certificate key save path",
-					Value: "client.key",
 				},
 			},
 		},
@@ -240,6 +216,11 @@ func generateCertAndKey(template, parent *x509.Certificate, name, crtOut, keyOut
 }
 
 func generateCertificates(ctx *cli.Context) (err error) {
+
+	var saveTo = func(name string) string {
+		return fmt.Sprintf("%s/%s", strings.TrimSuffix(ctx.String("save-to"), string(os.PathSeparator)), name)
+	}
+
 	rootCa := &x509.Certificate{
 		SerialNumber: big.NewInt(rand.Int63()),
 		Subject: pkix.Name{
@@ -255,7 +236,7 @@ func generateCertificates(ctx *cli.Context) (err error) {
 	var rootPrivateKey *rsa.PrivateKey
 
 	// generate root certificates
-	if rootPrivateKey, err = generateCertAndKey(rootCa, rootCa, "ca", ctx.String("ca-cert-out"), ctx.String("ca-key-out"), nil); err != nil {
+	if rootPrivateKey, err = generateCertAndKey(rootCa, rootCa, "ca", saveTo("ca.pem"), saveTo("ca.key"), nil); err != nil {
 		return
 	}
 
@@ -274,7 +255,7 @@ func generateCertificates(ctx *cli.Context) (err error) {
 	for _, ips := range ctx.StringSlice("server-cert-ips") {
 		serverCert.IPAddresses = append(serverCert.IPAddresses, net.ParseIP(ips))
 	}
-	if _, err = generateCertAndKey(serverCert, rootCa, "server", ctx.String("server-cert-out"), ctx.String("server-key-out"), rootPrivateKey); err != nil {
+	if _, err = generateCertAndKey(serverCert, rootCa, "server", saveTo("server.pem"), saveTo("server.key"), rootPrivateKey); err != nil {
 		return
 	}
 
@@ -289,7 +270,7 @@ func generateCertificates(ctx *cli.Context) (err error) {
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 	}
-	if _, err = generateCertAndKey(clientCert, rootCa, "client", ctx.String("client-cert-out"), ctx.String("client-key-out"), rootPrivateKey); err != nil {
+	if _, err = generateCertAndKey(clientCert, rootCa, "client", saveTo("client.pem"), saveTo("client.key"), rootPrivateKey); err != nil {
 		return
 	}
 
