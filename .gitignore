@@ -14,11 +14,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-/.idea
+.idea/
 .bigfile.yaml
 *.log
 *.key
 *.pem
-/storage
-/dist
+storage/
+dist/
 coverage.txt

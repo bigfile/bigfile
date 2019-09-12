@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
+	libPath "path"
 
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
@@ -121,8 +121,8 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 
 	if fc.Rename == 1 {
 		var (
-			dir      = filepath.Dir(path)
-			basename = filepath.Base(path)
+			dir      = libPath.Dir(path)
+			basename = libPath.Base(path)
 		)
 		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMd5(256), basename)
 		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)

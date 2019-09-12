@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 
@@ -249,10 +249,10 @@ func (f *File) mustPath(db *gorm.DB) string {
 // if the input path ios the same as the previous path, nothing changes.
 func (f *File) MoveTo(newPath string, db *gorm.DB) (err error) {
 	var (
-		newPathDir      = filepath.Dir(newPath)
+		newPathDir      = path.Dir(newPath)
 		newPathDirFile  *File
-		newPathFileName = filepath.Base(newPath)
-		newPathExt      = strings.TrimPrefix(filepath.Ext(newPathFileName), ".")
+		newPathFileName = path.Base(newPath)
+		newPathExt      = strings.TrimPrefix(path.Ext(newPathFileName), ".")
 		previousPath    string
 	)
 
@@ -399,15 +399,15 @@ func CreateOrGetRootPath(app *App, db *gorm.DB) (*File, error) {
 }
 
 // CreateFileFromReader is used to create a file from reader.
-func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) (file *File, err error) {
+func CreateFileFromReader(app *App, savePath string, reader io.Reader, hidden int8, rootPath *string, db *gorm.DB) (file *File, err error) {
 	var (
 		object    *Object
 		parentDir *File
-		dirPrefix = filepath.Dir(path)
-		fileName  = filepath.Base(path)
+		dirPrefix = path.Dir(savePath)
+		fileName  = path.Base(savePath)
 	)
 
-	if f, err := FindFileByPathWithTrashed(app, path, db); err == nil && f.ID > 0 {
+	if f, err := FindFileByPathWithTrashed(app, savePath, db); err == nil && f.ID > 0 {
 		return nil, ErrFileExisted
 	}
 
@@ -426,7 +426,7 @@ func CreateFileFromReader(app *App, path string, reader io.Reader, hidden int8, 
 		ObjectID: object.ID,
 		Size:     object.Size,
 		Name:     fileName,
-		Ext:      strings.TrimPrefix(filepath.Ext(fileName), "."),
+		Ext:      strings.TrimPrefix(path.Ext(fileName), "."),
 		Hidden:   hidden,
 		Object:   *object,
 		App:      *app,
