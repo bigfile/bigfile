@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -75,7 +76,7 @@ func TestRouters3(t *testing.T) {
 	testDBConn = trx
 
 	config.DefaultConfig.CORSEnable = true
-	config.DefaultConfig.AccessLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("%s.txt", models.RandomWithMd5(22)))
+	config.DefaultConfig.AccessLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", models.RandomWithMd5(22)))
 	config.DefaultConfig.Log.File.Enable = false
 
 	req := httptest.NewRequest("OPTIONS", api, strings.NewReader(""))
@@ -84,6 +85,8 @@ func TestRouters3(t *testing.T) {
 	headers := w.Header()
 	assert.Equal(t, "*", headers.Get("Access-Control-Allow-Origin"))
 	assert.True(t, util.IsFile(config.DefaultConfig.AccessLogFile))
-	assert.Nil(t, os.Remove(config.DefaultConfig.AccessLogFile))
+	if runtime.GOOS != "windows" {
+		assert.Nil(t, os.Remove(config.DefaultConfig.AccessLogFile))
+	}
 	config.DefaultConfig.AccessLogFile = ""
 }
