@@ -170,7 +170,7 @@ func TestCreateFileFromReader(t *testing.T) {
 	defer func() {
 		down(t)
 		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		}
 	}()
 
@@ -212,7 +212,7 @@ func TestCreateFileFromReader2(t *testing.T) {
 	defer func() {
 		down(t)
 		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		}
 	}()
 
@@ -245,7 +245,7 @@ func TestFile_AppendFromReader(t *testing.T) {
 	defer func() {
 		down(t)
 		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		}
 	}()
 

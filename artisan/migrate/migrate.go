@@ -132,7 +132,7 @@ func (c *{{ .StructureName }}) Down(db *gorm.DB) error {
 		{
 			Name:      "migrate:upgrade",
 			Usage:     "execute migrate to upgrade database",
-			UsageText: "migrate upgrade",
+			UsageText: "migrate:upgrade",
 			Category:  cmdCategory,
 			Action: func(context *cli.Context) error {
 				migrate.DefaultMC.Upgrade()

@@ -32,20 +32,20 @@ func TestChunk_Path2(t *testing.T) {
 		path    string
 		tempDir = NewTempDirForTest()
 	)
-	defer func() { os.RemoveAll(tempDir) }()
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	chunk := &Chunk{ID: 100044}
 	path, err = chunk.Path(&tempDir)
 	assert.Nil(t, err)
-	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/100/100044")
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), strings.Join([]string{"", "100", "100044"}, string(os.PathSeparator)))
 	chunk = &Chunk{ID: 10001}
 	path, err = chunk.Path(&tempDir)
 	assert.Nil(t, err)
-	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/10/10001")
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), strings.Join([]string{"", "10", "10001"}, string(os.PathSeparator)))
 	chunk = &Chunk{ID: 100001}
 	path, err = chunk.Path(&tempDir)
 	assert.Nil(t, err)
-	assert.Equal(t, strings.TrimPrefix(path, tempDir), "/100/100001")
+	assert.Equal(t, strings.TrimPrefix(path, tempDir), strings.Join([]string{"", "100", "100001"}, string(os.PathSeparator)))
 }
 
 func TestFindChunkByHash(t *testing.T) {
@@ -85,7 +85,7 @@ func TestCreateChunkFromBytes(t *testing.T) {
 	defer func() {
 		down(t)
 		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		}
 	}()
 
