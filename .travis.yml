@@ -32,6 +32,7 @@ env:
     - PATH=/snap/bin:$PATH
 
 before_install:
+  - sudo snap install snapcraft --classic
   - test -n "$TRAVIS_TAG" && openssl aes-256-cbc -K $encrypted_27812f9c1870_key -iv $encrypted_27812f9c1870_iv -in snap.login.enc -out snap.login -d
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
   - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
@@ -42,7 +43,6 @@ before_install:
 
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
-  - sudo snap install snapcraft --classic
 
 go_import_path: github.com/bigfile/bigfile
 
