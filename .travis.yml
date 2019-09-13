@@ -59,7 +59,7 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - test -n "$TRAVIS_TAG" && docker login -u=bigfile -p="$DOCKER_PASSWORD"
-  - test -n "$TRAVIS_TAG" && openssl aes-256-cbc -K $encrypted_2f22f80e969e_key -iv $encrypted_2f22f80e969e_iv -in snap.login.enc -out snap.login -d
+  - test -n "$TRAVIS_TAG" && openssl aes-256-cbc -K $encrypted_27812f9c1870_key -iv $encrypted_27812f9c1870_iv -in snap.login.enc -out snap.login -d
   - test -n "$TRAVIS_TAG" && snapcraft login --with snap.login
 
 deploy:
