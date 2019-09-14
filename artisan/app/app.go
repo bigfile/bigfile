@@ -161,12 +161,16 @@ var Commands = []*cli.Command{
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader(headers)
 			for _, app := range apps {
+				note := ""
+				if app.Note != nil {
+					note = *app.Note
+				}
 				data = []string{
 					strconv.FormatUint(app.ID, 10),
 					app.UID,
 					app.Secret,
 					app.Name,
-					*app.Note,
+					note,
 					app.CreatedAt.Format("2006-01-02 15:04:05"),
 				}
 				if del {

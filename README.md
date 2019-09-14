@@ -22,6 +22,8 @@ In fact, we built a file organization system based on the database. Here you can
 
 Since the rpc and http protocols are supported, those languages supported by [grpc](https://grpc.io/) and other languages can be quickly accessed.
 
+More detailed documents can be found here, [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
+
 ### Features
 
 * Support HTTP(s) protocol
@@ -35,7 +37,7 @@ Since the rpc and http protocols are supported, those languages supported by [gr
 
 * Support RPC protocol
 
-* Support deploy by docker
+* Support to deploy by []docker](https://www.docker.com/)
 
 * Provide document with English and Chinese
 
