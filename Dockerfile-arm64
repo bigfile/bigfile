@@ -1,0 +1,7 @@
+FROM arm64v8/ubuntu
+
+COPY bigfile /bigfile/
+
+WORKDIR /bigfile
+
+ENTRYPOINT ["/bigfile/bigfile"]

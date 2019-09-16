@@ -27,7 +27,7 @@ import (
 var (
 	app = cli.App{
 		Name:     "bigfile",
-		Version:  "1.0.4",
+		Version:  "1.0.5",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
