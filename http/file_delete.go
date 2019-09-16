@@ -15,10 +15,11 @@ import (
 )
 
 type fileDeleteInput struct {
-	Token   string `form:"token" binding:"required"`
-	Nonce   string `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
-	FileUID string `form:"fileUid" binding:"required"`
-	Force   bool   `form:"force,default=0"  binding:"omitempty"`
+	Token   string  `form:"token" binding:"required"`
+	Nonce   string  `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
+	FileUID string  `form:"fileUid" binding:"required"`
+	Force   bool    `form:"force,default=0"  binding:"omitempty"`
+	Sign    *string `form:"sign" binding:"omitempty"`
 }
 
 // FileDeleteHandler is used to delete a file or a directory
