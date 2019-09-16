@@ -13,7 +13,9 @@ A clear and concise description of what the bug is.
 - go version:
 - bigfile version (or commit ref):
 - operating system:
-- mysql version
+- mysql version:
+- docker version:
+- cpu arch: 
 
 ## Description
 
