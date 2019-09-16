@@ -111,9 +111,11 @@ var (
 					listener           net.Listener
 				)
 				if serverCert, err = tls.LoadX509KeyPair(ctx.String("server-cert"), ctx.String("server-key")); err != nil {
+					log.MustNewLogger(nil).Errorf("load server certificates failed, %s", err)
 					return
 				}
 				if rootCaContentBytes, err = ioutil.ReadFile(ctx.String("ca-cert")); err != nil {
+					log.MustNewLogger(nil).Errorf("load ca certificates failed, %s", err)
 					return
 				}
 				if !certPool.AppendCertsFromPEM(rootCaContentBytes) {

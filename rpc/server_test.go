@@ -89,7 +89,7 @@ func TestServer_TokenCreate(t *testing.T) {
 		AppSecret:      app.Secret,
 		Path:           &wrappers.StringValue{Value: "/random"},
 		Ip:             &wrappers.StringValue{Value: "192.168.0.1"},
-		Secret:         &wrappers.StringValue{Value: models.RandomWithMd5(22)},
+		Secret:         &wrappers.StringValue{Value: models.NewSecret()},
 		AvailableTimes: &wrappers.UInt32Value{Value: 1000},
 		ReadOnly:       &wrappers.BoolValue{Value: true},
 		ExpiredAt:      &timestamp.Timestamp{Seconds: time.Now().Add(10 * time.Minute).Unix()},
@@ -98,7 +98,7 @@ func TestServer_TokenCreate(t *testing.T) {
 	assert.True(t, resp.RequestId > 0)
 	assert.Equal(t, "/random", resp.Token.Path)
 	assert.Equal(t, 32, len(resp.Token.Token))
-	assert.Equal(t, 32, len(resp.Token.Secret.GetValue()))
+	assert.Equal(t, models.SecretLength, len(resp.Token.Secret.GetValue()))
 	assert.Equal(t, int32(1000), resp.Token.AvailableTimes)
 	assert.Equal(t, "192.168.0.1", resp.Token.Ip.GetValue())
 	assert.True(t, resp.Token.ReadOnly)
