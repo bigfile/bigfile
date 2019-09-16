@@ -14,20 +14,16 @@ builds:
     binary: bigfile
     goos:
       - darwin
-      - freebsd
       - linux
       - windows
     goarch:
-      - 386
       - amd64
-      - arm
-      - arm64
-    goarm:
-      - 6
-      - 7
 
 archives:
   -
+    id: bigfile-archive
+    builds:
+      - bigfile
     format_overrides:
       - goos: windows
         format: zip
@@ -73,6 +69,8 @@ dockers:
         - "--label=maintainer=bigfilefu <bigfilefu@gmail.com>"
 brews:
   -
+    ids:
+      - bigfile-archive
     github:
       owner: bigfile
       name: homebrew-tap
