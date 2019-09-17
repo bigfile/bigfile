@@ -1,4 +1,4 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格"
+### Bigfile ———— A Powerful File Transfer System with "逼格" [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
 ----
 
 <p align="center">
@@ -22,7 +22,7 @@ In fact, we built a file organization system based on the database. Here you can
 
 Since the rpc and http protocols are supported, those languages supported by [grpc](https://grpc.io/) and other languages can be quickly accessed.
 
-More detailed documents can be found here, [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
+More detailed documents can be found here
 
 ### Features
 
