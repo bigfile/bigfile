@@ -1,4 +1,4 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格" [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
+### Bigfile ———— A Powerful File Transfer System with "逼格" [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
 ----
 
 <p align="center">
