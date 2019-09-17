@@ -32,12 +32,13 @@ More detailed documents can be found here
     * Support cors
     * Support to avoid replay attack
     * Support to validate parameter signature
+    * Support Http Single Range Protocol
 
 * Support FTP(s) protocol
 
 * Support RPC protocol
 
-* Support to deploy by []docker](https://www.docker.com/)
+* Support to deploy by [docker](https://www.docker.com/)
 
 * Provide document with English and Chinese
 
