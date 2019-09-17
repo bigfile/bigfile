@@ -34,8 +34,8 @@ env:
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
   - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
-  - go get github.com/golangci/golangci-lint/cmd/golangci-lint
-  - go get github.com/mgechev/revive
+#  - go get github.com/golangci/golangci-lint/cmd/golangci-lint
+#  - go get github.com/mgechev/revive
   - go get github.com/client9/misspell/cmd/misspell
   - go get golang.org/x/tools/cmd/goimports
 
@@ -52,8 +52,8 @@ before_script:
 script:
   - misspell -error ./
   - diff <(goimports -l .) <(printf "")
-  - diff <(revive ./...) <(printf "")
-  - golangci-lint run
+#  - diff <(revive ./...) <(printf "")
+#  - golangci-lint run
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:
