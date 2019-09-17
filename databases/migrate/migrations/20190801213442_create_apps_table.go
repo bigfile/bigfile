@@ -25,7 +25,7 @@ func (c *CreateAppsTable20190801213442) Name() string {
 // Up is executed in upgrading
 func (c *CreateAppsTable20190801213442) Up(db *gorm.DB) error {
 	return db.Exec(`
-	CREATE TABLE apps (
+	CREATE TABLE IF NOT EXISTS apps (
 	  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 	  uid char(32) not null comment 'Application unique id',
 	  secret char(32) NOT NULL COMMENT 'Application Secret',

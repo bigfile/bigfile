@@ -1,4 +1,4 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格"
+### Bigfile ———— A Powerful File Transfer System with "逼格" [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
 ----
 
 <p align="center">
@@ -23,7 +23,7 @@ In fact, we built a file organization system based on the database. Here you can
 
 Since the rpc and http protocols are supported, those languages supported by [grpc](https://grpc.io/) and other languages can be quickly accessed.
 
-More detailed documents can be found here, [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
+More detailed documents can be found here
 
 ### Features
 
@@ -33,12 +33,13 @@ More detailed documents can be found here, [中文文档](https://learnku.com/do
     * Support cors
     * Support to avoid replay attack
     * Support to validate parameter signature
+    * Support Http Single Range Protocol
 
 * Support FTP(s) protocol
 
 * Support RPC protocol
 
-* Support to deploy by []docker](https://www.docker.com/)
+* Support to deploy by [docker](https://www.docker.com/)
 
 * Provide document with English and Chinese
 
