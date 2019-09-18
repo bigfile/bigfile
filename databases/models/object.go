@@ -5,6 +5,7 @@
 package models
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -226,36 +227,55 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (ob
 	var (
 		oc         []ObjectChunk
 		size       int
+		readerBuf  = bytes.NewBuffer(nil)
 		objectHash = sha256.New()
+		readerOver bool
 	)
-	for index := 0; ; index++ {
+
+	for index := 0; ; {
 		var (
 			chunk     *Chunk
-			content   = make([]byte, ChunkSize)
+			content   = make([]byte, ChunkSize-readerBuf.Len())
 			readLen   int
 			hashState string
 		)
 		if readLen, err = reader.Read(content); err != nil {
 			if err == io.EOF {
-				break
+				readerOver = true
+			} else {
+				return nil, err
 			}
-			return nil, err
 		}
-		if chunk, err = CreateChunkFromBytes(content[:readLen], rootPath, db); err != nil {
-			return nil, err
+
+		if readLen > 0 {
+			if _, err = readerBuf.Write(content[:readLen]); err != nil {
+				return nil, err
+			}
 		}
-		if _, err := objectHash.Write(content[:readLen]); err != nil {
-			return nil, err
+
+		if (readerOver || readerBuf.Len() == ChunkSize) && readerBuf.Len() > 0 {
+			writeContent := readerBuf.Bytes()
+			if chunk, err = CreateChunkFromBytes(writeContent, rootPath, db); err != nil {
+				return nil, err
+			}
+			if _, err := objectHash.Write(writeContent); err != nil {
+				return nil, err
+			}
+			if hashState, err = sha2562.GetHashStateText(objectHash); err != nil {
+				return nil, err
+			}
+			oc = append(oc, ObjectChunk{
+				ChunkID:   chunk.ID,
+				Number:    index + 1,
+				HashState: &hashState,
+			})
+			size += len(writeContent)
+			readerBuf.Reset()
+			index++
 		}
-		if hashState, err = sha2562.GetHashStateText(objectHash); err != nil {
-			return nil, err
+		if readerOver {
+			break
 		}
-		oc = append(oc, ObjectChunk{
-			ChunkID:   chunk.ID,
-			Number:    index + 1,
-			HashState: &hashState,
-		})
-		size += readLen
 	}
 
 	if size == 0 {
