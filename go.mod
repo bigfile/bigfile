@@ -45,5 +45,3 @@ require (
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8
 	gopkg.in/yaml.v2 v2.2.2
 )
-
-replace goftp.io/server v0.0.0-20190812052725-72a57b186803 => github.com/bigfile/ftp-server v0.0.0-20190812052725-72a57b186803
