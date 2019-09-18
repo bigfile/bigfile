@@ -38,7 +38,7 @@ More detailed documents can be found here
 
 * Support RPC protocol
 
-* Support to deploy by [docker](https://www.docker.com/)
+* Support to deploy by [docker](https://hub.docker.com/r/bigfile/bigfile)
 
 * Provide document with English and Chinese
 
