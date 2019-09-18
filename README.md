@@ -8,6 +8,7 @@
     <a href="https://github.com/bigfile/bigfile"><img src="https://img.shields.io/badge/release-v1.0.6-blue"/></a>
     <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_shield"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=shield"/></a>
     <a href="https://goreportcard.com/report/github.com/bigfile/bigfile"><img src="https://goreportcard.com/badge/github.com/bigfile/bigfile"/></a>
+    <a href="https://golangci.com/r/github.com/bigfile/bigfile"><img src="https://golangci.com/badges/github.com/bigfile/bigfile.svg"/></a>
     <a href="https://www.codetriage.com/bigfile/bigfile"><img src="https://www.codetriage.com/bigfile/bigfile/badges/users.svg"/></a>
 </p>
 

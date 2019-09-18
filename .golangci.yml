@@ -1,0 +1,21 @@
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - misspell
+    - goimports
+    - golint
+    - gocyclo
+
+linters-settings:
+  gocyclo:
+    min-complexity: 35

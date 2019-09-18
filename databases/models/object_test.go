@@ -438,15 +438,14 @@ func TestObject_AppendFromReader2(t *testing.T) {
 	assert.Nil(t, trx.Save(file1).Error)
 	assert.Nil(t, trx.Save(file2).Error)
 
-	chunkSize := ChunkSize
-	randomStr = Random(uint(float64(chunkSize) * 0.12))
+	randomStr = Random(uint(ChunkSize))
 	object2, size, err = object.AppendFromReader(bytes.NewReader(randomStr), &tempDir, trx)
 	assert.Nil(t, err)
-	assert.Equal(t, int(float64(chunkSize)*0.12), size)
+	assert.Equal(t, ChunkSize, size)
 	_, err = h.Write(randomStr)
 	assert.Nil(t, err)
 	assert.Equal(t, hex.EncodeToString(h.Sum(nil)), object2.Hash)
-	assert.Equal(t, 3, object2.ChunkCount(trx))
+	assert.Equal(t, 4, object2.ChunkCount(trx))
 	oc, err = object2.LastObjectChunk(trx)
 	assert.Nil(t, err)
 	stateHash, err = sha256.NewHashWithStateText(*oc.HashState)
