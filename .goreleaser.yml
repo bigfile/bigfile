@@ -48,6 +48,7 @@ changelog:
       - '^test:'
       - Merge pull request
       - Merge branch
+      - '[skip ci]'
 
 dockers:
     -
