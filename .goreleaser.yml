@@ -57,7 +57,7 @@ dockers:
       image_templates:
         - "bigfile/bigfile:latest"
         - "bigfile/bigfile:{{ .Tag }}"
-        - "bigfile/bigfile:v{{ .Major }}"
+        - "bigfile/bigfile:v{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       skip_push: false
       dockerfile: Dockerfile
       binaries:
@@ -78,7 +78,7 @@ dockers:
       image_templates:
         - "bigfile/bigfile:latest-arm64v8"
         - "bigfile/bigfile:{{ .Tag }}-arm64v8"
-        - "bigfile/bigfile:v{{ .Major }}-arm64v8"
+        - "bigfile/bigfile:v{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64v8"
       skip_push: false
       dockerfile: Dockerfile-arm64v8
       binaries:
