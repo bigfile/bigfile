@@ -34,10 +34,7 @@ env:
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
   - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
-#  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
   - go get -u github.com/mgechev/revive
-  - go get -u github.com/client9/misspell/cmd/misspell
-  - go get -u golang.org/x/tools/cmd/goimports
 
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
@@ -50,10 +47,7 @@ before_script:
   - go run artisan/bigfile.go --db-pass=  migrate:refresh
 
 script:
-  - misspell -error ./
-  - diff <(goimports -l .) <(printf "")
   - diff <(revive ./...) <(printf "")
-#  - golangci-lint run
   - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:

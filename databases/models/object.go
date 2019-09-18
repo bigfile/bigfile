@@ -170,6 +170,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 		object.ObjectChunks[len(object.ObjectChunks)-1].HashState = &hashState
 	}
 
+	// read the rest of content
 	restContentBuf := bytes.NewBuffer(nil)
 	restContentReadOver := false
 	for index := lastOc.Number; ; {
