@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"hash"
 	"io"
 	"time"
@@ -98,8 +97,8 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	var (
 		lastOc     *ObjectChunk
 		stateHash  hash.Hash
-		objectSize = o.Size
 		lastChunk  *Chunk
+		objectSize = o.Size
 	)
 	if lastOc, err = o.LastObjectChunk(db); err != nil {
 		return o, readerContentLen, err
@@ -111,6 +110,7 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	if err = db.Where("objectId = ?", o.ID).Find(&object.ObjectChunks).Error; err != nil {
 		return o, readerContentLen, err
 	}
+
 	// determine if we need to copy the object
 	if o.FileCountWithTrashed(db)+db.Model(o).Association("Histories").Count() <= 1 {
 		object.ID = o.ID
@@ -127,66 +127,96 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	if lastChunk, err = o.LastChunk(db); err != nil {
 		return o, readerContentLen, err
 	}
-	fmt.Println(ChunkSize-lastChunk.Size, "lackSize")
 	if lackSize := ChunkSize - lastChunk.Size; lackSize > 0 {
 		var (
-			chunk       *Chunk
-			hashState   string
-			lackContent = make([]byte, lackSize)
-			readCount   int
+			chunk          *Chunk
+			hashState      string
+			lackContentBuf = bytes.NewBuffer(nil)
 		)
 
-		if readCount, err = reader.Read(lackContent); err != nil {
-			if err == io.EOF {
-				return o, readerContentLen, nil
+		// read until to EOF or up to lackSize
+		for {
+			var (
+				readCount   int
+				lackContent = make([]byte, lackSize-lackContentBuf.Len())
+			)
+			if readCount, err = reader.Read(lackContent); err != nil {
+				if err == io.EOF {
+					break
+				}
+			}
+			if _, err = lackContentBuf.Write(lackContent[:readCount]); err != nil {
+				return o, readerContentLen, err
+			}
+			if lackContentBuf.Len() == lackSize {
+				break
 			}
 		}
-		fmt.Println(readCount, "readCount")
-		if chunk, _, err = lastChunk.AppendBytes(lackContent[:readCount], rootPath, db); err != nil {
+
+		lackContent := lackContentBuf.Bytes()
+		if chunk, _, err = lastChunk.AppendBytes(lackContent, rootPath, db); err != nil {
 			return o, readerContentLen, err
 		}
 		if chunk.ID != lastChunk.ID {
 			object.ObjectChunks[len(object.ObjectChunks)-1].ChunkID = chunk.ID
 		}
-		if _, err := stateHash.Write(lackContent[:readCount]); err != nil {
+		if _, err := stateHash.Write(lackContent); err != nil {
 			return o, readerContentLen, err
 		}
 		if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
 			return o, readerContentLen, err
 		}
-		readerContentLen += readCount
+		readerContentLen += len(lackContent)
 		object.ObjectChunks[len(object.ObjectChunks)-1].HashState = &hashState
 	}
 
-	for index := lastOc.Number; ; index++ {
+	restContentBuf := bytes.NewBuffer(nil)
+	restContentReadOver := false
+	for index := lastOc.Number; ; {
 		var (
 			chunk     *Chunk
-			content   = make([]byte, ChunkSize)
+			content   = make([]byte, ChunkSize-restContentBuf.Len())
 			readLen   int
 			hashState string
 		)
+
 		if readLen, err = reader.Read(content); err != nil {
 			if err == io.EOF {
-				break
+				restContentReadOver = true
+			} else {
+				return o, readerContentLen, err
 			}
-			return o, readerContentLen, err
 		}
-		fmt.Println(readLen, "readLen")
-		if chunk, err = CreateChunkFromBytes(content[:readLen], rootPath, db); err != nil {
-			return o, readerContentLen, err
+
+		if readLen > 0 {
+			if _, err = restContentBuf.Write(content[:readLen]); err != nil {
+				return o, readerContentLen, err
+			}
 		}
-		if _, err := stateHash.Write(content[:readLen]); err != nil {
-			return o, readerContentLen, err
+
+		if (restContentReadOver || restContentBuf.Len() == ChunkSize) && restContentBuf.Len() > 0 {
+			writeContent := restContentBuf.Bytes()
+			if chunk, err = CreateChunkFromBytes(writeContent, rootPath, db); err != nil {
+				return o, readerContentLen, err
+			}
+			if _, err := stateHash.Write(writeContent); err != nil {
+				return o, readerContentLen, err
+			}
+			if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
+				return o, readerContentLen, err
+			}
+			object.ObjectChunks = append(object.ObjectChunks, ObjectChunk{
+				ChunkID:   chunk.ID,
+				Number:    index + 1,
+				HashState: &hashState,
+			})
+			readerContentLen += len(writeContent)
+			restContentBuf.Reset()
+			index++
 		}
-		if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
-			return o, readerContentLen, err
+		if restContentReadOver {
+			break
 		}
-		object.ObjectChunks = append(object.ObjectChunks, ObjectChunk{
-			ChunkID:   chunk.ID,
-			Number:    index + 1,
-			HashState: &hashState,
-		})
-		readerContentLen += readLen
 	}
 
 	objectHashValue := hex.EncodeToString(stateHash.Sum(nil))
