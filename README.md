@@ -1,15 +1,14 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格" [中文文档](https://learnku.com/docs/bigfile)，[English Doc](https://bigfile.site)
+### Bigfile ———— A Powerful File Transfer System with "逼格" [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
 ----
 
 <p align="center">
     <a href="https://travis-ci.org/bigfile/bigfile"><img src="https://travis-ci.org/bigfile/bigfile.svg?branch=master"/></a>
     <a href="https://codecov.io/gh/bigfile/bigfile"><img src="https://codecov.io/gh/bigfile/bigfile/branch/master/graph/badge.svg"/></a>
     <a href="https://github.com/bigfile/bigfile"><img src="https://godoc.org/github.com/bigfile/bigfile?status.svg"/></a>
+    <a href="https://github.com/bigfile/bigfile"><img src="https://img.shields.io/badge/release-v1.0.6-blue"/></a>
     <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_shield"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=shield"/></a>
     <a href="https://goreportcard.com/report/github.com/bigfile/bigfile"><img src="https://goreportcard.com/badge/github.com/bigfile/bigfile"/></a>
     <a href="https://www.codetriage.com/bigfile/bigfile"><img src="https://www.codetriage.com/bigfile/bigfile/badges/users.svg"/></a>
-    <a href="https://learnku.com/docs/bigfile"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E4%B8%AD%E6%96%87-blue"/></a>
-    <a href="https://bigfile.site"><img src="https://img.shields.io/badge/Doc-English-blue"/></a>
 </p>
 
 <p align="center">

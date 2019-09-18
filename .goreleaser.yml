@@ -19,6 +19,10 @@ builds:
     goarch:
       - amd64
       - arm64
+      - arm
+    goarm:
+      - 6
+      - 7
 
 archives:
   -
@@ -71,11 +75,11 @@ dockers:
     - goos: linux
       goarch: arm64
       image_templates:
-        - "bigfile/bigfile:latest-arm64"
-        - "bigfile/bigfile:{{ .Tag }}-arm64"
-        - "bigfile/bigfile:v{{ .Major }}-arm64"
+        - "bigfile/bigfile:latest-arm64v8"
+        - "bigfile/bigfile:{{ .Tag }}-arm64v8"
+        - "bigfile/bigfile:v{{ .Major }}-arm64v8"
       skip_push: false
-      dockerfile: Dockerfile-arm64
+      dockerfile: Dockerfile-arm64v8
       binaries:
         - bigfile
       build_flag_templates:
