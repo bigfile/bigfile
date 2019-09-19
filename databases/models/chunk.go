@@ -174,7 +174,7 @@ func CreateChunkFromBytes(p []byte, rootPath *string, db *gorm.DB) (chunk *Chunk
 		Hash: hashStr,
 	}
 
-	if err = db.Create(chunk).Error; err != nil {
+	if err = db.Set("gorm:insert_option", "ON DUPLICATE KEY UPDATE id=id").Create(chunk).Error; err != nil {
 		return nil, err
 	}
 

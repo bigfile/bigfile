@@ -126,13 +126,13 @@ func (f *File) Delete(forceDelete bool, db *gorm.DB) (err error) {
 // CanBeAccessedByToken represent whether the file can be accessed by the token
 func (f *File) CanBeAccessedByToken(token *Token, db *gorm.DB) error {
 	var (
-		err  error
-		path string
+		err error
+		p   string
 	)
-	if path, err = f.Path(db); err != nil {
+	if p, err = f.Path(db); err != nil {
 		return err
 	}
-	if !strings.HasPrefix(path, token.Path) {
+	if !strings.HasPrefix(p, token.Path) {
 		return ErrAccessDenied
 	}
 	return nil
@@ -176,22 +176,26 @@ func (f *File) Path(db *gorm.DB) (string, error) {
 	return strings.Join(parts, "/"), nil
 }
 
-// UpdateParentSize is used to update parent size. note, size may be a negative number.
+// UpdateParentSize is used to update parent directory size. note, size may be a negative number.
 func (f *File) UpdateParentSize(size int, db *gorm.DB) error {
-	f.Size += size
-	if err := db.Model(f).Update("size", f.Size).Error; err != nil {
-		return err
+	var dirIds []uint64
+	current := f
+	for {
+		current.Size += size
+		dirIds = append(dirIds, current.ID)
+		if current.PID == 0 {
+			break
+		}
+		if current.Parent == nil {
+			current.Parent = &File{}
+		}
+		if err := db.Model(current).Association("Parent").Find(current.Parent).Error; err != nil {
+			return err
+		}
+		current = current.Parent
 	}
-	if f.PID == 0 {
-		return nil
-	}
-	if f.Parent == nil {
-		f.Parent = &File{}
-	}
-	if err := db.Model(f).Association("Parent").Find(f.Parent).Error; err != nil {
-		return err
-	}
-	return f.Parent.UpdateParentSize(size, db)
+
+	return db.Model(&File{}).Where("id in (?)", dirIds).UpdateColumn("size", gorm.Expr("size + ?", size)).Error
 }
 
 func (f *File) createHistory(objectID uint64, path string, db *gorm.DB) error {
@@ -206,16 +210,16 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 	}
 
 	var (
-		path     string
+		p        string
 		object   *Object
 		sizeDiff int
 	)
 
-	if path, err = f.Path(db); err != nil {
+	if p, err = f.Path(db); err != nil {
 		return err
 	}
 
-	if err := f.createHistory(f.ObjectID, path, db); err != nil {
+	if err := f.createHistory(f.ObjectID, p, db); err != nil {
 		return err
 	}
 
@@ -241,8 +245,8 @@ func (f *File) OverWriteFromReader(reader io.Reader, hidden int8, rootPath *stri
 }
 
 func (f *File) mustPath(db *gorm.DB) string {
-	path, _ := f.Path(db)
-	return path
+	p, _ := f.Path(db)
+	return p
 }
 
 // MoveTo move file to another path, the input path must be complete and new path.
