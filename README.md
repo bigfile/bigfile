@@ -159,3 +159,5 @@ func main() {
 ### FTP Example
 
 ![ftp-example](https://bigfile.site/ftp-connect-succesfully.png)
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_large)
