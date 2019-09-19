@@ -15,6 +15,7 @@ import (
 	"github.com/bigfile/bigfile/artisan/ftp"
 	"github.com/bigfile/bigfile/artisan/http"
 	"github.com/bigfile/bigfile/artisan/migrate"
+	"github.com/bigfile/bigfile/artisan/multi"
 	"github.com/bigfile/bigfile/artisan/rpc"
 	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/log"
@@ -118,6 +119,7 @@ func main() {
 	commands = append(commands, http.Commands...)
 	commands = append(commands, rpc.Commands...)
 	commands = append(commands, ftp.Commands...)
+	commands = append(commands, multi.Commands...)
 	app.Commands = commands
 
 	sort.Sort(cli.FlagsByName(app.Flags))

@@ -42,6 +42,29 @@ More detailed documents can be found here
 
 * Provide document with English and Chinese
 
+
+### Install Bigfile
+
+There are kinds of ways to install Bigfile, you can find more detailed documentation here [English](https://bigfile.site/start/) [简体中文](https://learnku.com/docs/bigfile)
+
+### Start Bigfile
+
+1. generate certificates
+
+> bigfile rpc:make-cert
+
+2. start server
+
+>  bigfile multi:server
+>
+
+This will print some information as follows:
+
+        [2019/09/19 15:38:32.817] 56628 DEBUG  bigfile http service listening on: https://0.0.0.0:10985
+        [2019/09/19 15:38:32.818] 56628 DEBUG   Go FTP Server listening on 2121
+        [2019/09/19 15:38:32.819] 56628 DEBUG  bigfile rpc service listening on: tcp://[::]:10986
+
+
 ### HTTP Example (Token Create)
 
 ```go

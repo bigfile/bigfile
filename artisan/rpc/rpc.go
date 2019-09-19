@@ -92,13 +92,13 @@ var (
 				&cli.StringFlag{
 					Name:    "host",
 					Aliases: []string{"H"},
-					Usage:   "http service listen ip",
+					Usage:   "rpc service listen ip",
 					Value:   "0.0.0.0",
 				},
 				&cli.Int64Flag{
 					Name:    "port",
 					Aliases: []string{"P"},
-					Usage:   "http service listen port",
+					Usage:   "rpc service listen port",
 					Value:   10986,
 				},
 			},
