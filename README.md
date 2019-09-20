@@ -1,11 +1,11 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格" [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
+### Bigfile ———— a file transfer system that supports http, rpc and ftp protocol [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
 ----
 
 <p align="center">
     <a href="https://travis-ci.org/bigfile/bigfile"><img src="https://travis-ci.org/bigfile/bigfile.svg?branch=master"/></a>
     <a href="https://codecov.io/gh/bigfile/bigfile"><img src="https://codecov.io/gh/bigfile/bigfile/branch/master/graph/badge.svg"/></a>
-    <a href="https://github.com/bigfile/bigfile"><img src="https://godoc.org/github.com/bigfile/bigfile?status.svg"/></a>
-    <a href="https://github.com/bigfile/bigfile"><img src="https://img.shields.io/badge/release-v1.0.7-blue"/></a>
+    <a href="https://godoc.org/github.com/bigfile/bigfile"><img src="https://godoc.org/github.com/bigfile/bigfile?status.svg"/></a>
+    <a href="https://github.com/bigfile/bigfile"><img src="https://img.shields.io/badge/release-v1.0.9-blue"/></a>
     <a href="https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_shield"><img src="https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=shield"/></a>
     <a href="https://goreportcard.com/report/github.com/bigfile/bigfile"><img src="https://goreportcard.com/badge/github.com/bigfile/bigfile"/></a>
     <a href="https://golangci.com/r/github.com/bigfile/bigfile"><img src="https://golangci.com/badges/github.com/bigfile/bigfile.svg"/></a>
@@ -38,9 +38,32 @@ More detailed documents can be found here
 
 * Support RPC protocol
 
-* Support to deploy by [docker](https://www.docker.com/)
+* Support to deploy by [docker](https://hub.docker.com/r/bigfile/bigfile)
 
 * Provide document with English and Chinese
+
+
+### Install Bigfile
+
+There are kinds of ways to install Bigfile, you can find more detailed documentation here [English](https://bigfile.site/start/) [简体中文](https://learnku.com/docs/bigfile)
+
+### Start Bigfile
+
+1. generate certificates
+
+> bigfile rpc:make-cert
+
+2. start server
+
+>  bigfile multi:server
+>
+
+This will print some information as follows:
+
+        [2019/09/19 15:38:32.817] 56628 DEBUG  bigfile http service listening on: https://0.0.0.0:10985
+        [2019/09/19 15:38:32.818] 56628 DEBUG   Go FTP Server listening on 2121
+        [2019/09/19 15:38:32.819] 56628 DEBUG  bigfile rpc service listening on: tcp://[::]:10986
+
 
 ### HTTP Example (Token Create)
 
@@ -159,3 +182,5 @@ func main() {
 ### FTP Example
 
 ![ftp-example](https://bigfile.site/ftp-connect-succesfully.png)
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fbigfile%2Fbigfile?ref=badge_large)
