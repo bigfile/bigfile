@@ -6,6 +6,8 @@ package http
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -179,7 +181,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 		}
 	}()
 
-	trx := databases.MustNewConnection(nil).Begin()
+	trx := databases.MustNewConnection(nil).BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	testDBConn = trx
 	defer func() { trx.Rollback() }()
 

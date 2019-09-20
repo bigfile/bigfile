@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
@@ -65,7 +66,10 @@ func (fu *FileUpdate) Execute(ctx context.Context) (interface{}, error) {
 	)
 
 	if !inTrx {
-		fu.DB = fu.DB.Begin()
+		fu.DB = fu.DB.BeginTx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelReadCommitted,
+			ReadOnly:  false,
+		})
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fu.DB.Rollback()

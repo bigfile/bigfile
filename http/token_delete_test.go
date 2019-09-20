@@ -6,6 +6,8 @@ package http
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -119,7 +121,7 @@ func BenchmarkTokenDeleteHandler(b *testing.B) {
 		err error
 	)
 
-	trx = databases.MustNewConnection(nil).Begin()
+	trx = databases.MustNewConnection(nil).BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	testDBConn = trx
 	defer func() {
 		trx.Rollback()

@@ -6,6 +6,8 @@ package http
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -169,7 +171,7 @@ func BenchmarkFileUpdateHandler(b *testing.B) {
 		tempDir = models.NewTempDirForTest()
 	)
 
-	trx = databases.MustNewConnection(nil).Begin()
+	trx = databases.MustNewConnection(nil).BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	testDBConn = trx
 	testingChunkRootPath = &tempDir
 	defer func() {

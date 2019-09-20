@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/internal/util"
@@ -58,7 +59,10 @@ func (fd *FileDelete) Execute(ctx context.Context) (interface{}, error) {
 	)
 
 	if !inTrx {
-		fd.DB = fd.DB.Begin()
+		fd.DB = fd.DB.BeginTx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelReadCommitted,
+			ReadOnly:  false,
+		})
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fd.DB.Rollback()

@@ -5,6 +5,8 @@
 package models
 
 import (
+	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/bigfile/bigfile/databases"
@@ -30,7 +32,7 @@ func BenchmarkNewApp(b *testing.B) {
 			b.Fatal(err)
 		}
 	}()
-	trx := databases.MustNewConnection(nil).Begin()
+	trx := databases.MustNewConnection(nil).BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	defer func() {
 		trx.Rollback()
 	}()

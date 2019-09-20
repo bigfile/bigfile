@@ -92,12 +92,128 @@ func (o *Object) LastObjectChunk(db *gorm.DB) (*ObjectChunk, error) {
 	return &o.ObjectChunks[0], nil
 }
 
+func (o *Object) completeLastChunk(
+	reader io.Reader,
+	object *Object,
+	stateHash hash.Hash,
+	readerContentLen *int,
+	rootPath *string,
+	db *gorm.DB,
+) (err error) {
+	var lastChunk *Chunk
+	if lastChunk, err = o.LastChunk(db); err != nil {
+		return err
+	}
+	if lackSize := ChunkSize - lastChunk.Size; lackSize > 0 {
+		var (
+			chunk          *Chunk
+			hashState      string
+			lackContentBuf = bytes.NewBuffer(nil)
+		)
+
+		// read until to EOF or up to lackSize
+		for {
+			var (
+				readCount   int
+				lackContent = make([]byte, lackSize-lackContentBuf.Len())
+			)
+			if readCount, err = reader.Read(lackContent); err != nil {
+				if err == io.EOF {
+					break
+				}
+			}
+			if _, err = lackContentBuf.Write(lackContent[:readCount]); err != nil {
+				return err
+			}
+			if lackContentBuf.Len() == lackSize {
+				break
+			}
+		}
+
+		lackContent := lackContentBuf.Bytes()
+		if chunk, _, err = lastChunk.AppendBytes(lackContent, rootPath, db); err != nil {
+			return err
+		}
+		if chunk.ID != lastChunk.ID {
+			object.ObjectChunks[len(object.ObjectChunks)-1].ChunkID = chunk.ID
+		}
+		if _, err := stateHash.Write(lackContent); err != nil {
+			return err
+		}
+		if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
+			return err
+		}
+		*readerContentLen += len(lackContent)
+		object.ObjectChunks[len(object.ObjectChunks)-1].HashState = &hashState
+	}
+	return nil
+}
+
+func (o *Object) appendRestContent(
+	lastOc *ObjectChunk,
+	reader io.Reader,
+	object *Object,
+	stateHash hash.Hash,
+	readerContentLen *int,
+	rootPath *string,
+	db *gorm.DB,
+) (err error) {
+	restContentBuf := bytes.NewBuffer(nil)
+	restContentReadOver := false
+	for index := lastOc.Number; ; {
+		var (
+			chunk     *Chunk
+			content   = make([]byte, ChunkSize-restContentBuf.Len())
+			readLen   int
+			hashState string
+		)
+
+		if readLen, err = reader.Read(content); err != nil {
+			if err == io.EOF {
+				restContentReadOver = true
+			} else {
+				return err
+			}
+		}
+
+		if readLen > 0 {
+			if _, err = restContentBuf.Write(content[:readLen]); err != nil {
+				return err
+			}
+		}
+
+		if (restContentReadOver || restContentBuf.Len() == ChunkSize) && restContentBuf.Len() > 0 {
+			writeContent := restContentBuf.Bytes()
+			if chunk, err = CreateChunkFromBytes(writeContent, rootPath, db); err != nil {
+				return err
+			}
+			if _, err := stateHash.Write(writeContent); err != nil {
+				return err
+			}
+			if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
+				return err
+			}
+			object.ObjectChunks = append(object.ObjectChunks, ObjectChunk{
+				ChunkID:   chunk.ID,
+				Number:    index + 1,
+				HashState: &hashState,
+			})
+			*readerContentLen += len(writeContent)
+			restContentBuf.Reset()
+			index++
+		}
+		if restContentReadOver {
+			break
+		}
+	}
+	return nil
+}
+
 // AppendFromReader will append content from reader to object
 func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (object *Object, readerContentLen int, err error) {
 	var (
 		lastOc     *ObjectChunk
 		stateHash  hash.Hash
-		lastChunk  *Chunk
 		objectSize = o.Size
 	)
 	if lastOc, err = o.LastObjectChunk(db); err != nil {
@@ -124,100 +240,13 @@ func (o *Object) AppendFromReader(reader io.Reader, rootPath *string, db *gorm.D
 	}
 
 	// get the last chunk of object, determine if we need to complete the last chunk
-	if lastChunk, err = o.LastChunk(db); err != nil {
+	if err = o.completeLastChunk(reader, object, stateHash, &readerContentLen, rootPath, db); err != nil {
 		return o, readerContentLen, err
-	}
-	if lackSize := ChunkSize - lastChunk.Size; lackSize > 0 {
-		var (
-			chunk          *Chunk
-			hashState      string
-			lackContentBuf = bytes.NewBuffer(nil)
-		)
-
-		// read until to EOF or up to lackSize
-		for {
-			var (
-				readCount   int
-				lackContent = make([]byte, lackSize-lackContentBuf.Len())
-			)
-			if readCount, err = reader.Read(lackContent); err != nil {
-				if err == io.EOF {
-					break
-				}
-			}
-			if _, err = lackContentBuf.Write(lackContent[:readCount]); err != nil {
-				return o, readerContentLen, err
-			}
-			if lackContentBuf.Len() == lackSize {
-				break
-			}
-		}
-
-		lackContent := lackContentBuf.Bytes()
-		if chunk, _, err = lastChunk.AppendBytes(lackContent, rootPath, db); err != nil {
-			return o, readerContentLen, err
-		}
-		if chunk.ID != lastChunk.ID {
-			object.ObjectChunks[len(object.ObjectChunks)-1].ChunkID = chunk.ID
-		}
-		if _, err := stateHash.Write(lackContent); err != nil {
-			return o, readerContentLen, err
-		}
-		if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
-			return o, readerContentLen, err
-		}
-		readerContentLen += len(lackContent)
-		object.ObjectChunks[len(object.ObjectChunks)-1].HashState = &hashState
 	}
 
 	// read the rest of content
-	restContentBuf := bytes.NewBuffer(nil)
-	restContentReadOver := false
-	for index := lastOc.Number; ; {
-		var (
-			chunk     *Chunk
-			content   = make([]byte, ChunkSize-restContentBuf.Len())
-			readLen   int
-			hashState string
-		)
-
-		if readLen, err = reader.Read(content); err != nil {
-			if err == io.EOF {
-				restContentReadOver = true
-			} else {
-				return o, readerContentLen, err
-			}
-		}
-
-		if readLen > 0 {
-			if _, err = restContentBuf.Write(content[:readLen]); err != nil {
-				return o, readerContentLen, err
-			}
-		}
-
-		if (restContentReadOver || restContentBuf.Len() == ChunkSize) && restContentBuf.Len() > 0 {
-			writeContent := restContentBuf.Bytes()
-			if chunk, err = CreateChunkFromBytes(writeContent, rootPath, db); err != nil {
-				return o, readerContentLen, err
-			}
-			if _, err := stateHash.Write(writeContent); err != nil {
-				return o, readerContentLen, err
-			}
-			if hashState, err = sha2562.GetHashStateText(stateHash); err != nil {
-				return o, readerContentLen, err
-			}
-			object.ObjectChunks = append(object.ObjectChunks, ObjectChunk{
-				ChunkID:   chunk.ID,
-				Number:    index + 1,
-				HashState: &hashState,
-			})
-			readerContentLen += len(writeContent)
-			restContentBuf.Reset()
-			index++
-		}
-		if restContentReadOver {
-			break
-		}
+	if err = o.appendRestContent(lastOc, reader, object, stateHash, &readerContentLen, rootPath, db); err != nil {
+		return o, readerContentLen, err
 	}
 
 	objectHashValue := hex.EncodeToString(stateHash.Sum(nil))
@@ -253,16 +282,16 @@ func FindObjectByHash(h string, db *gorm.DB) (*Object, error) {
 	return &object, err
 }
 
-// CreateObjectFromReader reads data from reader to create an object
-func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (object *Object, err error) {
+func createChunksForObject(
+	reader io.Reader,
+	rootPath *string,
+	objectHash hash.Hash,
+	db *gorm.DB,
+) (oc []ObjectChunk, size int, err error) {
 	var (
-		oc         []ObjectChunk
-		size       int
-		readerBuf  = bytes.NewBuffer(nil)
-		objectHash = sha256.New()
 		readerOver bool
+		readerBuf  = bytes.NewBuffer(nil)
 	)
-
 	for index := 0; ; {
 		var (
 			chunk     *Chunk
@@ -272,28 +301,29 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (ob
 		)
 		if readLen, err = reader.Read(content); err != nil {
 			if err == io.EOF {
+				err = nil
 				readerOver = true
 			} else {
-				return nil, err
+				return
 			}
 		}
 
 		if readLen > 0 {
 			if _, err = readerBuf.Write(content[:readLen]); err != nil {
-				return nil, err
+				return
 			}
 		}
 
 		if (readerOver || readerBuf.Len() == ChunkSize) && readerBuf.Len() > 0 {
 			writeContent := readerBuf.Bytes()
 			if chunk, err = CreateChunkFromBytes(writeContent, rootPath, db); err != nil {
-				return nil, err
+				return
 			}
-			if _, err := objectHash.Write(writeContent); err != nil {
-				return nil, err
+			if _, err = objectHash.Write(writeContent); err != nil {
+				return
 			}
 			if hashState, err = sha2562.GetHashStateText(objectHash); err != nil {
-				return nil, err
+				return
 			}
 			oc = append(oc, ObjectChunk{
 				ChunkID:   chunk.ID,
@@ -307,6 +337,20 @@ func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (ob
 		if readerOver {
 			break
 		}
+	}
+	return
+}
+
+// CreateObjectFromReader reads data from reader to create an object
+func CreateObjectFromReader(reader io.Reader, rootPath *string, db *gorm.DB) (object *Object, err error) {
+	var (
+		oc         []ObjectChunk
+		size       int
+		objectHash = sha256.New()
+	)
+
+	if oc, size, err = createChunksForObject(reader, rootPath, objectHash, db); err != nil {
+		return nil, err
 	}
 
 	if size == 0 {
