@@ -1,4 +1,4 @@
-### Bigfile ———— A Powerful File Transfer System with "逼格" [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
+### Bigfile ———— a file transfer system that supports http, rpc and ftp protocol [简体中文](https://learnku.com/docs/bigfile) ∙ [English](https://bigfile.site)
 ----
 
 <p align="center">
