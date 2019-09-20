@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -82,7 +83,10 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 	)
 
 	if !inTrx {
-		fc.DB = fc.DB.Begin()
+		fc.DB = fc.DB.BeginTx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelReadCommitted,
+			ReadOnly:  false,
+		})
 		defer func() {
 			if reErr := recover(); reErr != nil {
 				fc.DB.Rollback()

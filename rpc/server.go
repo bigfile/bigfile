@@ -277,42 +277,15 @@ func (s *Server) TokenCreate(ctx context.Context, req *TokenCreateRequest) (resp
 	return resp, nil
 }
 
-// TokenUpdate is used to update some token
-func (s *Server) TokenUpdate(ctx context.Context, req *TokenUpdateRequest) (resp *TokenUpdateResponse, err error) {
+func createTokenUpdateSrv(req *TokenUpdateRequest, token *models.Token, db *gorm.DB) *service.TokenUpdate {
 	var (
 		ip             *string
-		db             = getDbConn()
-		app            *models.App
 		path           *string
 		secret         *string
-		token          *models.Token
-		record         *models.Request
 		readOnly       *int8
 		expiredAt      *time.Time
-		tokenUpdateSrv *service.TokenUpdate
-		tokenUpdateVal interface{}
 		availableTimes *int
 	)
-	defer func() {
-		if err != nil {
-			err = status.Error(codes.InvalidArgument, err.Error())
-		}
-	}()
-	if record, err = s.generateRequestRecord(ctx, "TokenUpdate", req, db); err != nil {
-		return resp, err
-	}
-	resp = &TokenUpdateResponse{RequestId: record.ID}
-	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
-	if app, err = fetchAPP(req.AppUid, req.AppSecret, db); err != nil {
-		return
-	}
-	record.AppID = &app.ID
-	if token, err = models.FindTokenByUID(req.Token, db); err != nil {
-		return
-	}
-	if token.AppID != app.ID {
-		return resp, ErrTokenNotMatchApp
-	}
 	if s := req.GetSecret(); s != nil {
 		sv := s.GetValue()
 		secret = &sv
@@ -342,7 +315,7 @@ func (s *Server) TokenUpdate(ctx context.Context, req *TokenUpdateRequest) (resp
 		availableTimes = &av
 	}
 
-	tokenUpdateSrv = &service.TokenUpdate{
+	return &service.TokenUpdate{
 		BaseService:    service.BaseService{DB: db},
 		Token:          token.UID,
 		IP:             ip,
@@ -352,6 +325,39 @@ func (s *Server) TokenUpdate(ctx context.Context, req *TokenUpdateRequest) (resp
 		ExpiredAt:      expiredAt,
 		AvailableTimes: availableTimes,
 	}
+}
+
+// TokenUpdate is used to update some token
+func (s *Server) TokenUpdate(ctx context.Context, req *TokenUpdateRequest) (resp *TokenUpdateResponse, err error) {
+	var (
+		db             = getDbConn()
+		app            *models.App
+		token          *models.Token
+		record         *models.Request
+		tokenUpdateSrv *service.TokenUpdate
+		tokenUpdateVal interface{}
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "TokenUpdate", req, db); err != nil {
+		return resp, err
+	}
+	resp = &TokenUpdateResponse{RequestId: record.ID}
+	defer func() { s.updateRequestRecord(ctx, record, resp, err, db) }()
+	if app, err = fetchAPP(req.AppUid, req.AppSecret, db); err != nil {
+		return
+	}
+	record.AppID = &app.ID
+	if token, err = models.FindTokenByUID(req.Token, db); err != nil {
+		return
+	}
+	if token.AppID != app.ID {
+		return resp, ErrTokenNotMatchApp
+	}
+	tokenUpdateSrv = createTokenUpdateSrv(req, token, db)
 	if err = tokenUpdateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
 		return
 	}
@@ -410,6 +416,33 @@ func (s *Server) fetchToken(t string, secret *wrappers.StringValue, db *gorm.DB)
 	return token, nil
 }
 
+func createFileCreateSrv(req *FileCreateRequest, fileCreateSrv *service.FileCreate) error {
+	if req.GetCreateDir() {
+		if req.GetContent() != nil {
+			return ErrDirShouldNotHasContent
+		}
+	} else {
+		var content []byte
+		if req.Content != nil {
+			content = req.Content.GetValue()
+		}
+		fileCreateSrv.Reader = bytes.NewReader(content)
+	}
+	if req.GetOverwrite() {
+		fileCreateSrv.Overwrite = 1
+	}
+	if req.GetAppend() {
+		fileCreateSrv.Append = 1
+	}
+	if req.GetRename() {
+		fileCreateSrv.Rename = 1
+	}
+	if req.Hidden != nil && req.Hidden.GetValue() {
+		fileCreateSrv.Hidden = 1
+	}
+	return nil
+}
+
 // FileCreate is used to upload file in a stream
 func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 	var (
@@ -454,28 +487,8 @@ func (s *Server) FileCreate(stream FileCreate_FileCreateServer) (err error) {
 				Path:        req.Path,
 				IP:          record.IP,
 			}
-			if req.GetCreateDir() {
-				if req.GetContent() != nil {
-					return ErrDirShouldNotHasContent
-				}
-			} else {
-				var content []byte
-				if req.Content != nil {
-					content = req.Content.GetValue()
-				}
-				fileCreateSrv.Reader = bytes.NewReader(content)
-			}
-			if req.GetOverwrite() {
-				fileCreateSrv.Overwrite = 1
-			}
-			if req.GetAppend() {
-				fileCreateSrv.Append = 1
-			}
-			if req.GetRename() {
-				fileCreateSrv.Rename = 1
-			}
-			if req.Hidden != nil && req.Hidden.GetValue() {
-				fileCreateSrv.Hidden = 1
+			if err = createFileCreateSrv(req, fileCreateSrv); err != nil {
+				return
 			}
 			if err = fileCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
 				return

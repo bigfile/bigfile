@@ -94,46 +94,13 @@ func FileCreateHandler(ctx *gin.Context) {
 		// here, assign buf to reader, because the origin reader is multipart.sectionReadCloser
 		// and the content of the origin reader has exhausted
 		reader = buf
-
-		if input.Hash != nil || input.Size != nil {
-
-			if input.Size != nil && buf.Len() != *input.Size {
-				reErrors = generateErrors(errors.New("the size of file doesn't match"), "size")
-				return
-			}
-			if input.Hash != nil {
-				var (
-					h   string
-					err error
-				)
-				if h, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
-					reErrors = generateErrors(err, "")
-					return
-				}
-				if h != *input.Hash {
-					reErrors = generateErrors(errors.New("the hash of file doesn't match"), "hash")
-					return
-				}
-			}
+		if reErrors = validateHashAndSize(input, buf); reErrors != nil {
+			return
 		}
 	}
-	fileCreateSrv.Reader = reader
-	if input.Hidden != nil && *input.Hidden {
-		fileCreateSrv.Hidden = 1
-	}
-	if input.Overwrite != nil && *input.Overwrite {
-		fileCreateSrv.Overwrite = 1
-	}
-	if input.Append != nil && *input.Append {
-		fileCreateSrv.Append = 1
-	}
-	if input.Rename != nil && *input.Rename {
-		fileCreateSrv.Rename = 1
-	}
 
-	if isTesting {
-		fileCreateSrv.RootPath = testingChunkRootPath
-	}
+	fileCreateSrv.Reader = reader
+	setFileCreateSrv(input, fileCreateSrv)
 
 	if err := fileCreateSrv.Validate(); !reflect.ValueOf(err).IsNil() {
 		reErrors = generateErrors(err, "")
@@ -152,4 +119,44 @@ func FileCreateHandler(ctx *gin.Context) {
 
 	code = 200
 	success = true
+}
+
+func setFileCreateSrv(input *fileCreateInput, fileCreateSrv *service.FileCreate) {
+	if input.Hidden != nil && *input.Hidden {
+		fileCreateSrv.Hidden = 1
+	}
+	if input.Overwrite != nil && *input.Overwrite {
+		fileCreateSrv.Overwrite = 1
+	}
+	if input.Append != nil && *input.Append {
+		fileCreateSrv.Append = 1
+	}
+	if input.Rename != nil && *input.Rename {
+		fileCreateSrv.Rename = 1
+	}
+
+	if isTesting {
+		fileCreateSrv.RootPath = testingChunkRootPath
+	}
+}
+
+func validateHashAndSize(input *fileCreateInput, buf *bytes.Buffer) (reErrors map[string][]string) {
+	if input.Hash != nil || input.Size != nil {
+		if input.Size != nil && buf.Len() != *input.Size {
+			reErrors = generateErrors(errors.New("the size of file doesn't match"), "size")
+		}
+		if input.Hash != nil {
+			var (
+				h   string
+				err error
+			)
+			if h, err = util.Sha256Hash2String(buf.Bytes()); err != nil {
+				reErrors = generateErrors(err, "")
+			}
+			if h != *input.Hash {
+				reErrors = generateErrors(errors.New("the hash of file doesn't match"), "hash")
+			}
+		}
+	}
+	return
 }

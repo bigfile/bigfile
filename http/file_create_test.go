@@ -6,6 +6,8 @@ package http
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"io"
 	"math/rand"
 	"mime/multipart"
@@ -336,7 +338,7 @@ func BenchmarkFileCreateHandler(b *testing.B) {
 		formFileWriter io.Writer
 	)
 
-	trx = databases.MustNewConnection(nil).Begin()
+	trx = databases.MustNewConnection(nil).BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	testDBConn = trx
 	testingChunkRootPath = &tempDir
 	defer func() {

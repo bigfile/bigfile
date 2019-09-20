@@ -5,6 +5,8 @@
 package models
 
 import (
+	"context"
+	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,7 +41,10 @@ var (
 func setUpTestCaseWithTrx(dbConfig *config.Database, t *testing.T) (*gorm.DB, func(*testing.T)) {
 	defer func() { assert.Nil(t, recover()) }()
 	db := databases.MustNewConnection(dbConfig)
-	trx := db.Begin()
+	trx := db.BeginTx(context.Background(), &sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+		ReadOnly:  false,
+	})
 	return trx, func(t *testing.T) {
 		defer func() { assert.Nil(t, recover()) }()
 		trx.Rollback()

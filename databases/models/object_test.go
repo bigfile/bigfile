@@ -511,11 +511,11 @@ func TestObject_AppendFromReader4(t *testing.T) {
 		down    func(*testing.T)
 		tempDir = NewTempDirForTest()
 
-		part1       = "hello world"
+		part1       = Random(128)
 		part1Object *Object
-		part2       = "hello"
+		part2       = part1[:70]
 		part2Object *Object
-		part3       = " world"
+		part3       = part1[70:]
 		part3Object *Object
 	)
 	trx, down = setUpTestCaseWithTrx(nil, t)
@@ -526,19 +526,19 @@ func TestObject_AppendFromReader4(t *testing.T) {
 		down(t)
 	}()
 
-	part1Object, err = CreateObjectFromReader(strings.NewReader(part1), &tempDir, trx)
+	part1Object, err = CreateObjectFromReader(bytes.NewReader(part1), &tempDir, trx)
 	assert.Nil(t, err)
-	part1Hash, err := util.Sha256Hash2String([]byte(part1))
+	part1Hash, err := util.Sha256Hash2String(part1)
 	assert.Nil(t, err)
 	assert.Equal(t, part1Hash, part1Object.Hash)
 
-	part2Object, err = CreateObjectFromReader(strings.NewReader(part2), &tempDir, trx)
+	part2Object, err = CreateObjectFromReader(bytes.NewReader(part2), &tempDir, trx)
 	assert.Nil(t, err)
-	part2Hash, err := util.Sha256Hash2String([]byte(part2))
+	part2Hash, err := util.Sha256Hash2String(part2)
 	assert.Nil(t, err)
 	assert.Equal(t, part2Hash, part2Object.Hash)
 
-	part3Object, size, err := part2Object.AppendFromReader(strings.NewReader(part3), &tempDir, trx)
+	part3Object, size, err := part2Object.AppendFromReader(bytes.NewReader(part3), &tempDir, trx)
 	assert.Nil(t, err)
 	assert.Equal(t, size, len(part3))
 	assert.Equal(t, part3Object.ID, part1Object.ID)

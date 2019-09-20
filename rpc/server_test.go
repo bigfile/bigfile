@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -386,10 +387,11 @@ func TestServer_FileDelete(t *testing.T) {
 			os.RemoveAll(tempDir)
 		}
 	}()
+	p := "/" + path.Join("", models.RandomWithMD5(22), "r.bytes")
 	randomBytes := models.Random(222)
 	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
 	assert.Nil(t, err)
-	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, p, bytes.NewReader(randomBytes), int8(0), testRootPath, trx)
 	assert.Nil(t, err)
 
 	req := &FileDeleteRequest{
@@ -400,7 +402,7 @@ func TestServer_FileDelete(t *testing.T) {
 	s := Server{}
 	resp, err := s.FileDelete(newContext(context.Background()), req)
 	assert.Nil(t, err)
-	assert.Equal(t, "/random/r.bytes", resp.File.Path)
+	assert.Equal(t, p, resp.File.Path)
 	assert.Equal(t, randomBytesHash, resp.File.Hash.GetValue())
 	assert.NotNil(t, resp.File.GetDeletedAt())
 
