@@ -187,7 +187,7 @@ func TestFileDeleteHandler6(t *testing.T) {
 	file, err := models.CreateFileFromReader(&token.App, "/save/to/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
-	apiWithQs := fmt.Sprintf("%s?token=%s&fileUid=%s&nonce=%s", api, token.UID, file.UID, models.RandomWithMd5(222))
+	apiWithQs := fmt.Sprintf("%s?token=%s&fileUid=%s&nonce=%s", api, token.UID, file.UID, models.RandomWithMD5(222))
 	req, _ := http.NewRequest("DELETE", apiWithQs, nil)
 	Routers().ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

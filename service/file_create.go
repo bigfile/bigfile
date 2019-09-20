@@ -124,7 +124,7 @@ func (fc *FileCreate) Execute(ctx context.Context) (interface{}, error) {
 			dir      = libPath.Dir(path)
 			basename = libPath.Base(path)
 		)
-		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMd5(256), basename)
+		path = fmt.Sprintf("%s/%s_%s", dir, models.RandomWithMD5(256), basename)
 		return models.CreateFileFromReader(&fc.Token.App, path, fc.Reader, fc.Hidden, fc.RootPath, fc.DB)
 	}
 

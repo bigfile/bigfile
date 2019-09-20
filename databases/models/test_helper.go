@@ -94,5 +94,5 @@ func newArbitrarilyTokenForTest(cfg *config.Database, t *testing.T) (*Token, *go
 }
 
 func newTempDirForTest() string {
-	return filepath.Join(os.TempDir(), RandomWithMd5(512))
+	return filepath.Join(os.TempDir(), RandomWithMD5(512))
 }

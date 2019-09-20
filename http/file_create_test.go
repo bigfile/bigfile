@@ -267,7 +267,7 @@ func TestFileCreateHandler3(t *testing.T) {
 		down           func(*testing.T)
 		body           = &bytes.Buffer{}
 		token          *models.Token
-		secret         = models.RandomWithMd5(122)
+		secret         = models.RandomWithMD5(122)
 		params         map[string]interface{}
 		tempDir        = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
 		response       *Response
@@ -291,7 +291,7 @@ func TestFileCreateHandler3(t *testing.T) {
 	params = map[string]interface{}{
 		"token": token.UID,
 		"path":  "/test/create/binary/file.binary",
-		"nonce": models.RandomWithMd5(255),
+		"nonce": models.RandomWithMD5(255),
 	}
 	params["sign"] = getParamsSignature(params, secret)
 	for k, v := range params {
@@ -329,7 +329,7 @@ func BenchmarkFileCreateHandler(b *testing.B) {
 		err            error
 		body           = &bytes.Buffer{}
 		token          *models.Token
-		secret         = models.RandomWithMd5(122)
+		secret         = models.RandomWithMD5(122)
 		params         map[string]interface{}
 		tempDir        = filepath.Join(os.TempDir(), strconv.FormatInt(rand.Int63n(1<<32), 10))
 		formBodyWriter = multipart.NewWriter(body)
@@ -364,7 +364,7 @@ func BenchmarkFileCreateHandler(b *testing.B) {
 		params = map[string]interface{}{
 			"token":  token.UID,
 			"path":   "/test/create/binary/file.binary",
-			"nonce":  models.RandomWithMd5(255),
+			"nonce":  models.RandomWithMD5(255),
 			"append": "1",
 		}
 		params["sign"] = getParamsSignature(params, secret)

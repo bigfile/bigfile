@@ -21,7 +21,7 @@ func TestAuth_CheckPasswd(t *testing.T) {
 	_, err = auth.CheckPasswd(tokenPrefix, "")
 	assert.Equal(t, ErrTokenNotFound, err)
 
-	secret := models.RandomWithMd5(22)
+	secret := models.RandomWithMD5(22)
 	token.Secret = &secret
 	assert.Nil(t, trx.Model(token).Update("secret", secret).Error)
 

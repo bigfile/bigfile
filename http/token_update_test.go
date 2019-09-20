@@ -78,7 +78,7 @@ func TestTokenUpdateHandler2(t *testing.T) {
 		w    = httptest.NewRecorder()
 		api  = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/update")
 		body = fmt.Sprintf("appUid=%s&nonce=%s&token=%s",
-			app.UID, models.RandomWithMd5(128), token.UID)
+			app.UID, models.RandomWithMD5(128), token.UID)
 		sign = SignStrWithSecret(body, app.Secret)
 	)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
@@ -113,7 +113,7 @@ func TestTokenUpdateHandler3(t *testing.T) {
 		secret    = models.NewSecret()
 		body      = getParamsSignBody(map[string]interface{}{
 			"appUid":         app.UID,
-			"nonce":          models.RandomWithMd5(32),
+			"nonce":          models.RandomWithMD5(32),
 			"token":          token.UID,
 			"expiredAt":      expiredAt,
 			"ip":             "192.168.0.1",
@@ -175,7 +175,7 @@ func BenchmarkTokenUpdateHandler(b *testing.B) {
 		w := httptest.NewRecorder()
 		body := getParamsSignBody(map[string]interface{}{
 			"appUid":         app.UID,
-			"nonce":          models.RandomWithMd5(32),
+			"nonce":          models.RandomWithMD5(32),
 			"token":          token.UID,
 			"expiredAt":      expiredAt,
 			"ip":             "192.168.0.1",

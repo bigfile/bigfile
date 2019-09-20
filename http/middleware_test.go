@@ -239,7 +239,7 @@ func TestReplayAttackMiddleware2(t *testing.T) {
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	bw := &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
 	ctx.Writer = bw
-	nonce := models.RandomWithMd5(128)
+	nonce := models.RandomWithMD5(128)
 	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader("nonce="+nonce))
 	ctx.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 	app, db, down, err := models.NewAppForTest(nil, t)
@@ -365,7 +365,7 @@ func TestSignWithTokenMiddleware(t *testing.T) {
 	bw.body.Reset()
 
 	// sign wrongly
-	secret := models.RandomWithMd5(127)
+	secret := models.RandomWithMD5(127)
 	token.Secret = &secret
 	assert.Nil(t, db.Save(token).Error)
 

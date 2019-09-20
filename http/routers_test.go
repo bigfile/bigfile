@@ -57,7 +57,7 @@ func TestRouters2(t *testing.T) {
 	params := map[string]interface{}{
 		"appUid": token.App.UID,
 		"token":  token.UID,
-		"nonce":  models.RandomWithMd5(222),
+		"nonce":  models.RandomWithMD5(222),
 	}
 
 	apiWithQs := fmt.Sprintf("%s?%s", api, getParamsSignBody(params, token.App.Secret))
@@ -76,7 +76,7 @@ func TestRouters3(t *testing.T) {
 	testDBConn = trx
 
 	config.DefaultConfig.CORSEnable = true
-	config.DefaultConfig.AccessLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", models.RandomWithMd5(22)))
+	config.DefaultConfig.AccessLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("%s.log", models.RandomWithMD5(22)))
 	config.DefaultConfig.Log.File.Enable = false
 
 	req := httptest.NewRequest("OPTIONS", api, strings.NewReader(""))

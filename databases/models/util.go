@@ -35,8 +35,8 @@ func Random(length uint) []byte {
 	return r
 }
 
-// RandomWithMd5 is used to generate random and hashed by md5
-func RandomWithMd5(length uint) string {
+// RandomWithMD5 is used to generate random and hashed by md5
+func RandomWithMD5(length uint) string {
 	var (
 		b    = Random(length)
 		hash = md5.New()

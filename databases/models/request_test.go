@@ -64,7 +64,7 @@ func TestFindRequestWithAppAndNonce(t *testing.T) {
 	req, err := NewRequestWithProtocol("http", trx)
 	assert.Nil(t, err)
 	req.AppID = &app.ID
-	nonce := RandomWithMd5(128)
+	nonce := RandomWithMD5(128)
 	req.Nonce = &nonce
 	assert.Nil(t, trx.Save(req).Error)
 	reqTemp, err := FindRequestWithAppAndNonce(app, nonce, trx)

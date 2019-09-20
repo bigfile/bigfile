@@ -63,10 +63,10 @@ func main() {
 	appSecret := "f8f2ae1fe4f70b788254dcc991a35558"
 	body := http.GetParamsSignBody(map[string]interface{}{
 		"appUid":         appUid,
-		"nonce":          models.RandomWithMd5(128),
+		"nonce":          models.RandomWithMD5(128),
 		"path":           "/images/png",
 		"expiredAt":      time.Now().AddDate(0, 0, 2).Unix(),
-		"secret":         models.RandomWithMd5(44),
+		"secret":         models.RandomWithMD5(44),
 		"availableTimes": -1,
 		"readOnly":       false,
 	}, appSecret)

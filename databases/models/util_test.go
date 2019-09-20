@@ -30,8 +30,8 @@ func BenchmarkRandom(b *testing.B) {
 	}
 }
 
-func TestRandomWithMd5(t *testing.T) {
-	assert.Equal(t, len(RandomWithMd5(128)), 32)
+func TestRandomWithMD5(t *testing.T) {
+	assert.Equal(t, len(RandomWithMD5(128)), 32)
 }
 
 func TestUID(t *testing.T) {

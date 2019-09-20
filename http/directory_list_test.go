@@ -164,7 +164,7 @@ func TestDirectoryListHandler4(t *testing.T) {
 		err     error
 		down    func(*testing.T)
 		token   *models.Token
-		secret  = models.RandomWithMd5(222)
+		secret  = models.RandomWithMD5(222)
 		tempDir = models.NewTempDirForTest()
 	)
 
@@ -189,7 +189,7 @@ func TestDirectoryListHandler4(t *testing.T) {
 
 	qs := getParamsSignBody(map[string]interface{}{
 		"token":  token.UID,
-		"nonce":  models.RandomWithMd5(222),
+		"nonce":  models.RandomWithMD5(222),
 		"subDir": "/list/",
 	}, secret)
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?%s", api, qs), nil)
@@ -212,7 +212,7 @@ func BenchmarkDirectoryListHandler(b *testing.B) {
 		trx     *gorm.DB
 		err     error
 		token   *models.Token
-		secret  = models.RandomWithMd5(222)
+		secret  = models.RandomWithMD5(222)
 		tempDir = models.NewTempDirForTest()
 	)
 
@@ -248,7 +248,7 @@ func BenchmarkDirectoryListHandler(b *testing.B) {
 		w := httptest.NewRecorder()
 		qs := getParamsSignBody(map[string]interface{}{
 			"token":  token.UID,
-			"nonce":  models.RandomWithMd5(222),
+			"nonce":  models.RandomWithMD5(222),
 			"subDir": "/list/",
 		}, secret)
 		req, _ := http.NewRequest("GET", fmt.Sprintf("%s?%s", api, qs), nil)

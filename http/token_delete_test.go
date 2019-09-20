@@ -94,7 +94,7 @@ func TestTokenDeleteHandler3(t *testing.T) {
 	params := map[string]interface{}{
 		"appUid": token.App.UID,
 		"token":  token.UID,
-		"nonce":  models.RandomWithMd5(222),
+		"nonce":  models.RandomWithMD5(222),
 	}
 
 	apiWithQs := fmt.Sprintf("%s?%s", api, getParamsSignBody(params, token.App.Secret))
@@ -143,7 +143,7 @@ func BenchmarkTokenDeleteHandler(b *testing.B) {
 			params = map[string]interface{}{
 				"appUid": token.App.UID,
 				"token":  token.UID,
-				"nonce":  models.RandomWithMd5(222),
+				"nonce":  models.RandomWithMD5(222),
 			}
 		)
 		apiWithQs := fmt.Sprintf("%s?%s", api, getParamsSignBody(params, app.Secret))

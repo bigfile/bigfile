@@ -140,7 +140,7 @@ func TestServer_TokenUpdate(t *testing.T) {
 		Token:          token.UID,
 		Path:           &wrappers.StringValue{Value: "/new/path"},
 		Ip:             &wrappers.StringValue{Value: "192.168.0.2"},
-		Secret:         &wrappers.StringValue{Value: models.RandomWithMd5(233)},
+		Secret:         &wrappers.StringValue{Value: models.RandomWithMD5(233)},
 		AvailableTimes: &wrappers.UInt32Value{Value: 223},
 		ReadOnly:       &wrappers.BoolValue{Value: true},
 		ExpiredAt:      &timestamp.Timestamp{Seconds: time.Now().Add(1000 * time.Minute).Unix()},
@@ -262,7 +262,7 @@ func TestServer_FileCreate(t *testing.T) {
 	assert.Equal(t, "record not found", se.Message())
 
 	// token secret error
-	secret := models.RandomWithMd5(22)
+	secret := models.RandomWithMD5(22)
 	assert.Nil(t, trx.Model(token).Update("secret", secret).Error)
 	req.Token = token.UID
 	streamClient, _ = client.FileCreate(ctx)

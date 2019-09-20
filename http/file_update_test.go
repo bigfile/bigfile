@@ -144,7 +144,7 @@ func TestFileUpdateHandler4(t *testing.T) {
 	file, err := models.CreateFileFromReader(&token.App, "/test/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
-	body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMd5(2))
+	body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMD5(2))
 	req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
 	req.Header.Set("X-Forwarded-For", "192.168.0.1")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -200,7 +200,7 @@ func BenchmarkFileUpdateHandler(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMd5(2))
+		body := fmt.Sprintf("token=%s&fileUid=%s&path=/another/another.bytes&nonce=%s", token.UID, file.UID, models.RandomWithMD5(2))
 		req, _ := http.NewRequest("PATCH", api, strings.NewReader(body))
 		req.Header.Set("X-Forwarded-For", "192.168.0.1")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

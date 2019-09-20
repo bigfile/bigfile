@@ -53,7 +53,7 @@ func TestFindChunkByHash(t *testing.T) {
 	defer down(t)
 
 	var (
-		str     = []byte(RandomWithMd5(256))
+		str     = []byte(RandomWithMD5(256))
 		strLen  = len(str)
 		err     error
 		strHash string

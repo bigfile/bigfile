@@ -29,7 +29,7 @@ func TestTokenCreateHandler(t *testing.T) {
 		availableTimes = 1
 		path           = "/"
 		input          = &tokenCreateInput{
-			Nonce:          models.RandomWithMd5(128),
+			Nonce:          models.RandomWithMD5(128),
 			Path:           &path,
 			AvailableTimes: &availableTimes,
 			ReadOnly:       &readOnly,
@@ -73,7 +73,7 @@ func TestTokenCreateHandler2(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	api := buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/token/create")
-	body := fmt.Sprintf("appUid=%s&nonce=%s", app.UID, models.RandomWithMd5(128))
+	body := fmt.Sprintf("appUid=%s&nonce=%s", app.UID, models.RandomWithMD5(128))
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
 	req, _ := http.NewRequest("POST", api, strings.NewReader(body))
@@ -116,7 +116,7 @@ func TestTokenCreateHandler3(t *testing.T) {
 	secret := SignStrWithSecret("", "")
 	body := fmt.Sprintf(
 		"appUid=%s&availableTimes=1000&expiredAt=%d&ip=192.168.0.1&nonce=%s&path=/test&readOnly=1&secret=%s",
-		app.UID, expiredAtUnix, models.RandomWithMd5(128), secret,
+		app.UID, expiredAtUnix, models.RandomWithMD5(128), secret,
 	)
 	sign := SignStrWithSecret(body, app.Secret)
 	body = fmt.Sprintf("%s&sign=%s", body, sign)
@@ -204,7 +204,7 @@ func BenchmarkTokenCreateHandler(b *testing.B) {
 				"availableTimes": 1000,
 				"expiredAt":      expiredAtUnix,
 				"ip":             "192.168.0.1",
-				"nonce":          models.RandomWithMd5(64),
+				"nonce":          models.RandomWithMD5(64),
 				"path":           "/test",
 				"readOnly":       1,
 				"secret":         secret,
