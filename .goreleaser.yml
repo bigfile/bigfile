@@ -146,7 +146,7 @@ snapcrafts:
       and ftp.
     grade: stable
 #    grade: devel
-    confinement: classic
+    confinement: strict
     publish: true
     name: bigfile
     license: MIT
