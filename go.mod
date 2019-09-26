@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.4.1-0.20190805014259-20440b96b9ab
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
+	github.com/gographics/gmagick v1.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gookit/color v1.1.10
