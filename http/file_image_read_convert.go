@@ -22,18 +22,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// ErrWrongRangeHeader represent the http range header format error
-//var ErrWrongRangeHeader = errors.New("http range header format error")
-//
-//// ErrWrongHTTPRange represent wrong http range header
-//var ErrWrongHTTPRange = errors.New("wrong http range header, start must be less than end")
-//
 const JpegContentType = "image/jpeg"
 
 type imageFileReadInput struct {
 	Token         string  `form:"token" binding:"required"`
 	FileUID       string  `form:"fileUid" binding:"required"`
-	Type 		  string  `form:"type,default=zoom" binding:"omitempty"`
+	Type          string  `form:"type,default=zoom" binding:"omitempty"`
 	Width         string  `form:"width" binding:"required"`
 	Height        string  `form:"height" binding:"required"`
 	Left          string  `form:"left" binding:"omitempty"`
@@ -43,8 +37,8 @@ type imageFileReadInput struct {
 	OpenInBrowser bool    `form:"openInBrowser,default=0" binding:"omitempty"`
 }
 
-// FileReadHandler is used to handle file read request
-func ImageFileReadHandler(ctx *gin.Context) {
+// ImageFileConvertHandler is used to handle image convert request
+func ImageFileConvertHandler(ctx *gin.Context) {
 	var (
 		ip               = ctx.ClientIP()
 		db               = ctx.MustGet("db").(*gorm.DB)
@@ -137,12 +131,12 @@ func ImageFileReadHandler(ctx *gin.Context) {
 }
 
 func readAllImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *imageFileReadInput) {
-	ctx.Header("Accept-Ranges","bytes")
-	ctx.Header("Last-Modified",file.UpdatedAt.Format(time.RFC1123))
-	ctx.Header("Content-Disposition",fmt.Sprintf(`attachment; filename="%s"`, file.Name))
+	ctx.Header("Accept-Ranges", "bytes")
+	ctx.Header("Last-Modified", file.UpdatedAt.Format(time.RFC1123))
+	ctx.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Name))
 
 	if input.OpenInBrowser {
-		ctx.Header("Content-Disposition",fmt.Sprintf(`inline; filename="%s"`, file.Name))
+		ctx.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, file.Name))
 	}
 	ctx.Set("ignoreRespBody", true)
 
@@ -174,7 +168,7 @@ func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *imageFil
 		return
 	}
 	ctx.Set("ignoreRespBody", true)
-	res,err :=  ImageHandler(ctx,buf,input)
+	res, err := imageConvert(buf, input)
 	if err != nil {
 		ctx.JSON(400, &Response{
 			RequestID: ctx.GetInt64("requestId"),
@@ -182,84 +176,49 @@ func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *imageFil
 			Errors:    generateErrors(err, ""),
 		})
 	}
-	ctx.Data(http.StatusPartialContent, JpegContentType,res)
+	ctx.Data(http.StatusPartialContent, JpegContentType, res)
 }
 
-func imageThumb (mw *gmagick.MagickWand,width ,height float64) {
-	w := mw.GetImageWidth()
-	h := mw.GetImageHeight()
-	x := float64(w)/float64(h)
-	var	targetW,targetH uint
-	if height*x > width {
-		targetW = uint(width)
-		targetH = uint(width / x)
-	} else {
-		targetW = uint(height *x)
-		targetH = uint(height)
-	}
-	mw.ResizeImage(targetW, targetH, gmagick.FILTER_LANCZOS, 1)
-}
-
-func imageCrop (mw *gmagick.MagickWand,width ,height uint,left ,top int) {
-	mw.CropImage(width ,height ,left ,top)
-}
-
-func imageZoom (mw *gmagick.MagickWand,width ,height float64) {
-	var left,top int
-	var x,xW,xH float64
-
-	w := mw.GetImageWidth()
-	h := mw.GetImageHeight()
-	xW = float64(w)/width
-	xH = float64(h)/height
-	if xW < xH {
-		x = xW
-	} else {
-		x = xH
-	}
-	thumbWidth,thumbHeight := uint(float64(w)/x),uint(float64(h)/x)
-	mw.ResizeImage(thumbWidth, thumbHeight, gmagick.FILTER_LANCZOS, 1)
-
-	top = int(thumbHeight - uint(height))/2
-	left = int(thumbWidth - uint(width))/2
-	mw.CropImage(uint(width) , uint(height) ,left ,top)
-}
-
-func toUint(s string) uint {
-	i,e := strconv.Atoi(s)
-	if e!=nil {
-		fmt.Println(e)
-	}
-	return uint(i)
-}
-
-func ImageHandler(ctx *gin.Context,imageBuf []byte,input *imageFileReadInput) ([]byte ,error) {
-	mw := gmagick.NewMagickWand()
-	gmagick.Initialize()
+func imageConvert(imageBuf []byte, input *imageFileReadInput) ([]byte, error) {
+	gm := service.NewGm()
 	defer func() {
-		mw.Destroy()
+		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	readErr := mw.ReadImageBlob(imageBuf)
+	readErr := gm.MagickWand.ReadImageBlob(imageBuf)
 	if readErr != nil {
 		return nil, readErr
 	}
 
-	width,_ := strconv.ParseFloat(input.Width,64)
-	height,_ := strconv.ParseFloat(input.Height,64)
+	width, _ := strconv.ParseFloat(input.Width, 64)
+	height, _ := strconv.ParseFloat(input.Height, 64)
 
 	switch input.Type {
 	case "thumb":
-		imageThumb(mw,width,height)
+		if err := gm.ImageThumb(width, height); err != nil {
+			return nil, err
+		}
 	case "crop":
-		cw,ch:= toUint(input.Width),toUint(input.Height)
-		cl,_ := strconv.Atoi(input.Left)
-		ct,_ := strconv.Atoi(input.Top)
-		imageCrop(mw,cw,ch,cl,ct)
+		cw, ch := toUint(input.Width), toUint(input.Height)
+		cl, _ := strconv.Atoi(input.Left)
+		ct, _ := strconv.Atoi(input.Top)
+		if err := gm.ImageCrop(cw, ch, cl, ct); err != nil {
+			return nil, err
+		}
 	case "zoom":
-		imageZoom(mw,width,height)
+		if err := gm.ImageZoom(width, height); err != nil {
+			return nil, err
+		}
 	}
-	mw.SetImageFormat("JPEG")
 
-	return mw.WriteImageBlob(), nil
+	if err := gm.MagickWand.SetImageFormat("JPEG"); err != nil {
+		return nil, err
+	}
+
+	return gm.MagickWand.WriteImageBlob(), nil
+}
+
+func toUint(s string) uint {
+	i, _ := strconv.Atoi(s)
+	return uint(i)
 }

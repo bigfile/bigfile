@@ -73,7 +73,7 @@ func TestImageReadHandler(t *testing.T) {
 	input := ctx.MustGet("inputParam").(*imageFileReadInput)
 	input.FileUID = ""
 
-	ImageFileReadHandler(ctx)
+	ImageFileConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
@@ -90,23 +90,12 @@ func TestImageReadHandler2(t *testing.T) {
 	token.AvailableTimes = 0
 	assert.Nil(t, db.Save(token).Error)
 
-	ImageFileReadHandler(ctx)
+	ImageFileConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
 	assert.Equal(t, "the available times of token has already exhausted", response.Errors["FileRead.Token"][0])
 }
-
-//func TestImageReadHandler3(t *testing.T) {
-//	ctx, down := newImageConvertForTest(t)
-//	defer down(t)
-//	writer := ctx.Writer.(*bodyWriter)
-//	ImageFileReadHandler(ctx)
-//
-//	bodyHash, err := util.Sha256Hash2String(writer.body.Bytes())
-//	assert.Nil(t, err)
-//	assert.Equal(t, bodyHash, ctx.GetString("randomBytesHash"))
-//}
 
 func TestImageReadHandler4(t *testing.T) {
 	var (
@@ -204,7 +193,7 @@ func TestImageReadHandler6(t *testing.T) {
 	assert.NotNil(t, file.Parent)
 	input.FileUID = file.Parent.UID
 
-	ImageFileReadHandler(ctx)
+	ImageFileConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
