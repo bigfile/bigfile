@@ -24,14 +24,14 @@ import (
 
 const JpegContentType = "image/jpeg"
 
-type imageFileReadInput struct {
+type ImageConvertInput struct {
 	Token         string  `form:"token" binding:"required"`
 	FileUID       string  `form:"fileUid" binding:"required"`
 	Type          string  `form:"type,default=zoom" binding:"omitempty"`
-	Width         string  `form:"width" binding:"required"`
-	Height        string  `form:"height" binding:"required"`
-	Left          string  `form:"left" binding:"omitempty"`
-	Top           string  `form:"top" binding:"omitempty"`
+	Width         float64 `form:"width" binding:"required"`
+	Height        float64 `form:"height" binding:"required"`
+	Left          int     `form:"left,default=0" binding:"omitempty"`
+	Top           int     `form:"top,default=0" binding:"omitempty"`
 	Nonce         *string `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
 	Sign          *string `form:"sign" binding:"omitempty"`
 	OpenInBrowser bool    `form:"openInBrowser,default=0" binding:"omitempty"`
@@ -45,7 +45,7 @@ func ImageConvertHandler(ctx *gin.Context) {
 		err              error
 		file             *models.File
 		token            = ctx.MustGet("token").(*models.Token)
-		input            = ctx.MustGet("inputParam").(*imageFileReadInput)
+		input            = ctx.MustGet("inputParam").(*ImageConvertInput)
 		requestID        = ctx.GetInt64("requestId")
 		fileReadSrv      *service.FileRead
 		fileReaderSeeker io.ReadSeeker
@@ -130,7 +130,7 @@ func ImageConvertHandler(ctx *gin.Context) {
 	readRangeImage(ctx, fileReaderSeeker, file, input, rangeStart, rangeEnd)
 }
 
-func readAllImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *imageFileReadInput) {
+func readAllImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *ImageConvertInput) {
 	ctx.Header("Accept-Ranges", "bytes")
 	ctx.Header("Last-Modified", file.UpdatedAt.Format(time.RFC1123))
 	ctx.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Name))
@@ -143,7 +143,7 @@ func readAllImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.Fil
 	renderImage(ctx, readerSeeker, int64(file.Size), input)
 }
 
-func readRangeImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *imageFileReadInput, start, end int) {
+func readRangeImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.File, input *ImageConvertInput, start, end int) {
 	if _, err := readerSeeker.Seek(int64(start), io.SeekStart); err != nil {
 		ctx.JSON(400, &Response{
 			RequestID: ctx.GetInt64("requestId"),
@@ -157,7 +157,7 @@ func readRangeImage(ctx *gin.Context, readerSeeker io.ReadSeeker, file *models.F
 	renderImage(ctx, limitReader, limitSize, input)
 }
 
-func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *imageFileReadInput) {
+func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *ImageConvertInput) {
 	buf := make([]byte, size)
 	if _, err := io.ReadFull(reader, buf); err != nil {
 		ctx.JSON(400, &Response{
@@ -179,7 +179,7 @@ func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *imageFil
 	ctx.Data(http.StatusPartialContent, JpegContentType, res)
 }
 
-func imageConvert(imageBuf []byte, input *imageFileReadInput) ([]byte, error) {
+func imageConvert(imageBuf []byte, input *ImageConvertInput) ([]byte, error) {
 	gm := service.NewGm()
 	defer func() {
 		gm.MagickWand.Destroy()
@@ -190,22 +190,17 @@ func imageConvert(imageBuf []byte, input *imageFileReadInput) ([]byte, error) {
 		return nil, readErr
 	}
 
-	width, _ := strconv.ParseFloat(input.Width, 64)
-	height, _ := strconv.ParseFloat(input.Height, 64)
-
 	switch input.Type {
 	case "thumb":
-		if err := gm.ImageThumb(width, height); err != nil {
+		if err := gm.ImageThumb(input.Width, input.Height); err != nil {
 			return nil, err
 		}
 	case "crop":
-		cl, _ := strconv.Atoi(input.Left)
-		ct, _ := strconv.Atoi(input.Top)
-		if err := gm.ImageCrop(width, height, cl, ct); err != nil {
+		if err := gm.ImageCrop(input.Width, input.Height, input.Left, input.Top); err != nil {
 			return nil, err
 		}
 	case "zoom":
-		if err := gm.ImageZoom(width, height); err != nil {
+		if err := gm.ImageZoom(input.Width, input.Height); err != nil {
 			return nil, err
 		}
 	}

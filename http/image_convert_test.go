@@ -52,7 +52,7 @@ func newImageConvertForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	assert.Nil(t, err)
 
 	ctx.Set("randomBytesHash", randomBytesHash)
-	ctx.Set("inputParam", &imageFileReadInput{
+	ctx.Set("inputParam", &ImageConvertInput{
 		FileUID:       file.UID,
 		OpenInBrowser: true,
 	})
@@ -70,7 +70,7 @@ func TestImageReadHandler(t *testing.T) {
 	defer down(t)
 	writer := ctx.Writer.(*bodyWriter)
 
-	input := ctx.MustGet("inputParam").(*imageFileReadInput)
+	input := ctx.MustGet("inputParam").(*ImageConvertInput)
 	input.FileUID = ""
 
 	ImageConvertHandler(ctx)
@@ -184,7 +184,7 @@ func TestImageReadHandler6(t *testing.T) {
 	defer down(t)
 
 	writer := ctx.Writer.(*bodyWriter)
-	input := ctx.MustGet("inputParam").(*imageFileReadInput)
+	input := ctx.MustGet("inputParam").(*ImageConvertInput)
 	db := ctx.MustGet("db").(*gorm.DB)
 
 	file, err := models.FindFileByUID(input.FileUID, false, db)
