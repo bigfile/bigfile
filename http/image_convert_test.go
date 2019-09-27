@@ -73,7 +73,7 @@ func TestImageReadHandler(t *testing.T) {
 	input := ctx.MustGet("inputParam").(*imageFileReadInput)
 	input.FileUID = ""
 
-	ImageFileConvertHandler(ctx)
+	ImageConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
@@ -90,7 +90,7 @@ func TestImageReadHandler2(t *testing.T) {
 	token.AvailableTimes = 0
 	assert.Nil(t, db.Save(token).Error)
 
-	ImageFileConvertHandler(ctx)
+	ImageConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
@@ -193,7 +193,7 @@ func TestImageReadHandler6(t *testing.T) {
 	assert.NotNil(t, file.Parent)
 	input.FileUID = file.Parent.UID
 
-	ImageFileConvertHandler(ctx)
+	ImageConvertHandler(ctx)
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)

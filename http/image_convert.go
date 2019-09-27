@@ -37,8 +37,8 @@ type imageFileReadInput struct {
 	OpenInBrowser bool    `form:"openInBrowser,default=0" binding:"omitempty"`
 }
 
-// ImageFileConvertHandler is used to handle image convert request
-func ImageFileConvertHandler(ctx *gin.Context) {
+// ImageConvertHandler is used to handle image convert request
+func ImageConvertHandler(ctx *gin.Context) {
 	var (
 		ip               = ctx.ClientIP()
 		db               = ctx.MustGet("db").(*gorm.DB)
@@ -199,10 +199,9 @@ func imageConvert(imageBuf []byte, input *imageFileReadInput) ([]byte, error) {
 			return nil, err
 		}
 	case "crop":
-		cw, ch := toUint(input.Width), toUint(input.Height)
 		cl, _ := strconv.Atoi(input.Left)
 		ct, _ := strconv.Atoi(input.Top)
-		if err := gm.ImageCrop(cw, ch, cl, ct); err != nil {
+		if err := gm.ImageCrop(width, height, cl, ct); err != nil {
 			return nil, err
 		}
 	case "zoom":
@@ -216,9 +215,4 @@ func imageConvert(imageBuf []byte, input *imageFileReadInput) ([]byte, error) {
 	}
 
 	return gm.MagickWand.WriteImageBlob(), nil
-}
-
-func toUint(s string) uint {
-	i, _ := strconv.Atoi(s)
-	return uint(i)
 }

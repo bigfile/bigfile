@@ -39,8 +39,8 @@ func (gm *GM) ImageThumb(width, height float64) error {
 	return nil
 }
 
-func (gm *GM) ImageCrop(width, height uint, left, top int) error {
-	err := gm.MagickWand.CropImage(width, height, left, top)
+func (gm *GM) ImageCrop(width, height float64, left, top int) error {
+	err := gm.MagickWand.CropImage(uint(width), uint(height), left, top)
 	if err != nil {
 		return err
 	}
