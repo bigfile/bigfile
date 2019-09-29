@@ -97,5 +97,5 @@ func ImageConvertHandler(ctx *gin.Context) {
 	}
 	ctx.Set("ignoreRespBody", true)
 
-	ctx.Data(http.StatusPartialContent, JpegContentType, convertData)
+	ctx.Data(http.StatusOK, JpegContentType, convertData)
 }

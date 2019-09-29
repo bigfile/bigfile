@@ -7,6 +7,7 @@ package http
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -100,105 +101,66 @@ func TestImageReadHandler2(t *testing.T) {
 	assert.Equal(t, "the available times of token has already exhausted", response.Errors["FileRead.Token"][0])
 }
 
-func TestImageReadHandler4(t *testing.T) {
+func TestImageReadHandler3(t *testing.T) {
 	var (
 		w       = httptest.NewRecorder()
-		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/read")
+		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/image/convert")
 		trx     *gorm.DB
 		err     error
 		down    func(*testing.T)
 		token   *models.Token
 		tempDir = models.NewTempDirForTest()
 	)
-
+	f, downImg := models.NewImageForTest(t)
+	img, err := os.Open(f.Name())
+	assert.Nil(t, err)
 	testingChunkRootPath = &tempDir
 	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
 	assert.Nil(t, err)
 	testDBConn = trx
 	defer func() {
+		downImg(t)
 		down(t)
 		if util.IsDir(tempDir) {
 			os.RemoveAll(tempDir)
 		}
 	}()
 
-	randomBytes := models.Random(128)
-	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
-	assert.Nil(t, err)
-	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", img, int8(0), testingChunkRootPath, trx)
 	assert.Nil(t, err)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s", api, token.UID, file.UID), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s&width=%d&height=%d", api, token.UID, file.UID, 100, 200), nil)
 	Routers().ServeHTTP(w, req)
-	responseBodyHash, err := util.Sha256Hash2String(w.Body.Bytes())
+
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Nil(t, err)
-	assert.Equal(t, responseBodyHash, randomBytesHash)
-}
 
-func TestImageReadHandler5(t *testing.T) {
-	var (
-		w       = httptest.NewRecorder()
-		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/file/read")
-		trx     *gorm.DB
-		err     error
-		down    func(*testing.T)
-		token   *models.Token
-		secret  = models.RandomWithMD5(222)
-		tempDir = models.NewTempDirForTest()
-	)
-
-	testingChunkRootPath = &tempDir
-	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
+	c, _, err := image.DecodeConfig(bytes.NewReader(w.Body.Bytes()))
 	assert.Nil(t, err)
-	token.Secret = &secret
-	assert.Nil(t, trx.Save(token).Error)
-	testDBConn = trx
-	defer func() {
-		down(t)
-		if util.IsDir(tempDir) {
-			os.RemoveAll(tempDir)
-		}
-	}()
+	assert.Equal(t, c.Width, 100)
+	assert.Equal(t, c.Height, 200)
+	resp := w.Result()
+	assert.Equal(t, resp.Header.Get("Content-Type"), JpegContentType)
 
-	randomBytes := models.Random(128)
-	randomBytesHash, err := util.Sha256Hash2String(randomBytes)
+	var w2 = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s&type=%s&width=%d&height=%d", api, token.UID, file.UID, "thumb", 50, 100), nil)
+	Routers().ServeHTTP(w2, req)
+
+	assert.Equal(t, http.StatusOK, w2.Code)
 	assert.Nil(t, err)
-	randomBytesReader := bytes.NewReader(randomBytes)
-	file, err := models.CreateFileFromReader(&token.App, "/random.bytes", randomBytesReader, int8(0), testingChunkRootPath, trx)
+	c, _, err = image.DecodeConfig(bytes.NewReader(w2.Body.Bytes()))
 	assert.Nil(t, err)
+	assert.Equal(t, c.Width, 50)
+	assert.Equal(t, c.Height, 50)
 
-	qs := getParamsSignBody(map[string]interface{}{
-		"token":   token.UID,
-		"fileUid": file.UID,
-		"nonce":   models.RandomWithMD5(333),
-	}, secret)
+	var w3 = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s&type=%s&width=%d&height=%d&left=%d&top=%d", api, token.UID, file.UID, "crop", 100, 100, 10, 10), nil)
+	Routers().ServeHTTP(w3, req)
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s?%s", api, qs), nil)
-	Routers().ServeHTTP(w, req)
-	responseBodyHash, err := util.Sha256Hash2String(w.Body.Bytes())
+	assert.Equal(t, http.StatusOK, w3.Code)
 	assert.Nil(t, err)
-	assert.Equal(t, responseBodyHash, randomBytesHash)
-}
-
-func TestImageReadHandler6(t *testing.T) {
-	ctx, down := newImageConvertForTest(t)
-	defer down(t)
-
-	writer := ctx.Writer.(*bodyWriter)
-	input := ctx.MustGet("inputParam").(*ImageConvertInput)
-	db := ctx.MustGet("db").(*gorm.DB)
-
-	file, err := models.FindFileByUID(input.FileUID, false, db)
+	c, _, err = image.DecodeConfig(bytes.NewReader(w3.Body.Bytes()))
 	assert.Nil(t, err)
-	assert.Nil(t, db.Preload("Parent").First(file).Error)
-	assert.NotNil(t, file.Parent)
-	input.FileUID = file.Parent.UID
-
-	ImageConvertHandler(ctx)
-	response, err := parseResponse(writer.body.String())
-	assert.Nil(t, err)
-	assert.False(t, response.Success)
-	assert.Equal(t, models.ErrReadDir.Error(), response.Errors["system"][0])
+	assert.Equal(t, c.Width, 100)
+	assert.Equal(t, c.Height, 100)
 }
