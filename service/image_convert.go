@@ -5,11 +5,78 @@
 package service
 
 import (
+	"context"
+	"io"
+
+	"github.com/bigfile/bigfile/databases/models"
 	"github.com/gographics/gmagick"
+	"gopkg.in/go-playground/validator.v9"
 )
+
+// ImageConvert is used to provide convert image service
+type ImageConvert struct {
+	BaseService
+
+	Token  *models.Token `validate:"required"`
+	File   *models.File  `validate:"required"`
+	IP     *string       `validate:"omitempty"`
+	Type   string        `validate:"required"`
+	Width  float64       `validate:"required"`
+	Height float64       `validate:"required"`
+	Left   int           `validate:"omitempty"`
+	Top    int           `validate:"omitempty"`
+}
 
 type GM struct {
 	MagickWand *gmagick.MagickWand
+}
+
+// Validate is used to validate service params
+func (fr *ImageConvert) Validate() ValidateErrors {
+	var (
+		validateErrors ValidateErrors
+		errs           error
+	)
+	if errs = Validate.Struct(fr); errs != nil {
+		for _, err := range errs.(validator.ValidationErrors) {
+			validateErrors = append(validateErrors, PreDefinedValidateErrors[err.Namespace()])
+		}
+	}
+
+	if err := ValidateToken(fr.DB, fr.IP, true, fr.Token); err != nil {
+		validateErrors = append(validateErrors, generateErrorByField("FileRead.Token", err))
+	}
+
+	if err := ValidateFile(fr.DB, fr.File); err != nil {
+		validateErrors = append(validateErrors, generateErrorByField("FileRead.File", err))
+	} else {
+		if err := fr.File.CanBeAccessedByToken(fr.Token, fr.DB); err != nil {
+			validateErrors = append(validateErrors, generateErrorByField("FileRead.Token", err))
+		}
+	}
+
+	return validateErrors
+}
+
+// Execute is used to convert
+func (fr *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
+	var err error
+
+	if err = fr.Token.UpdateAvailableTimes(-1, fr.DB); err != nil {
+		return nil, err
+	}
+
+	if fr.File.Hidden == 1 {
+		return nil, ErrReadHiddenFile
+	}
+
+	fileReader, err := fr.File.Reader(fr.RootPath, fr.DB)
+
+	if fr.File.Hidden == 1 {
+		return nil, err
+	}
+
+	return ImageConvertRun(fileReader, int64(fr.File.Size), fr.Type, fr.Width, fr.Height, fr.Left, fr.Top)
 }
 
 func NewGm() *GM {
@@ -77,13 +144,18 @@ func (gm *GM) ImageZoom(width, height float64) error {
 	return nil
 }
 
-func ImageConvert(imageBuf []byte, t string, width, height float64, left, top int) ([]byte, error) {
+//convert image
+func ImageConvertRun(reader io.Reader, size int64, t string, width, height float64, left, top int) ([]byte, error) {
+	buf := make([]byte, size)
+	if _, err := io.ReadFull(reader, buf); err != nil {
+		return nil, err
+	}
 	gm := NewGm()
 	defer func() {
 		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	readErr := gm.MagickWand.ReadImageBlob(imageBuf)
+	readErr := gm.MagickWand.ReadImageBlob(buf)
 	if readErr != nil {
 		return nil, readErr
 	}

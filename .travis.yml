@@ -1,4 +1,4 @@
-dist: trusty
+dist: bionic
 sudo: required
 
 language: go
@@ -39,7 +39,7 @@ before_install:
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
   - sudo snap install snapcraft --classic
-  - sudo apt-get install libgraphicsmagick1-dev=1.3.28-2
+  - sudo apt-get install libgraphicsmagick1-dev
 
 go_import_path: github.com/bigfile/bigfile
 

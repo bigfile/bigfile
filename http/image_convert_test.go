@@ -55,6 +55,9 @@ func newImageConvertForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
 	ctx.Set("inputParam", &ImageConvertInput{
 		FileUID:       file.UID,
 		OpenInBrowser: true,
+		Type:          "zoom",
+		Width:         200,
+		Height:        200,
 	})
 
 	return ctx, func(t *testing.T) {

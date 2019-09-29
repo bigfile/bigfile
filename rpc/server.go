@@ -612,14 +612,13 @@ func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *
 // ImageConvert is used to convert image
 func (s *Server) ImageConvert(req *ImageConvertRequest, resp ImageConvert_ImageConvertServer) (err error) {
 	var (
-		db          = getDbConn()
-		ctx         = resp.Context()
-		file        *models.File
-		token       *models.Token
-		record      *models.Request
-		fileReader  io.Reader
-		fileReadSrv *service.FileRead
-		fileReadVal interface{}
+		db              = getDbConn()
+		ctx             = resp.Context()
+		file            *models.File
+		token           *models.Token
+		record          *models.Request
+		imageConvertSrv *service.ImageConvert
+		convertData     []byte
 	)
 	defer func() {
 		if err != nil {
@@ -640,38 +639,34 @@ func (s *Server) ImageConvert(req *ImageConvertRequest, resp ImageConvert_ImageC
 	if err = db.Model(record).Updates(map[string]interface{}{"appId": record.AppID, "token": record.Token}).Error; err != nil {
 		return
 	}
-	fileReadSrv = &service.FileRead{
+	imageConvertSrv = &service.ImageConvert{
 		BaseService: service.BaseService{DB: db, RootPath: testRootPath},
 		Token:       token,
 		File:        file,
 		IP:          record.IP,
+		Type:        req.Type,
+		Width:       float64(req.Width),
+		Height:      float64(req.Height),
+		Left:        int(req.Left),
+		Top:         int(req.Top),
 	}
-	if err = fileReadSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+	if err = imageConvertSrv.Validate(); !reflect.ValueOf(err).IsNil() {
 		return
 	}
-	if fileReadVal, err = fileReadSrv.Execute(ctx); err != nil {
+	if convertData, err = imageConvertSrv.Execute(ctx); err != nil {
 		return
 	}
-	fileReader = fileReadVal.(io.Reader)
 
-	buf := make([]byte, file.Size)
-	if _, err := io.ReadFull(fileReader, buf); err != nil {
-		return err
-	}
-	res, err := service.ImageConvert(buf, req.Type, float64(req.Width), float64(req.Height), int(req.Left), int(req.Top))
-	if err != nil {
-		return
-	}
-	hash, _ := util.Sha256Hash2String(res)
+	hash, _ := util.Sha256Hash2String(convertData)
 	if err = resp.SendHeader(metadata.New(map[string]string{
 		"name": file.Name,
-		"size": strconv.Itoa(len(res)),
+		"size": strconv.Itoa(len(convertData)),
 		"hash": string(hash[:]),
 	})); err != nil {
 		return
 	}
 
-	if err = resp.Send(&ImageConvertResponse{Content: res}); err != nil {
+	if err = resp.Send(&ImageConvertResponse{Content: convertData}); err != nil {
 		return
 	}
 
