@@ -34,12 +34,12 @@ env:
 before_install:
   - if [[ "${GO111MODULE}" = "on" ]]; then mkdir "${HOME}/go"; export GOPATH="${HOME}/go"; fi
   - if [[ "${GO111MODULE}" = "on" ]]; then export PATH="${GOPATH}/bin:${GOROOT}/bin:${PATH}"; fi
+  - sudo apt-get install libgraphicsmagick1-dev
 #  - go get -u github.com/mgechev/revive
 
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
   - sudo snap install snapcraft --classic
-  - sudo apt-get install libgraphicsmagick1-dev
 
 go_import_path: github.com/bigfile/bigfile
 
