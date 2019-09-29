@@ -18,7 +18,6 @@ import (
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/service"
 	"github.com/gin-gonic/gin"
-	"github.com/gographics/gmagick"
 	"github.com/jinzhu/gorm"
 )
 
@@ -180,34 +179,5 @@ func renderImage(ctx *gin.Context, reader io.Reader, size int64, input *ImageCon
 }
 
 func imageConvert(imageBuf []byte, input *ImageConvertInput) ([]byte, error) {
-	gm := service.NewGm()
-	defer func() {
-		gm.MagickWand.Destroy()
-		gmagick.Terminate()
-	}()
-	readErr := gm.MagickWand.ReadImageBlob(imageBuf)
-	if readErr != nil {
-		return nil, readErr
-	}
-
-	switch input.Type {
-	case "thumb":
-		if err := gm.ImageThumb(input.Width, input.Height); err != nil {
-			return nil, err
-		}
-	case "crop":
-		if err := gm.ImageCrop(input.Width, input.Height, input.Left, input.Top); err != nil {
-			return nil, err
-		}
-	case "zoom":
-		if err := gm.ImageZoom(input.Width, input.Height); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := gm.MagickWand.SetImageFormat("JPEG"); err != nil {
-		return nil, err
-	}
-
-	return gm.MagickWand.WriteImageBlob(), nil
+	return service.ImageConvert(imageBuf, input.Type, input.Width, input.Height, input.Left, input.Top)
 }

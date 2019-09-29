@@ -41,6 +41,7 @@ func init() {
 	RegisterTokenDeleteServer(s, server)
 	RegisterFileCreateServer(s, server)
 	RegisterFileReadServer(s, server)
+	RegisterImageConvertServer(s, server)
 	RegisterFileDeleteServer(s, server)
 	RegisterFileUpdateServer(s, server)
 	RegisterDirectoryListServer(s, server)
@@ -190,6 +191,69 @@ func ExampleServer_FileRead() {
 	if streamClient, err = client.FileRead(context.Background(), &FileReadRequest{
 		Token:   "bf0776c565412060eb93f8f307fae299",
 		FileUid: "556e3b9c936202c9dc67b7ad45530790",
+	}); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if header, err = streamClient.Header(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fileName = header.Get("name")[0]
+	fileHash = header.Get("hash")[0]
+	if fileSize, err = strconv.Atoi(header.Get("size")[0]); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("name = %s, hash = %s, size = %d\n", fileName, fileHash, fileSize)
+	dataBuffer = new(bytes.Buffer)
+	for {
+		if resp, err := streamClient.Recv(); err != nil {
+			if err != io.EOF {
+				fmt.Println(err)
+				return
+			}
+			break
+		} else {
+			if _, err = dataBuffer.Write(resp.Content); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+	}
+	if dataHash, err = util.Sha256Hash2String(dataBuffer.Bytes()); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if dataHash != fileHash {
+		fmt.Println("file is broken")
+		return
+	}
+
+	// here, you should put fileContent to a file, example:
+	// _ = ioutil.WriteFile(fileName, dataBuffer.Bytes(), 0666)
+}
+
+func ExampleServer_ImageConvert() {
+	var (
+		err          error
+		client       = NewImageConvertClient(getConn())
+		header       metadata.MD
+		fileName     string
+		fileHash     string
+		dataHash     string
+		dataBuffer   *bytes.Buffer
+		fileSize     int
+		streamClient ImageConvert_ImageConvertClient
+	)
+	if streamClient, err = client.ImageConvert(context.Background(), &ImageConvertRequest{
+		Token:   "bf0776c565412060eb93f8f307fae299",
+		FileUid: "556e3b9c936202c9dc67b7ad45530790",
+		Type:    "zoom",
+		Width:   100,
+		Height:  100,
+		Top:     0,
+		Left:    0,
 	}); err != nil {
 		fmt.Println(err)
 		return

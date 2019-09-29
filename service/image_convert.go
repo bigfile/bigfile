@@ -76,3 +76,36 @@ func (gm *GM) ImageZoom(width, height float64) error {
 
 	return nil
 }
+
+func ImageConvert(imageBuf []byte, t string, width, height float64, left, top int) ([]byte, error) {
+	gm := NewGm()
+	defer func() {
+		gm.MagickWand.Destroy()
+		gmagick.Terminate()
+	}()
+	readErr := gm.MagickWand.ReadImageBlob(imageBuf)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	switch t {
+	case "thumb":
+		if err := gm.ImageThumb(width, height); err != nil {
+			return nil, err
+		}
+	case "crop":
+		if err := gm.ImageCrop(width, height, left, top); err != nil {
+			return nil, err
+		}
+	case "zoom":
+		if err := gm.ImageZoom(width, height); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := gm.MagickWand.SetImageFormat("JPEG"); err != nil {
+		return nil, err
+	}
+
+	return gm.MagickWand.WriteImageBlob(), nil
+}

@@ -518,6 +518,96 @@ func TestServer_FileRead(t *testing.T) {
 	assert.Contains(t, statusError.Message(), models.ErrAccessDenied.Error())
 }
 
+func TestServer_ImageConvert(t *testing.T) {
+	// create image
+	img, downImg := models.NewImageForTest(t)
+	tf, err := os.Open(img.Name())
+	assert.Nil(t, err)
+	// create token
+	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
+	rootPath := models.NewTempDirForTest()
+	assert.Nil(t, err)
+	defer func() {
+		down(t)
+		downImg(t)
+		if util.IsDir(rootPath) {
+			os.RemoveAll(rootPath)
+		}
+	}()
+	testDbConn = trx
+	testRootPath = &rootPath
+
+	file, err := models.CreateFileFromReader(&token.App, "/random/r.bytes", tf, int8(0), testRootPath, trx)
+	assert.Nil(t, err)
+
+	// create server
+	const bufSize = 1024 * 1024
+	lis := bufconn.Listen(bufSize)
+	s := grpc.NewServer()
+	RegisterImageConvertServer(s, &Server{})
+	go func() { _ = s.Serve(lis) }()
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+	ctx := newContext(context.Background())
+
+	// create client
+	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	assert.Nil(t, err)
+	client := NewImageConvertClient(conn)
+	req := &ImageConvertRequest{Token: token.UID, FileUid: file.UID, Width: 100, Height: 100, Type: "zoom"}
+	streamClient, err := client.ImageConvert(ctx, req)
+	assert.Nil(t, err)
+
+	header, err := streamClient.Header()
+	assert.Nil(t, err)
+	headerSize, err := strconv.Atoi(header.Get("size")[0])
+	assert.Nil(t, err)
+	dataBuffer := new(bytes.Buffer)
+	for {
+		if resp, err := streamClient.Recv(); err != nil {
+			if err != io.EOF {
+				t.Fatal(err)
+			} else {
+				break
+			}
+		} else {
+			_, err = dataBuffer.Write(resp.Content)
+			assert.Nil(t, err)
+		}
+	}
+
+	dataHash, err := util.Sha256Hash2String(dataBuffer.Bytes())
+	assert.Nil(t, err)
+	assert.Equal(t, dataBuffer.Len(), headerSize)
+	assert.Equal(t, header.Get("hash")[0], dataHash)
+
+	req.Token = ""
+	streamClient, err = client.ImageConvert(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	req.Token = token.UID
+	req.FileUid = ""
+	streamClient, err = client.ImageConvert(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "record not found")
+
+	req.FileUid = file.UID
+	assert.Nil(t, trx.Model(token).Update("path", "/hello").Error)
+	streamClient, err = client.ImageConvert(ctx, req)
+	assert.Nil(t, err)
+	_, err = streamClient.Recv()
+	assert.NotNil(t, err)
+	statusError, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Contains(t, statusError.Message(), models.ErrAccessDenied.Error())
+}
+
 func TestServer_DirectoryList(t *testing.T) {
 	// create token
 	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)

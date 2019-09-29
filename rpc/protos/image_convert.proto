@@ -35,5 +35,5 @@ message ImageConvertResponse {
 
 // FileRead is used to delete a token
 service ImageConvert {
-    rpc fileRead (ImageConvertRequest) returns (stream ImageConvertResponse) {}
+    rpc ImageConvert (ImageConvertRequest) returns (stream ImageConvertResponse) {}
 }
