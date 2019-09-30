@@ -263,6 +263,33 @@ var (
 			Field: "DirectoryList.Limit",
 			Msg:   "the min value of limit is 10, and max of limit 20",
 		},
+
+		// ImageConvert Field error
+		"ImageConvert.Token": {
+			Code:  10036,
+			Field: "FileRead.Token",
+			Msg:   "token is required",
+		},
+		"ImageConvert.File": {
+			Code:  10037,
+			Field: "FileRead.File",
+			Msg:   "file is required",
+		},
+		"ImageConvert.Type": {
+			Code:  10038,
+			Field: "ImageConvert.Type",
+			Msg:   "type is required and is one of thumb, crop and zoom",
+		},
+		"ImageConvert.Width": {
+			Code:  10039,
+			Field: "ImageConvert.Width",
+			Msg:   "width is required and the minimum is 0",
+		},
+		"ImageConvert.Height": {
+			Code:  10040,
+			Field: "ImageConvert.Height",
+			Msg:   "height is required and the minimum is 0",
+		},
 	}
 )
 

@@ -1,4 +1,4 @@
-dist: trusty
+dist: bionic
 sudo: required
 
 language: go
@@ -39,6 +39,7 @@ before_install:
 install:
   - if [[ "${GO111MODULE}" = "on" ]]; then go mod download; fi
   - sudo snap install snapcraft --classic
+  - sudo apt-get install libgraphicsmagick1-dev
 
 go_import_path: github.com/bigfile/bigfile
 
@@ -64,3 +65,6 @@ deploy:
       tags: true
       condition: $TRAVIS_OS_NAME = linux
       all_branches: true
+
+notifications:
+  email: false

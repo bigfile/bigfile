@@ -35,7 +35,7 @@ message DirectoryListRequest {
     google.protobuf.UInt32Value offset = 6;
 }
 
-// DirectoryListResponse represent the token delete response
+// DirectoryListResponse represent the list directory request
 message DirectoryListResponse {
     uint64 request_id = 1;
     int32 total = 2;
@@ -43,7 +43,7 @@ message DirectoryListResponse {
     repeated bigfile.file.File files = 4;
 }
 
-// DirectoryList is used to delete a token
+// DirectoryList is used to list directory request
 service DirectoryList {
     rpc directoryList (DirectoryListRequest) returns (DirectoryListResponse) {}
 }

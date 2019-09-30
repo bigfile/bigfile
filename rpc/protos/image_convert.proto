@@ -16,19 +16,24 @@ option java_outer_classname = "FileReadProto";
 option java_multiple_files = true;
 option objc_class_prefix = "BPR";
 
-// FileReadRequest represent the file read request
-message FileReadRequest {
+// ImageConvertRequest represent the image convert request
+message ImageConvertRequest {
     string token = 1;
     string file_uid = 2;
+    string type = 3;
+    uint32 width = 5;
+    uint32 height = 6;
+    int32 left = 7;
+    int32 top = 8;
     google.protobuf.StringValue secret = 4;
 }
 
-// FileReadResponse represent the file read response
-message FileReadResponse {
+// ImageConvertResponse represent the image converting response
+message ImageConvertResponse {
     bytes content = 1;
 }
 
-// FileRead is used to read file
-service FileRead {
-    rpc fileRead (FileReadRequest) returns (stream FileReadResponse) {}
+// ImageConvert service is used to image convert
+service ImageConvert {
+    rpc ImageConvert (ImageConvertRequest) returns (stream ImageConvertResponse) {}
 }

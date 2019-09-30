@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bigfile/bigfile/internal/util"
+
 	"github.com/bigfile/bigfile/databases"
 	"github.com/bigfile/bigfile/databases/models"
 	"github.com/bigfile/bigfile/log"
@@ -604,6 +606,70 @@ func (s *Server) FileDelete(ctx context.Context, req *FileDeleteRequest) (resp *
 	if resp.File, err = s.fileResp(fileDeleteVal.(*models.File), db); err != nil {
 		return
 	}
+	return
+}
+
+// ImageConvert is used to convert image
+func (s *Server) ImageConvert(req *ImageConvertRequest, resp ImageConvert_ImageConvertServer) (err error) {
+	var (
+		db              = getDbConn()
+		ctx             = resp.Context()
+		file            *models.File
+		token           *models.Token
+		record          *models.Request
+		imageConvertSrv *service.ImageConvert
+		convertData     []byte
+	)
+	defer func() {
+		if err != nil {
+			err = status.Error(codes.InvalidArgument, err.Error())
+		}
+	}()
+	if record, err = s.generateRequestRecord(ctx, "ImageConvert", req, db); err != nil {
+		return
+	}
+	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
+		return
+	}
+	record.AppID = &token.App.ID
+	record.Token = &token.UID
+	if file, err = models.FindFileByUID(req.FileUid, false, db); err != nil {
+		return
+	}
+	if err = db.Model(record).Updates(map[string]interface{}{"appId": record.AppID, "token": record.Token}).Error; err != nil {
+		return
+	}
+	imageConvertSrv = &service.ImageConvert{
+		BaseService: service.BaseService{DB: db, RootPath: testRootPath},
+		Token:       token,
+		File:        file,
+		IP:          record.IP,
+		Type:        req.Type,
+		Width:       float64(req.Width),
+		Height:      float64(req.Height),
+		Left:        int(req.Left),
+		Top:         int(req.Top),
+	}
+	if err = imageConvertSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+		return
+	}
+	if convertData, err = imageConvertSrv.Execute(ctx); err != nil {
+		return
+	}
+
+	hash, _ := util.Sha256Hash2String(convertData)
+	if err = resp.SendHeader(metadata.New(map[string]string{
+		"name": file.Name,
+		"size": strconv.Itoa(len(convertData)),
+		"hash": hash,
+	})); err != nil {
+		return
+	}
+
+	if err = resp.Send(&ImageConvertResponse{Content: convertData}); err != nil {
+		return
+	}
+
 	return
 }
 

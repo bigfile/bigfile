@@ -7,6 +7,10 @@ package models
 import (
 	"context"
 	"database/sql"
+	"image"
+	"image/draw"
+	"image/jpeg"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -100,4 +104,18 @@ func newArbitrarilyTokenForTest(cfg *config.Database, t *testing.T) (*Token, *go
 
 func newTempDirForTest() string {
 	return filepath.Join(os.TempDir(), RandomWithMD5(512))
+}
+
+// NewImageForTest  create a test image for test
+func NewImageForTest(t *testing.T) (string, func(t *testing.T)) {
+	rectImage := image.NewRGBA(image.Rect(0, 0, 1000, 1000))
+	draw.Draw(rectImage, rectImage.Bounds(), image.White, image.Point{}, draw.Src)
+	file, err := ioutil.TempFile("", "tmpfile")
+	assert.Nil(t, err)
+	defer file.Close()
+	assert.Nil(t, jpeg.Encode(file, rectImage, nil))
+	return file.Name(), func(t *testing.T) {
+		defer func() { assert.Nil(t, recover()) }()
+		assert.Nil(t, os.Remove(file.Name()))
+	}
 }
