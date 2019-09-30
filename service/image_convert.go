@@ -21,8 +21,8 @@ type ImageConvert struct {
 	File   *models.File  `validate:"required"`
 	IP     *string       `validate:"omitempty"`
 	Type   string        `validate:"required"`
-	Width  float64       `validate:"required"`
-	Height float64       `validate:"required"`
+	Width  float64       `validate:"required,min=0"`
+	Height float64       `validate:"required,min=0"`
 	Left   int           `validate:"omitempty"`
 	Top    int           `validate:"omitempty"`
 }
