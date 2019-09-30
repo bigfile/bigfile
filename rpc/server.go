@@ -625,7 +625,7 @@ func (s *Server) ImageConvert(req *ImageConvertRequest, resp ImageConvert_ImageC
 			err = status.Error(codes.InvalidArgument, err.Error())
 		}
 	}()
-	if record, err = s.generateRequestRecord(ctx, "FileRead", req, db); err != nil {
+	if record, err = s.generateRequestRecord(ctx, "ImageConvert", req, db); err != nil {
 		return
 	}
 	if token, err = s.fetchToken(req.Token, req.Secret, db); err != nil {
