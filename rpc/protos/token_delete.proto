@@ -32,7 +32,7 @@ message TokenDeleteResponse {
     bigfile.token.Token token = 2;
 }
 
-// TokenDelete is used to create a token
+// TokenDelete is used to delete a token
 service TokenDelete {
     rpc tokenDelete (TokenDeleteRequest) returns (TokenDeleteResponse) {}
 }

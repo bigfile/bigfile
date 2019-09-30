@@ -42,7 +42,7 @@ message TokenUpdateResponse {
     bigfile.token.Token token = 4;
 }
 
-// TokenCreate is used to create a token
+// TokenCreate is used to update a token
 service TokenUpdate {
     rpc tokenUpdate (TokenUpdateRequest) returns (TokenUpdateResponse) {}
 }

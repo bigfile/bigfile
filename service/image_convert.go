@@ -27,6 +27,7 @@ type ImageConvert struct {
 	Top    int           `validate:"omitempty"`
 }
 
+//Encapsulates the method of converting images
 type GM struct {
 	MagickWand *gmagick.MagickWand
 }
@@ -59,6 +60,9 @@ func (fr *ImageConvert) Validate() ValidateErrors {
 }
 
 // Execute is used to convert
+// Generate thumbnails via the “ImageThumb” type
+// Generate crop via the “ImageCrop” method
+// Generate Centered zoom cut via the “ImageZoom” method
 func (fr *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 	var err error
 
@@ -79,6 +83,7 @@ func (fr *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 	return ImageConvertRun(fileReader, int64(fr.File.Size), fr.Type, fr.Width, fr.Height, fr.Left, fr.Top)
 }
 
+//init GM
 func NewGm() *GM {
 	MagickWand := gmagick.NewMagickWand()
 	gmagick.Initialize()
@@ -87,6 +92,7 @@ func NewGm() *GM {
 	}
 }
 
+// thumbnails the image
 func (gm *GM) ImageThumb(width, height float64) error {
 	w := gm.MagickWand.GetImageWidth()
 	h := gm.MagickWand.GetImageHeight()
@@ -106,6 +112,7 @@ func (gm *GM) ImageThumb(width, height float64) error {
 	return nil
 }
 
+// crop the image
 func (gm *GM) ImageCrop(width, height float64, left, top int) error {
 	err := gm.MagickWand.CropImage(uint(width), uint(height), left, top)
 	if err != nil {
@@ -114,6 +121,7 @@ func (gm *GM) ImageCrop(width, height float64, left, top int) error {
 	return nil
 }
 
+// Centered zoom cut the image
 func (gm *GM) ImageZoom(width, height float64) error {
 	var left, top int
 	var x, xW, xH float64

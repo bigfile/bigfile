@@ -16,7 +16,7 @@ option java_outer_classname = "FileReadProto";
 option java_multiple_files = true;
 option objc_class_prefix = "BPR";
 
-// FileReadRequest represent the token delete request
+// ImageConvertRequest represent the image convert request
 message ImageConvertRequest {
     string token = 1;
     string file_uid = 2;
@@ -28,12 +28,12 @@ message ImageConvertRequest {
     google.protobuf.StringValue secret = 4;
 }
 
-// FileReadResponse represent the token delete response
+// ImageConvertResponse represent the image converting response
 message ImageConvertResponse {
     bytes content = 1;
 }
 
-// FileRead is used to delete a token
+// ImageConvert service is used to image convert
 service ImageConvert {
     rpc ImageConvert (ImageConvertRequest) returns (stream ImageConvertResponse) {}
 }

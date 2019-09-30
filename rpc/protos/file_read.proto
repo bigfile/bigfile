@@ -16,19 +16,19 @@ option java_outer_classname = "FileReadProto";
 option java_multiple_files = true;
 option objc_class_prefix = "BPR";
 
-// FileReadRequest represent the token delete request
+// FileReadRequest represent the file read request
 message FileReadRequest {
     string token = 1;
     string file_uid = 2;
     google.protobuf.StringValue secret = 4;
 }
 
-// FileReadResponse represent the token delete response
+// FileReadResponse represent the file read response
 message FileReadResponse {
     bytes content = 1;
 }
 
-// FileRead is used to delete a token
+// FileRead is used to read file
 service FileRead {
     rpc fileRead (FileReadRequest) returns (stream FileReadResponse) {}
 }

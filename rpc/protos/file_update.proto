@@ -26,13 +26,13 @@ message FileUpdateRequest {
     google.protobuf.BoolValue hidden = 5;
 }
 
-// FileUpdateResponse represent the response from creating file
+// FileUpdateResponse represent the response from updating file
 message FileUpdateResponse {
     uint64 request_id = 1;
     bigfile.file.File file = 2;
 }
 
-// FileUpdate is used to create a token
+// FileUpdate is used to update file
 service FileUpdate {
     rpc fileUpdate (FileUpdateRequest) returns (FileUpdateResponse) {}
 }
