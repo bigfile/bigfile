@@ -98,7 +98,7 @@ func TestImageReadHandler2(t *testing.T) {
 	response, err := parseResponse(writer.body.String())
 	assert.Nil(t, err)
 	assert.False(t, response.Success)
-	assert.Equal(t, "the available times of token has already exhausted", response.Errors["FileRead.Token"][0])
+	assert.Equal(t, "the available times of token has already exhausted", response.Errors["ImageConvert.Token"][0])
 }
 
 func TestImageReadHandler3(t *testing.T) {

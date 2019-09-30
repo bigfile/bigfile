@@ -93,8 +93,8 @@ func TestImageConvert_Validate(t *testing.T) {
 	confirm.True(errValidate.ContainsErrCode(10038))
 	confirm.True(errValidate.ContainsErrCode(10039))
 	confirm.True(errValidate.ContainsErrCode(10040))
-	confirm.True(errValidate.ContainsErrCode(10023))
-	confirm.True(errValidate.ContainsErrCode(10024))
+	confirm.True(errValidate.ContainsErrCode(10036))
+	confirm.True(errValidate.ContainsErrCode(10037))
 	confirm.Contains(errValidate.Error(), "invalid token")
 	confirm.Contains(errValidate.Error(), "invalid file")
 

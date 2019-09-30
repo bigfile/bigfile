@@ -33,26 +33,26 @@ type GM struct {
 }
 
 // Validate is used to validate service params
-func (fr *ImageConvert) Validate() ValidateErrors {
+func (ic *ImageConvert) Validate() ValidateErrors {
 	var (
 		validateErrors ValidateErrors
 		errs           error
 	)
-	if errs = Validate.Struct(fr); errs != nil {
+	if errs = Validate.Struct(ic); errs != nil {
 		for _, err := range errs.(validator.ValidationErrors) {
 			validateErrors = append(validateErrors, PreDefinedValidateErrors[err.Namespace()])
 		}
 	}
 
-	if err := ValidateToken(fr.DB, fr.IP, true, fr.Token); err != nil {
-		validateErrors = append(validateErrors, generateErrorByField("FileRead.Token", err))
+	if err := ValidateToken(ic.DB, ic.IP, true, ic.Token); err != nil {
+		validateErrors = append(validateErrors, generateErrorByField("ImageConvert.Token", err))
 	}
 
-	if err := ValidateFile(fr.DB, fr.File); err != nil {
-		validateErrors = append(validateErrors, generateErrorByField("FileRead.File", err))
+	if err := ValidateFile(ic.DB, ic.File); err != nil {
+		validateErrors = append(validateErrors, generateErrorByField("ImageConvert.File", err))
 	} else {
-		if err := fr.File.CanBeAccessedByToken(fr.Token, fr.DB); err != nil {
-			validateErrors = append(validateErrors, generateErrorByField("FileRead.Token", err))
+		if err := ic.File.CanBeAccessedByToken(ic.Token, ic.DB); err != nil {
+			validateErrors = append(validateErrors, generateErrorByField("ImageConvert.Token", err))
 		}
 	}
 
@@ -63,27 +63,27 @@ func (fr *ImageConvert) Validate() ValidateErrors {
 // Generate thumbnails via the “ImageThumb” type
 // Generate crop via the “ImageCrop” method
 // Generate Centered zoom cut via the “ImageZoom” method
-func (fr *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
+func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 	var err error
 
-	if err = fr.Token.UpdateAvailableTimes(-1, fr.DB); err != nil {
+	if err = ic.Token.UpdateAvailableTimes(-1, ic.DB); err != nil {
 		return nil, err
 	}
 
-	if fr.File.Hidden == 1 {
+	if ic.File.Hidden == 1 {
 		return nil, ErrReadHiddenFile
 	}
 
-	fileReader, err := fr.File.Reader(fr.RootPath, fr.DB)
+	fileReader, err := ic.File.Reader(ic.RootPath, ic.DB)
 
-	if fr.File.Hidden == 1 {
+	if ic.File.Hidden == 1 {
 		return nil, err
 	}
 
-	return ImageConvertRun(fileReader, int64(fr.File.Size), fr.Type, fr.Width, fr.Height, fr.Left, fr.Top)
+	return ImageConvertRun(fileReader, int64(ic.File.Size), ic.Type, ic.Width, ic.Height, ic.Left, ic.Top)
 }
 
-//NewGm is used to init GM
+// NewGm is used to init GM
 func NewGm() *GM {
 	MagickWand := gmagick.NewMagickWand()
 	gmagick.Initialize()
@@ -113,7 +113,7 @@ func (gm *GM) ImageCrop(width, height float64, left, top int) error {
 	return gm.MagickWand.CropImage(uint(width), uint(height), left, top)
 }
 
-// ImageZoom is used to Centered zoom cut the image
+// ImageZoom is used to centered zoom cut the image
 func (gm *GM) ImageZoom(width, height float64) error {
 	var left, top int
 	var x, xW, xH float64
