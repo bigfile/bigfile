@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,6 +24,52 @@ import (
 )
 
 func newImageConvertForTest(t *testing.T) (*gin.Context, func(*testing.T)) {
+	var (
+		ctx     *gin.Context
+		trx     *gorm.DB
+		err     error
+		token   *models.Token
+		down    func(*testing.T)
+		tempDir = models.NewTempDirForTest()
+	)
+
+	testingChunkRootPath = &tempDir
+	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
+	assert.Nil(t, err)
+	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Writer = &bodyWriter{ResponseWriter: ctx.Writer, body: bytes.NewBufferString("")}
+	ctx.Request, _ = http.NewRequest("POST", "http://bigfile.io", strings.NewReader(""))
+	ctx.Request.Header.Set("X-Forwarded-For", "192.168.0.1")
+	ctx.Set("db", trx)
+	ctx.Set("token", token)
+	reqRecord := models.MustNewRequestWithProtocol("http", trx)
+	ctx.Set("reqRecord", reqRecord)
+	ctx.Set("requestId", int64(reqRecord.ID))
+
+	imageName, downImg := models.NewImageForTest(t)
+	img, err := ioutil.ReadFile(imageName)
+	assert.Nil(t, err)
+	imgReader := bytes.NewReader(img)
+	file, err := models.CreateFileFromReader(&token.App, "/random.png", imgReader, int8(0), testingChunkRootPath, trx)
+	assert.Nil(t, err)
+
+	ctx.Set("inputParam", &ImageConvertInput{
+		FileUID:       file.UID,
+		OpenInBrowser: true,
+		Type:          "zoom",
+		Width:         200,
+		Height:        200,
+	})
+
+	return ctx, func(t *testing.T) {
+		downImg(t)
+		down(t)
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+	}
+}
+func newImageConvertForTest2(t *testing.T) (*gin.Context, func(*testing.T)) {
 	var (
 		ctx     *gin.Context
 		trx     *gorm.DB
@@ -102,6 +149,26 @@ func TestImageReadHandler2(t *testing.T) {
 }
 
 func TestImageReadHandler3(t *testing.T) {
+	ctx, down := newImageConvertForTest(t)
+	defer down(t)
+	writer := ctx.Writer.(*bodyWriter)
+
+	ImageConvertHandler(ctx)
+	s := writer.Header().Get("Content-Disposition")
+	assert.Equal(t, s, "inline; filename=\"random.png\"")
+}
+func TestImageReadHandler4(t *testing.T) {
+	ctx, down := newImageConvertForTest2(t)
+	defer down(t)
+	writer := ctx.Writer.(*bodyWriter)
+
+	ImageConvertHandler(ctx)
+	response, err := parseResponse(writer.body.String())
+	assert.Nil(t, err)
+	assert.False(t, response.Success)
+	assert.Equal(t, "undefined exception", response.Errors["system"][0])
+}
+func TestImageReadHandler5(t *testing.T) {
 	var (
 		w       = httptest.NewRecorder()
 		api     = buildRoute(config.DefaultConfig.HTTP.APIPrefix, "/image/convert")
@@ -164,4 +231,5 @@ func TestImageReadHandler3(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, c.Width, 100)
 	assert.Equal(t, c.Height, 100)
+
 }
