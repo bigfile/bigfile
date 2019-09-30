@@ -17,9 +17,10 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-//convert response always image/jpeg
+// JpegContentType convert response always image/jpeg
 const JpegContentType = "image/jpeg"
 
+// ImageConvertInput is a input type
 type ImageConvertInput struct {
 	Token         string  `form:"token" binding:"required"`
 	FileUID       string  `form:"fileUid" binding:"required"`

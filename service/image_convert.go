@@ -27,7 +27,7 @@ type ImageConvert struct {
 	Top    int           `validate:"omitempty"`
 }
 
-//Encapsulates the method of converting images
+// GM Encapsulates the method of converting images
 type GM struct {
 	MagickWand *gmagick.MagickWand
 }
@@ -83,7 +83,7 @@ func (fr *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 	return ImageConvertRun(fileReader, int64(fr.File.Size), fr.Type, fr.Width, fr.Height, fr.Left, fr.Top)
 }
 
-//init GM
+//NewGm is used to init GM
 func NewGm() *GM {
 	MagickWand := gmagick.NewMagickWand()
 	gmagick.Initialize()
@@ -92,7 +92,7 @@ func NewGm() *GM {
 	}
 }
 
-// thumbnails the image
+// ImageThumb is used to thumbnails the image
 func (gm *GM) ImageThumb(width, height float64) error {
 	w := gm.MagickWand.GetImageWidth()
 	h := gm.MagickWand.GetImageHeight()
@@ -105,23 +105,15 @@ func (gm *GM) ImageThumb(width, height float64) error {
 		targetW = uint(height * x)
 		targetH = uint(height)
 	}
-	err := gm.MagickWand.ResizeImage(targetW, targetH, gmagick.FILTER_LANCZOS, 1)
-	if err != nil {
-		return err
-	}
-	return nil
+	return gm.MagickWand.ResizeImage(targetW, targetH, gmagick.FILTER_LANCZOS, 1)
 }
 
-// crop the image
+// ImageCrop is used to crop the image
 func (gm *GM) ImageCrop(width, height float64, left, top int) error {
-	err := gm.MagickWand.CropImage(uint(width), uint(height), left, top)
-	if err != nil {
-		return err
-	}
-	return nil
+	return gm.MagickWand.CropImage(uint(width), uint(height), left, top)
 }
 
-// Centered zoom cut the image
+// ImageZoom is used to Centered zoom cut the image
 func (gm *GM) ImageZoom(width, height float64) error {
 	var left, top int
 	var x, xW, xH float64
@@ -145,14 +137,10 @@ func (gm *GM) ImageZoom(width, height float64) error {
 	top = int(thumbHeight-uint(height)) / 2
 	left = int(thumbWidth-uint(width)) / 2
 
-	if err := gm.MagickWand.CropImage(uint(width), uint(height), left, top); err != nil {
-		return err
-	}
-
-	return nil
+	return gm.MagickWand.CropImage(uint(width), uint(height), left, top)
 }
 
-//convert image
+// ImageConvertRun is used to convert image
 func ImageConvertRun(reader io.Reader, size int64, t string, width, height float64, left, top int) ([]byte, error) {
 	buf := make([]byte, size)
 	if _, err := io.ReadFull(reader, buf); err != nil {
