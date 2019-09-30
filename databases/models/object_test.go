@@ -9,6 +9,7 @@ import (
 	sha2562 "crypto/sha256"
 	"encoding/hex"
 	"hash"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -601,4 +602,23 @@ func TestObject_Reader(t *testing.T) {
 	defer down(t)
 	_, err := object.Reader(rootPath, trx)
 	assert.Nil(t, err)
+}
+
+// TestCreateObjectFromReader2 is used to create a img file
+func TestCreateObjectFromReader2(t *testing.T) {
+	img, imgDown := NewImageForTest(t)
+	tempDir := NewTempDirForTest()
+	trx, down := setUpTestCaseWithTrx(nil, t)
+	defer func() {
+		if util.IsDir(tempDir) {
+			os.RemoveAll(tempDir)
+		}
+		down(t)
+		imgDown(t)
+	}()
+	imgContent, err := ioutil.ReadFile(img)
+	assert.Nil(t, err)
+	object1, err := CreateObjectFromReader(bytes.NewReader(imgContent), &tempDir, trx)
+	assert.Nil(t, err)
+	assert.True(t, object1.ID > 0)
 }

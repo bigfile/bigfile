@@ -661,7 +661,7 @@ func (s *Server) ImageConvert(req *ImageConvertRequest, resp ImageConvert_ImageC
 	if err = resp.SendHeader(metadata.New(map[string]string{
 		"name": file.Name,
 		"size": strconv.Itoa(len(convertData)),
-		"hash": string(hash[:]),
+		"hash": hash,
 	})); err != nil {
 		return
 	}

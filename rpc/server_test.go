@@ -520,9 +520,10 @@ func TestServer_FileRead(t *testing.T) {
 
 func TestServer_ImageConvert(t *testing.T) {
 	// create image
-	img, downImg := models.NewImageForTest(t)
-	tf, err := os.Open(img.Name())
+	imgName, downImg := models.NewImageForTest(t)
+	tf, err := os.Open(imgName)
 	assert.Nil(t, err)
+	defer tf.Close()
 	// create token
 	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
 	rootPath := models.NewTempDirForTest()

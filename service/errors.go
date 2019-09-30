@@ -278,17 +278,17 @@ var (
 		"ImageConvert.Type": {
 			Code:  10038,
 			Field: "ImageConvert.Type",
-			Msg:   "type is required",
+			Msg:   "type is required and is one of thumb, crop and zoom",
 		},
 		"ImageConvert.Width": {
 			Code:  10039,
 			Field: "ImageConvert.Width",
-			Msg:   "width is required",
+			Msg:   "width is required and the minimum is 0",
 		},
 		"ImageConvert.Height": {
 			Code:  10040,
 			Field: "ImageConvert.Height",
-			Msg:   "height is required",
+			Msg:   "height is required and the minimum is 0",
 		},
 	}
 )

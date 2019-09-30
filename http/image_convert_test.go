@@ -111,9 +111,10 @@ func TestImageReadHandler3(t *testing.T) {
 		token   *models.Token
 		tempDir = models.NewTempDirForTest()
 	)
-	f, downImg := models.NewImageForTest(t)
-	img, err := os.Open(f.Name())
+	imgName, downImg := models.NewImageForTest(t)
+	img, err := os.Open(imgName)
 	assert.Nil(t, err)
+	defer img.Close()
 	testingChunkRootPath = &tempDir
 	token, trx, down, err = models.NewArbitrarilyTokenForTest(nil, t)
 	assert.Nil(t, err)

@@ -21,48 +21,48 @@ import (
 
 func TestNewGm(t *testing.T) {
 	gm := NewGm()
-	f, down := models.NewImageForTest(t)
+	imgName, down := models.NewImageForTest(t)
 	defer func() {
 		down(t)
 		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	assert.Nil(t, gm.MagickWand.ReadImage(f.Name()))
+	assert.Nil(t, gm.MagickWand.ReadImage(imgName))
 }
 
 func TestGM_ImageCropValidate(t *testing.T) {
 	gm := NewGm()
-	f, down := models.NewImageForTest(t)
+	imgName, down := models.NewImageForTest(t)
 	defer func() {
 		down(t)
 		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	assert.Nil(t, gm.MagickWand.ReadImage(f.Name()))
+	assert.Nil(t, gm.MagickWand.ReadImage(imgName))
 	assert.Nil(t, gm.ImageCrop(100, 100, 0, 0))
 }
 
 func TestGM_ImageThumb(t *testing.T) {
 	gm := NewGm()
-	f, down := models.NewImageForTest(t)
+	imgName, down := models.NewImageForTest(t)
 	defer func() {
 		down(t)
 		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	assert.Nil(t, gm.MagickWand.ReadImage(f.Name()))
+	assert.Nil(t, gm.MagickWand.ReadImage(imgName))
 	assert.Nil(t, gm.ImageThumb(100, 100))
 }
 
 func TestGM_ImageZoom(t *testing.T) {
 	gm := NewGm()
-	f, down := models.NewImageForTest(t)
+	imgName, down := models.NewImageForTest(t)
 	defer func() {
 		down(t)
 		gm.MagickWand.Destroy()
 		gmagick.Terminate()
 	}()
-	assert.Nil(t, gm.MagickWand.ReadImage(f.Name()))
+	assert.Nil(t, gm.MagickWand.ReadImage(imgName))
 	assert.Nil(t, gm.ImageZoom(100, 100))
 }
 
@@ -115,8 +115,8 @@ func TestImageConvert_Validate(t *testing.T) {
 func TestImageConvert_Execute(t *testing.T) {
 	tempDir := models.NewTempDirForTest()
 	token, trx, down, err := models.NewArbitrarilyTokenForTest(nil, t)
-	f, downImg := models.NewImageForTest(t)
-	img, err := ioutil.ReadFile(f.Name())
+	imgName, downImg := models.NewImageForTest(t)
+	img, err := ioutil.ReadFile(imgName)
 	assert.Nil(t, err)
 	defer func() {
 		downImg(t)
