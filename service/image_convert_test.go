@@ -198,4 +198,8 @@ func TestImageConvert_Execute(t *testing.T) {
 	assert.Equal(t, cc.Width, 300)
 	assert.Equal(t, cc.Height, 200)
 
+	assert.Nil(t, trx.Model(file).Update("hidden", 1).Error)
+	_, err = ImageConvertSrv.Execute(context.TODO())
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrReadHiddenFile.Error(), err.Error())
 }

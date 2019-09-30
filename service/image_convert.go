@@ -76,10 +76,6 @@ func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 
 	fileReader, err := ic.File.Reader(ic.RootPath, ic.DB)
 
-	if ic.File.Hidden == 1 {
-		return nil, err
-	}
-
 	return ImageConvertRun(fileReader, int64(ic.File.Size), ic.Type, ic.Width, ic.Height, ic.Left, ic.Top)
 }
 
