@@ -27,7 +27,7 @@ type ImageConvert struct {
 	Top    int           `validate:"omitempty"`
 }
 
-// GM Encapsulates the method of converting images
+// GM just wraps the *gmagick.MagickWand
 type GM struct {
 	MagickWand *gmagick.MagickWand
 }

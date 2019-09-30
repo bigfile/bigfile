@@ -17,10 +17,10 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// JpegContentType convert response always image/jpeg
+// JpegContentType represent the target content type for http response
 const JpegContentType = "image/jpeg"
 
-// ImageConvertInput is a input type
+// ImageConvertInput is a collection of params of request that is from image convert
 type ImageConvertInput struct {
 	Token         string  `form:"token" binding:"required"`
 	FileUID       string  `form:"fileUid" binding:"required"`
@@ -37,15 +37,15 @@ type ImageConvertInput struct {
 // ImageConvertHandler is used to handle image convert request
 func ImageConvertHandler(ctx *gin.Context) {
 	var (
-		ip           = ctx.ClientIP()
-		db           = ctx.MustGet("db").(*gorm.DB)
-		err          error
-		file         *models.File
-		token        = ctx.MustGet("token").(*models.Token)
-		input        = ctx.MustGet("inputParam").(*ImageConvertInput)
-		requestID    = ctx.GetInt64("requestId")
-		imageReadSrv *service.ImageConvert
-		convertData  []byte
+		ip              = ctx.ClientIP()
+		db              = ctx.MustGet("db").(*gorm.DB)
+		err             error
+		file            *models.File
+		token           = ctx.MustGet("token").(*models.Token)
+		input           = ctx.MustGet("inputParam").(*ImageConvertInput)
+		requestID       = ctx.GetInt64("requestId")
+		imageConvertSrv *service.ImageConvert
+		convertData     []byte
 	)
 
 	if file, err = models.FindFileByUID(input.FileUID, false, db); err != nil {
@@ -57,7 +57,7 @@ func ImageConvertHandler(ctx *gin.Context) {
 		return
 	}
 
-	imageReadSrv = &service.ImageConvert{
+	imageConvertSrv = &service.ImageConvert{
 		BaseService: service.BaseService{DB: db},
 		Token:       token,
 		File:        file,
@@ -70,10 +70,10 @@ func ImageConvertHandler(ctx *gin.Context) {
 	}
 
 	if isTesting {
-		imageReadSrv.RootPath = testingChunkRootPath
+		imageConvertSrv.RootPath = testingChunkRootPath
 	}
 
-	if err = imageReadSrv.Validate(); !reflect.ValueOf(err).IsNil() {
+	if err = imageConvertSrv.Validate(); !reflect.ValueOf(err).IsNil() {
 		ctx.JSON(400, &Response{
 			RequestID: requestID,
 			Success:   false,
@@ -82,7 +82,7 @@ func ImageConvertHandler(ctx *gin.Context) {
 		return
 	}
 
-	if convertData, err = imageReadSrv.Execute(context.Background()); err != nil {
+	if convertData, err = imageConvertSrv.Execute(context.Background()); err != nil {
 		ctx.JSON(400, &Response{
 			RequestID: requestID,
 			Success:   false,
