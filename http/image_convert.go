@@ -90,7 +90,8 @@ func ImageConvertHandler(ctx *gin.Context) {
 		})
 		return
 	}
-
+	//ctx.Header("ETag", fmt.Sprintf("%x", md5.Sum(convertData)))
+	ctx.Header("Cache-Control", "max-age=9940645")
 	ctx.Header("Last-Modified", file.UpdatedAt.Format(time.RFC1123))
 	ctx.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, file.Name))
 

@@ -69,5 +69,9 @@ func init() {
 		Chunk{
 			RootPath: "storage/chunks",
 		},
+		ConvertImage{
+			CachePath: "storage/cache/file",
+			Cache:     false,
+		},
 	}
 }

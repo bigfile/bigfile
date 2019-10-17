@@ -6,9 +6,18 @@ package service
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 
+	"github.com/bigfile/bigfile/config"
 	"github.com/bigfile/bigfile/databases/models"
+	"github.com/bigfile/bigfile/internal/util"
 	"github.com/gographics/gmagick"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -30,6 +39,41 @@ type ImageConvert struct {
 // GM just wraps the *gmagick.MagickWand
 type GM struct {
 	MagickWand *gmagick.MagickWand
+}
+
+// Path represent the actual storage path
+func (ic *ImageConvert) CachePath() (path string, err error) {
+	var (
+		idStr    string
+		parts    []string
+		index    int
+		dir      string
+		rootPath = config.DefaultConfig.ConvertImage.CachePath
+
+		id = ic.File.ID
+	)
+
+	combine := fmt.Sprintf("%d_%s_%f_%f_%d_%d", ic.File.Size, ic.Type, ic.Width, ic.Height, ic.Left, ic.Top)
+	w := md5.New()
+	io.WriteString(w, combine)
+	hash := fmt.Sprintf("%x", w.Sum(nil))
+
+	idStr = strconv.FormatUint(id, 10)
+	parts = make([]string, (len(idStr)/3)+1)
+	for ; len(idStr) > 3; index++ {
+		parts[index] = util.SubStrFromToEnd(idStr, -3)
+		idStr = util.SubStrFromTo(idStr, 0, -3)
+	}
+	parts[index] = idStr
+	parts = parts[1:]
+	util.ReverseSlice(parts)
+	dir = filepath.Join(strings.TrimSuffix(rootPath, string(os.PathSeparator)), filepath.Join(parts...))
+	dir = filepath.Join(dir, strconv.FormatUint(id, 10))
+	path = filepath.Join(dir, hash)
+	if !util.IsDir(dir) {
+		err = os.MkdirAll(dir, os.ModePerm)
+	}
+	return path, err
 }
 
 // Validate is used to validate service params
@@ -76,7 +120,23 @@ func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 
 	fileReader, err := ic.File.Reader(ic.RootPath, ic.DB)
 
-	return ImageConvertRun(fileReader, int64(ic.File.Size), ic.Type, ic.Width, ic.Height, ic.Left, ic.Top)
+	if config.DefaultConfig.ConvertImage.Cache {
+		//use cache file if exist
+		path, _ := ic.CachePath()
+		if _, err := os.Stat(path); err == nil {
+			return ioutil.ReadFile(path)
+		}
+	}
+
+	CD, err := ImageConvertRun(fileReader, int64(ic.File.Size), ic.Type, ic.Width, ic.Height, ic.Left, ic.Top)
+
+	//write cache if use cache
+	if config.DefaultConfig.ConvertImage.Cache {
+		path, _ := ic.CachePath()
+		ioutil.WriteFile(path, CD, os.ModePerm)
+	}
+
+	return CD, err
 }
 
 // NewGm is used to init GM

@@ -14,10 +14,11 @@ import (
 
 // Configurator combine every child config
 type Configurator struct {
-	Database `yaml:"database,omitempty"`
-	Log      `yaml:"log,omitempty"`
-	HTTP     `yaml:"http,omitempty"`
-	Chunk    `yaml:"chunk,omitempty"`
+	Database     `yaml:"database,omitempty"`
+	Log          `yaml:"log,omitempty"`
+	HTTP         `yaml:"http,omitempty"`
+	Chunk        `yaml:"chunk,omitempty"`
+	ConvertImage `yaml:"convertImage,omitempty"`
 }
 
 // ParseConfigFile is used to parse configuration from yaml file to
