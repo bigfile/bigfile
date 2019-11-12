@@ -30,8 +30,8 @@ type ImageConvert struct {
 	File   *models.File  `validate:"required"`
 	IP     *string       `validate:"omitempty"`
 	Type   string        `validate:"required,oneof=thumb zoom crop"`
-	Width  float64       `validate:"required"`
-	Height float64       `validate:"required"`
+	Width  float64       `validate:"omitempty"`
+	Height float64       `validate:"omitempty"`
 	Left   int           `validate:"omitempty"`
 	Top    int           `validate:"omitempty"`
 }

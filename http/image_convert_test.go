@@ -232,4 +232,28 @@ func TestImageReadHandler5(t *testing.T) {
 	assert.Equal(t, c.Width, 100)
 	assert.Equal(t, c.Height, 100)
 
+	//when thumb and height =0
+	var w4 = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s&type=%s&width=%d&height=%d", api, token.UID, file.UID, "thumb", 88, 0), nil)
+	Routers().ServeHTTP(w4, req)
+
+	assert.Equal(t, http.StatusOK, w4.Code)
+	assert.Nil(t, err)
+	c, _, err = image.DecodeConfig(bytes.NewReader(w4.Body.Bytes()))
+	assert.Nil(t, err)
+	assert.Equal(t, c.Width, 88)
+	assert.Equal(t, c.Height, 88)
+
+	//when thumb and height =0
+	var w5 = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", fmt.Sprintf("%s?token=%s&fileUid=%s&type=%s&width=%d&height=%d", api, token.UID, file.UID, "thumb", 0, 99), nil)
+	Routers().ServeHTTP(w5, req)
+
+	assert.Equal(t, http.StatusOK, w5.Code)
+	assert.Nil(t, err)
+	c, _, err = image.DecodeConfig(bytes.NewReader(w5.Body.Bytes()))
+	assert.Nil(t, err)
+	assert.Equal(t, c.Width, 99)
+	assert.Equal(t, c.Height, 99)
+
 }
