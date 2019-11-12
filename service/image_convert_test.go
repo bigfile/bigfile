@@ -160,6 +160,22 @@ func TestImageConvert_Execute(t *testing.T) {
 	assert.Equal(t, cc.Width, 200)
 	assert.Equal(t, cc.Height, 200)
 
+	ImageConvertSrv.Width = 300
+	ImageConvertSrv.Height = 0
+	fileCreateValue, err = ImageConvertSrv.Execute(context.TODO())
+	cc, _, err = image.DecodeConfig(bytes.NewReader(fileCreateValue))
+	assert.Nil(t, err)
+	assert.Equal(t, cc.Width, 300)
+	assert.Equal(t, cc.Height, 300)
+
+	ImageConvertSrv.Width = 0
+	ImageConvertSrv.Height = 105
+	fileCreateValue, err = ImageConvertSrv.Execute(context.TODO())
+	cc, _, err = image.DecodeConfig(bytes.NewReader(fileCreateValue))
+	assert.Nil(t, err)
+	assert.Equal(t, cc.Width, 105)
+	assert.Equal(t, cc.Height, 105)
+
 	//use zoom
 	ImageConvertSrv.Type = "zoom"
 	ImageConvertSrv.Width = 300

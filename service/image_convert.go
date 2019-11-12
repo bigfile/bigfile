@@ -109,6 +109,7 @@ func (ic *ImageConvert) Validate() ValidateErrors {
 // Generate Centered zoom cut via the “ImageZoom” method
 func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 	var err error
+	var path string
 
 	if err = ic.Token.UpdateAvailableTimes(-1, ic.DB); err != nil {
 		return nil, err
@@ -122,7 +123,7 @@ func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 
 	if config.DefaultConfig.ConvertImage.Cache {
 		//use cache file if exist
-		path, _ := ic.CachePath()
+		path, _ = ic.CachePath()
 		if _, err := os.Stat(path); err == nil {
 			return ioutil.ReadFile(path)
 		}
@@ -132,7 +133,6 @@ func (ic *ImageConvert) Execute(ctx context.Context) ([]byte, error) {
 
 	//write cache if use cache
 	if config.DefaultConfig.ConvertImage.Cache {
-		path, _ := ic.CachePath()
 		ioutil.WriteFile(path, CD, os.ModePerm)
 	}
 
@@ -160,6 +160,15 @@ func (gm *GM) ImageThumb(width, height float64) error {
 	} else {
 		targetW = uint(height * x)
 		targetH = uint(height)
+	}
+
+	if width == 0 {
+		targetW = uint(height * x)
+		targetH = uint(height)
+	}
+	if height == 0 {
+		targetW = uint(width)
+		targetH = uint(width / x)
 	}
 	return gm.MagickWand.ResizeImage(targetW, targetH, gmagick.FILTER_LANCZOS, 1)
 }

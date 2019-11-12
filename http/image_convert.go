@@ -25,8 +25,8 @@ type ImageConvertInput struct {
 	Token         string  `form:"token" binding:"required"`
 	FileUID       string  `form:"fileUid" binding:"required"`
 	Type          string  `form:"type,default=zoom" binding:"omitempty"`
-	Width         float64 `form:"width" binding:"required"`
-	Height        float64 `form:"height" binding:"required"`
+	Width         float64 `form:"width,default=0" binding:"omitempty"`
+	Height        float64 `form:"height,default=0" binding:"omitempty"`
 	Left          int     `form:"left,default=0" binding:"omitempty"`
 	Top           int     `form:"top,default=0" binding:"omitempty"`
 	Nonce         *string `form:"nonce" header:"X-Request-Nonce" binding:"omitempty,min=32,max=48"`
